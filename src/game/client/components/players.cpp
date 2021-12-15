@@ -392,7 +392,15 @@ void CPlayers::RenderHook(
 		float d = distance(Pos, HookPos);
 		vec2 Dir = normalize(Pos - HookPos);
 
-		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHookHead);
+		bool InfectedHook = pRenderInfo->m_InfectedHook;
+		if(InfectedHook)
+		{
+			Graphics()->TextureSet(GameClient()->m_InfclassSkin.m_SpriteHookHead);
+		}
+		else
+		{
+			Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHookHead);
+		}
 		Graphics()->QuadsSetRotation(angle(Dir) + pi);
 		// render head
 		int QuadOffset = NUM_WEAPONS * 2 + 2;
@@ -411,7 +419,14 @@ void CPlayers::RenderHook(
 			s_aHookChainRenderInfo[HookChainCount].m_Scale = 1;
 			s_aHookChainRenderInfo[HookChainCount].m_Rotation = angle(Dir) + pi;
 		}
-		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHookChain);
+		if(InfectedHook)
+		{
+			Graphics()->TextureSet(GameClient()->m_InfclassSkin.m_SpriteHookChain);
+		}
+		else
+		{
+			Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHookChain);
+		}
 		Graphics()->RenderQuadContainerAsSpriteMultiple(m_WeaponEmoteQuadContainerIndex, QuadOffset, HookChainCount, s_aHookChainRenderInfo);
 
 		Graphics()->QuadsSetRotation(0);
@@ -831,6 +846,9 @@ void CPlayers::OnRender()
 			aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
 		if(m_pClient->m_aClients[i].m_Predicted.m_Invincible)
 			aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+
+		const CGameClient::CClientData *pClientData = &m_pClient->m_aClients[i];
+		aRenderInfo[i].m_InfectedHook = pClientData->m_InfClassPlayerFlags & INFCLASS_PLAYER_FLAG_INFECTED;
 
 		const bool Frozen = m_pClient->m_aClients[i].m_Predicted.m_FreezeEnd != 0;
 		if((m_pClient->m_aClients[i].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)

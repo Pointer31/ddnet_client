@@ -114,6 +114,7 @@ public:
 		EType Type() const { return m_Type; }
 		int StorageType() const { return m_StorageType; }
 		bool IsVanilla() const { return m_Vanilla; }
+		bool IsInfclass() const { return m_Infclass; }
 		bool IsSpecial() const { return m_Special; }
 		bool IsAlwaysLoaded() const { return m_AlwaysLoaded; }
 		EState State() const { return m_State; }
@@ -130,6 +131,7 @@ public:
 		EType m_Type;
 		int m_StorageType;
 		bool m_Vanilla;
+		bool m_Infclass{};
 		bool m_Special;
 		bool m_AlwaysLoaded;
 
@@ -251,6 +253,7 @@ public:
 
 	const char *SkinPrefix() const;
 
+	static bool IsInfclassSkin(const char *pName);
 	static bool IsSpecialSkin(const char *pName);
 
 private:

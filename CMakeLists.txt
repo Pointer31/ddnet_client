@@ -2394,6 +2394,8 @@ if(CLIENT)
     components/hud.h
     components/important_alert.cpp
     components/important_alert.h
+    components/infc_binds.cpp
+    components/infc_binds.h
     components/infomessages.cpp
     components/infomessages.h
     components/items.cpp

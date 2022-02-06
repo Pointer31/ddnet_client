@@ -1594,7 +1594,7 @@ void CMenus::RenderSettingsInfClassControls(CUIRect MainView)
 			LoadPresetButton.VMargin(30.0f, &LoadPresetButton);
 			static CButtonContainer s_LoadPresetButton;
 			if(DoButton_Menu(&s_LoadPresetButton, Localize("Load the preset"), 0, &LoadPresetButton))
-				m_pClient->m_InfCBinds.LoadPreset();
+				GameClient()->m_InfCBinds.LoadPreset();
 		}
 	}
 
@@ -1620,7 +1620,7 @@ void CMenus::ResetSettingsControls()
 
 void CMenus::ResetSettingsInfclassControls()
 {
-	m_pClient->m_InfCBinds.LoadPreset();
+	GameClient()->m_InfCBinds.LoadPreset();
 }
 
 void CMenus::RenderSettingsGraphics(CUIRect MainView)

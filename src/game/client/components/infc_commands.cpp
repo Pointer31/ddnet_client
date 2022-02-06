@@ -204,7 +204,7 @@ void CInfCCommands::ConSayTeamLocation(ELocation Location, const char *pExtraArg
 		{
 			char aBuffer[128];
 			str_format(aBuffer, sizeof(aBuffer), "%s is clear", pText);
-			m_pClient->m_Chat.SendChat(1, aBuffer);
+			GameClient()->m_Chat.SendChat(1, aBuffer);
 		}
 		else
 		{
@@ -212,7 +212,7 @@ void CInfCCommands::ConSayTeamLocation(ELocation Location, const char *pExtraArg
 		}
 		return;
 	}
-	m_pClient->m_Chat.SendChat(1, pText);
+	GameClient()->m_Chat.SendChat(1, pText);
 }
 
 void CInfCCommands::ConSayInfoMessage(IConsole::IResult *pResult, void *pUserData)
@@ -249,7 +249,7 @@ void CInfCCommands::ConSayInfoMessage(EInfoMessage Message)
 		break;
 	}
 
-	m_pClient->m_Chat.SendChat(TeamChat ? 1 : 0, pText);
+	GameClient()->m_Chat.SendChat(TeamChat ? 1 : 0, pText);
 }
 
 void CInfCCommands::ConSetMessageText(IConsole::IResult *pResult, void *pUserData)
@@ -315,5 +315,5 @@ void CInfCCommands::ConCallWitch(IConsole::IResult *pResult, void *pUserData)
 
 void CInfCCommands::ConCallWitch()
 {
-	m_pClient->m_Chat.SendChat(0, "/witch");
+	GameClient()->m_Chat.SendChat(0, "/witch");
 }

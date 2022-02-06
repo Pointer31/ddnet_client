@@ -25,6 +25,8 @@
 #include <game/gamecore.h>
 #include <game/mapitems.h>
 
+#include <game/classes.h>
+
 static float CalculateHandAngle(vec2 Dir, float AngleOffset)
 {
 	const float Angle = angle(Dir);
@@ -531,6 +533,8 @@ void CPlayers::RenderPlayer(
 
 	CTeeRenderInfo RenderInfo = *pRenderInfo;
 
+	int PlayerClass = (GameClient()->m_GameInfo.m_InfClass && (ClientId >= 0)) ? GameClient()->m_aClients[ClientId].m_InfClassPlayerClass : -1;
+	
 	bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
 	bool OtherTeam = GameClient()->IsOtherTeam(ClientId);
 	float Alpha = (OtherTeam || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
@@ -539,6 +543,9 @@ void CPlayers::RenderPlayer(
 	// TODO: snd_game_volume_others
 	const float Volume = 1.0f;
 
+	if((PlayerClass == PLAYERCLASS_GHOST) && (Player.m_Emote == EMOTE_BLINK))
+		Alpha = 0.6;
+		
 	// set size
 	RenderInfo.m_Size = 64.0f;
 

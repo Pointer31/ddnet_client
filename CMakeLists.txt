@@ -2396,6 +2396,8 @@ if(CLIENT)
     components/important_alert.h
     components/infc_binds.cpp
     components/infc_binds.h
+    components/infc_commands.cpp
+    components/infc_commands.h
     components/infomessages.cpp
     components/infomessages.h
     components/items.cpp

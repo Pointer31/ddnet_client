@@ -139,6 +139,9 @@ public:
 	int m_InfClassClass;
 
 private:
+	void SaturateVelocity(vec2 Force, float MaxSpeed);
+
+private:
 	// weapon info
 	int m_aHitObjects[MAX_CLIENTS];
 	int m_NumObjectsHit;

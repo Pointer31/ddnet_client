@@ -33,8 +33,7 @@ void CInfCBinds::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserD
 	pConfigManager->WriteLine("infc_unbindall", InfclassConfigDomainId());
 	for(int Modifier = MODIFIER_NONE; Modifier < MODIFIER_COMBINATION_COUNT; Modifier++)
 	{
-		char aModifiers[128];
-		GetKeyBindModifiersName(Modifier, aModifiers, sizeof(aModifiers));
+		const char* aModifiers = GetModifierName(Modifier);
 		for(int Key = KEY_FIRST; Key < KEY_LAST; Key++)
 		{
 			if(!pSelf->m_aapKeyBindings[Modifier][Key])

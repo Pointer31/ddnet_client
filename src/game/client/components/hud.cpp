@@ -833,7 +833,7 @@ void CHud::PrepareInfclassHudQuads()
 	}
 	m_IcStatusIconOffset = Graphics()->QuadContainerAddQuads(m_HudQuadContainerIndex, Array, MaxStatusIcons);
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
-	m_IcParticleIconOffset = RenderTools()->QuadContainerAddSprite(m_HudQuadContainerIndex, 1.f);
+	m_IcParticleIconOffset = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, 1.f);
 }
 
 void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
@@ -1715,6 +1715,9 @@ void CHud::RenderObjectOwnerIcons(int ClientId)
 
 void CHud::RenderClassExtraHud(int ClientId)
 {
+	if(ClientId < 0)
+		return;
+
 	const CGameClient::CClientData *pClientData = &GameClient()->m_aClients[ClientId];
 	if(!pClientData || !GameClient()->m_GameInfo.m_InfClass)
 		return;
@@ -1842,7 +1845,7 @@ void CHud::RenderClassExtraHud(int ClientId)
 			}
 			else
 			{
-				if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_PAUSED))
+				if(GameClient()->m_Snap.m_pGameInfoObj && !(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_PAUSED))
 					TimePassed = (float)((t - s_LastTime) / (double)time_freq());
 			}
 			s_LastTime = t;
@@ -2133,6 +2136,7 @@ void CHud::OnRender()
 				RenderPlayerState(SpectatorId);
 			}
 			RenderMovementInformation();
+			RenderClassExtraHud(SpectatorId);
 			RenderSpectatorHud();
 		}
 

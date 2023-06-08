@@ -479,7 +479,7 @@ void CPlayers::RenderPlayer(
 	if(pClientData)
 	{
 		bool Invisible = false;
-		if(m_pClient->m_InfclassGameInfoVersion >= 2)
+		if(GameClient()->m_InfclassGameInfoVersion >= 2)
 		{
 			if(pClientData->m_InfClassClassFlags & INFCLASS_CLASSINFO_FLAG_IS_INVISIBLE)
 			{

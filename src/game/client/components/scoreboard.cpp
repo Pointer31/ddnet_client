@@ -142,10 +142,10 @@ void CScoreboard::RenderGoals(CUIRect Goals)
 		Ui()->DoLabel(&Goals, aBuf, FontSize, TEXTALIGN_ML);
 	}
 
-	if(m_pClient->m_TimeLimitInSeconds)
+	if(GameClient()->m_TimeLimitInSeconds)
 	{
-		int Min = m_pClient->m_TimeLimitInSeconds / 60;
-		int Sec = m_pClient->m_TimeLimitInSeconds % 60;
+		int Min = GameClient()->m_TimeLimitInSeconds / 60;
+		int Sec = GameClient()->m_TimeLimitInSeconds % 60;
 		if(Sec)
 		{
 			if(Min)

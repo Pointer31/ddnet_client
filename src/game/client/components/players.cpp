@@ -542,9 +542,30 @@ void CPlayers::RenderPlayer(
 		Alpha = g_Config.m_ClRaceGhostAlpha / 100.0f;
 	// TODO: snd_game_volume_others
 	const float Volume = 1.0f;
+	
+	if(pClientData)
+	{
+		bool Invisible = false;
+		if(GameClient()->m_InfclassGameInfoVersion >= 2)
+		{
+			if(pClientData->m_InfClassClassFlags & INFCLASS_CLASSINFO_FLAG_IS_INVISIBLE)
+			{
+				Invisible = true;
+			}
+		}
+		else
+		{
+			if((PlayerClass == PLAYERCLASS_GHOST) && (Player.m_Emote == EMOTE_BLINK))
+			{
+				Invisible = true;
+			}
+		}
 
-	if((PlayerClass == PLAYERCLASS_GHOST) && (Player.m_Emote == EMOTE_BLINK))
-		Alpha = 0.6;
+		if(Invisible)
+		{
+			Alpha = 0.625f;
+		}
+	}
 		
 	// set size
 	RenderInfo.m_Size = 64.0f;

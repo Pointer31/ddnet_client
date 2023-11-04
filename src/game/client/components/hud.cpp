@@ -1763,7 +1763,7 @@ void CHud::RenderClassExtraHud(int ClientId)
 
 	if(PlayerClass == PLAYERCLASS_SCIENTIST)
 	{
-		if(m_pClient->m_InfClassWhiteHoleMinKills == 0)
+		if(GameClient()->m_InfClassWhiteHoleMinKills == 0)
 		{
 			// WH disabled or the server didn't tell us
 			return;
@@ -1948,7 +1948,7 @@ void CHud::RenderClassExtraHud(int ClientId)
 	{
 		const int ProgressionFixed = pClientData->m_InfClassClassData1;
 		const float Prog = fx2f(ProgressionFixed);
-		const float Max = m_pClient->m_InfClassWhiteHoleMinKills;
+		const float Max = GameClient()->m_InfClassWhiteHoleMinKills;
 
 		char aBuffer[32];
 		if(Prog < 0)

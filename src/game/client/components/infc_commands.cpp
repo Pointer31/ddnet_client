@@ -210,7 +210,7 @@ void CInfCCommands::ConSayTeamLocation(ELocation Location, const char *pExtraArg
 		{
 			char aBuffer[128];
 			str_format(aBuffer, sizeof(aBuffer), "Help %s", pText);
-			m_pClient->m_Chat.SendChat(1, aBuffer);
+			GameClient()->m_Chat.SendChat(1, aBuffer);
 		}
 		else
 		{

@@ -18,4 +18,5 @@ CLayer::CLayer(const CLayer &Other) :
 	m_Flags = Other.m_Flags;
 	m_Readonly = false;
 	m_Visible = true;
+	m_pPtumZoneType = Other.m_pPtumZoneType;
 }

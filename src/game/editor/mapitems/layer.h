@@ -50,6 +50,7 @@ public:
 
 	bool m_Readonly = false;
 	bool m_Visible = true;
+	const char *m_pPtumZoneType = nullptr;
 };
 
 #endif

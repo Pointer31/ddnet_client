@@ -68,7 +68,7 @@ void CLayerGroup::Render()
 {
 	MapScreen();
 
-	if(m_UseClipping)
+	if(m_UseClipping && !m_ZonesGroup)
 	{
 		float aPoints[4];
 		Map()->m_pGameGroup->Mapping(aPoints);

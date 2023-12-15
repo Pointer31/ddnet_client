@@ -19,6 +19,7 @@
 
 static constexpr const char *DDNET_INFO_FILE = "ddnet-info.json";
 static constexpr const char *DDNET_INFO_URL = "https://info.ddnet.org/info";
+static constexpr const char *INFCLASS_INFO_FILE = "infclass-info.json";
 
 class CUIElement;
 
@@ -363,6 +364,7 @@ public:
 
 	virtual bool DDNetInfoAvailable() const = 0;
 	virtual std::optional<SHA256_DIGEST> DDNetInfoSha256() const = 0;
+	virtual std::optional<SHA256_DIGEST> InfclassInfoSha256() const = 0;
 
 	virtual ICommunityCache &CommunityCache() = 0;
 	virtual const ICommunityCache &CommunityCache() const = 0;

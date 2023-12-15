@@ -8,6 +8,7 @@
 #include <engine/console.h>
 #include <engine/shared/config.h>
 #include <engine/shared/console.h>
+#include <engine/shared/infclass.h>
 #include <engine/shared/protocol.h>
 #include <engine/storage.h>
 
@@ -314,6 +315,8 @@ void CConfigManager::Init()
 	}
 
 #include "config_variables.h"
+	ConfigDomainId = InfclassConfigDomainId();
+#include "infc_config_variables.h"
 
 #undef MACRO_CONFIG_INT
 #undef MACRO_CONFIG_COL

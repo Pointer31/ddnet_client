@@ -648,14 +648,14 @@ void CItems::RenderSoldierBomb(const CNetObj_InfClassObject *pCurrent, bool IsPr
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_aSpriteWeaponProjectiles[CurWeapon]);
 		Graphics()->SetColor(1.f, 1.f, 1.f, Alpha);
 
-		int NumBombs = m_pClient->m_InfClassSoldierBombs;
+		int NumBombs = GameClient()->m_InfClassSoldierBombs;
 		float AngleStep = 2.0f * pi / NumBombs;
-		int ActiveBombs = clamp(pCurrent->m_Data1, 0, NumBombs);
+		int ActiveBombs = std::clamp(pCurrent->m_Data1, 0, NumBombs);
 		for(int i = 0; i < ActiveBombs; ++i)
 		{
 			const float Angle = BaseAngle + AngleStep * i;
 			const vec2 Pos = ObjPos + direction(Angle) * Radius;
-			m_pClient->m_Effects.SmokeTrail(Pos, vec2(0, 0), Alpha);
+			GameClient()->m_Effects.SmokeTrail(Pos, vec2(0, 0), Alpha, 0.0f);
 			Graphics()->QuadsSetRotation(Angle + pi / 2);
 			Graphics()->RenderQuadContainerAsSprite(m_ItemsQuadContainerIndex, m_aProjectileOffset[CurWeapon], Pos.x, Pos.y);
 		}

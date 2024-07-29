@@ -1,3 +1,11 @@
+Modified version by Pointer  
+UI is changed a little  
+(Iternet, LAN, Favorites tabs are now text-only instead of icons, are are wider)  
+(community filter is at the bottom of the filter tab)  
+('normal' votes and 'map' votes are differentiated, and put in a different tab. This may require the server to use special characters to indicate a vote is a 'map' vote. Namely the invisible chars "  " or it starting with "Maps: " or "(x) "(x replaced by XS, S, M, L, or XL. Additional info can be given by adding a number of spaces after "  ".))  
+  
+The the original README.md of ddnet:
+
 [![DDraceNetwork](https://ddnet.org/ddnet-small.png)](https://ddnet.org) [![](https://github.com/ddnet/ddnet/workflows/Build/badge.svg)](https://github.com/ddnet/ddnet/actions?query=workflow%3ABuild+event%3Apush+branch%3Amaster) [![](https://codecov.io/gh/ddnet/ddnet/branch/master/graph/badge.svg)](https://codecov.io/gh/ddnet/ddnet/branch/master)
 
 Our own flavor of DDRace, a Teeworlds mod. See the [website](https://ddnet.org) for more information.

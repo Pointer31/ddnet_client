@@ -535,7 +535,7 @@ void CMenus::RenderServerInfoMotd(CUIRect Motd)
 	s_ScrollRegion.End();
 }
 
-bool CMenus::RenderServerControlServer(CUIRect MainView)
+bool CMenus::RenderServerControlServer(CUIRect MainView, bool maps)
 {
 	CUIRect List = MainView;
 	int Total = m_pClient->m_Voting.m_NumVoteOptions;
@@ -552,6 +552,9 @@ bool CMenus::RenderServerControlServer(CUIRect MainView)
 	}
 
 	static CListBox s_ListBox;
+	// if (maps)
+	// 	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
+	// else
 	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
 
 	int i = -1;
@@ -559,6 +562,18 @@ bool CMenus::RenderServerControlServer(CUIRect MainView)
 	{
 		i++;
 		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
+			continue;
+
+		bool is_map_vote = (str_startswith_nocase(pOption->m_aDescription, "Map: ") || 
+							str_startswith_nocase(pOption->m_aDescription, "(XS) ") || 
+							str_startswith_nocase(pOption->m_aDescription, "(S) ") || 
+							str_startswith_nocase(pOption->m_aDescription, "(M) ") || 
+							str_startswith_nocase(pOption->m_aDescription, "(L) ") || 
+							str_startswith_nocase(pOption->m_aDescription, "(XL) ") || 
+							str_utf8_find_nocase(pOption->m_aDescription, "  "));
+		if (!maps && is_map_vote)
+			continue;
+		if (maps && !is_map_vote)
 			continue;
 
 		if(NumVoteOptions < Total)
@@ -569,9 +584,40 @@ bool CMenus::RenderServerControlServer(CUIRect MainView)
 		if(!Item.m_Visible)
 			continue;
 
-		CUIRect Label;
-		Item.m_Rect.VMargin(2.0f, &Label);
-		Ui()->DoLabel(&Label, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
+		if (is_map_vote) {
+			CUIRect left; CUIRect right;
+			Item.m_Rect.VSplitMid(&left, &right);
+
+			CUIRect Label1;
+			left.VMargin(-2.0f, &Label1);
+			Ui()->DoLabel(&Label1, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
+
+			CUIRect Label2;
+			right.VMargin(-2.0f, &Label2);
+
+			TextRender()->TextColor(0.0, 0.0, 0.0, 0); // none/unknown
+			char* temp_text = "Theme";
+			if (str_utf8_find_nocase(pOption->m_aDescription, "        ")) // dark
+				{TextRender()->TextColor(0.2, 0, 0.2, 1); temp_text = "Dark";}
+			else if (str_utf8_find_nocase(pOption->m_aDescription, "       ")) // sky
+				{TextRender()->TextColor(0.6, 0.6, 0.7, 1); temp_text = "Sky";}
+			else if (str_utf8_find_nocase(pOption->m_aDescription, "      ")) // desert
+				{TextRender()->TextColor(1, 0.7, 0.5, 1); temp_text = "Desert";}
+			else if (str_utf8_find_nocase(pOption->m_aDescription, "     ")) // snow
+				{TextRender()->TextColor(0.9, 0.9, 1, 1); temp_text = "Snow";}
+			else if (str_utf8_find_nocase(pOption->m_aDescription, "    ")) // jungle
+				{TextRender()->TextColor(0.2, 0.7, 0.2, 1); temp_text = "Jungle";}
+			else if (str_utf8_find_nocase(pOption->m_aDescription, "   ")) // grass
+				{TextRender()->TextColor(0.5, 1, 0.5, 1); temp_text = "Grass";}
+
+			const char* text = temp_text;
+			Ui()->DoLabel(&Label2, text, 13.0f, TEXTALIGN_ML);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
+		} else {
+			CUIRect Label;
+			Item.m_Rect.VMargin(2.0f, &Label);
+			Ui()->DoLabel(&Label, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
+		}
 	}
 
 	s_CurVoteOption = s_ListBox.DoEnd();
@@ -640,6 +686,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		SETTINGS,
 		KICKVOTE,
 		SPECVOTE,
+		SETTINGS_MAPS,
 	};
 	static EServerControlTab s_ControlPage = EServerControlTab::SETTINGS;
 
@@ -655,10 +702,15 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		MainView.HSplitBottom(90.0f, &MainView, &RconExtension);
 
 	// tab bar
-	TabBar.VSplitLeft(TabBar.w / 3, &Button, &TabBar);
+	TabBar.VSplitLeft(TabBar.w / 4, &Button, &TabBar);
 	static CButtonContainer s_Button0;
 	if(DoButton_MenuTab(&s_Button0, Localize("Change settings"), s_ControlPage == EServerControlTab::SETTINGS, &Button, IGraphics::CORNER_NONE))
 		s_ControlPage = EServerControlTab::SETTINGS;
+
+	TabBar.VSplitLeft(TabBar.w / 3, &Button, &TabBar);
+	static CButtonContainer s_Button3;
+	if(DoButton_MenuTab(&s_Button3, Localize("Change map"), s_ControlPage == EServerControlTab::SETTINGS_MAPS, &Button, IGraphics::CORNER_NONE))
+		s_ControlPage = EServerControlTab::SETTINGS_MAPS;
 
 	TabBar.VSplitMid(&Button, &TabBar);
 	static CButtonContainer s_Button1;
@@ -676,7 +728,9 @@ void CMenus::RenderServerControl(CUIRect MainView)
 
 	bool Call = false;
 	if(s_ControlPage == EServerControlTab::SETTINGS)
-		Call = RenderServerControlServer(MainView);
+		Call = RenderServerControlServer(MainView, false);
+	else if(s_ControlPage == EServerControlTab::SETTINGS_MAPS)
+		Call = RenderServerControlServer(MainView, true);
 	else if(s_ControlPage == EServerControlTab::KICKVOTE)
 		Call = RenderServerControlKick(MainView, false);
 	else if(s_ControlPage == EServerControlTab::SPECVOTE)
@@ -714,7 +768,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	static CButtonContainer s_CallVoteButton;
 	if(DoButton_Menu(&s_CallVoteButton, Localize("Call vote"), 0, &Button) || Call)
 	{
-		if(s_ControlPage == EServerControlTab::SETTINGS)
+		if(s_ControlPage == EServerControlTab::SETTINGS || s_ControlPage == EServerControlTab::SETTINGS_MAPS)
 		{
 			m_pClient->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString());
 			if(g_Config.m_UiCloseWindowAfterChangingSetting)
@@ -757,7 +811,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	Ui()->DoEditBox(&m_CallvoteReasonInput, &Reason, 14.0f);
 
 	// vote option loading indicator
-	if(s_ControlPage == EServerControlTab::SETTINGS && m_pClient->m_Voting.IsReceivingOptions())
+	if((s_ControlPage == EServerControlTab::SETTINGS || s_ControlPage == EServerControlTab::SETTINGS_MAPS) && m_pClient->m_Voting.IsReceivingOptions())
 	{
 		CUIRect Spinner, LoadingLabel;
 		Bottom.VSplitLeft(20.0f, nullptr, &Bottom);
@@ -783,7 +837,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		static CButtonContainer s_ForceVoteButton;
 		if(DoButton_Menu(&s_ForceVoteButton, Localize("Force vote"), 0, &Button))
 		{
-			if(s_ControlPage == EServerControlTab::SETTINGS)
+			if(s_ControlPage == EServerControlTab::SETTINGS || s_ControlPage == EServerControlTab::SETTINGS_MAPS)
 			{
 				m_pClient->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString(), true);
 			}
@@ -808,7 +862,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 			m_CallvoteReasonInput.Clear();
 		}
 
-		if(s_ControlPage == EServerControlTab::SETTINGS)
+		if(s_ControlPage == EServerControlTab::SETTINGS || s_ControlPage == EServerControlTab::SETTINGS_MAPS)
 		{
 			// remove vote
 			Bottom.VSplitRight(10.0f, &Bottom, 0);
@@ -855,32 +909,35 @@ void CMenus::RenderInGameNetwork(CUIRect MainView)
 
 	int NewPage = g_Config.m_UiPage;
 
-	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
+	TextRender()->SetRenderFlags(0);
+	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 
-	TabBar.VSplitLeft(75.0f, &Button, &TabBar);
+	TabBar.VSplitLeft(110.0f, &Button, &TabBar);
 	static CButtonContainer s_InternetButton;
-	if(DoButton_MenuTab(&s_InternetButton, FONT_ICON_EARTH_AMERICAS, g_Config.m_UiPage == PAGE_INTERNET, &Button, IGraphics::CORNER_NONE))
+	if(DoButton_MenuTab(&s_InternetButton, Localize("Internet"), g_Config.m_UiPage == PAGE_INTERNET, &Button, IGraphics::CORNER_NONE))
 	{
 		NewPage = PAGE_INTERNET;
 	}
 	GameClient()->m_Tooltips.DoToolTip(&s_InternetButton, &Button, Localize("Internet"));
 
-	TabBar.VSplitLeft(75.0f, &Button, &TabBar);
+	TabBar.VSplitLeft(80.0f, &Button, &TabBar);
 	static CButtonContainer s_LanButton;
-	if(DoButton_MenuTab(&s_LanButton, FONT_ICON_NETWORK_WIRED, g_Config.m_UiPage == PAGE_LAN, &Button, IGraphics::CORNER_NONE))
+	if(DoButton_MenuTab(&s_LanButton, Localize("LAN"), g_Config.m_UiPage == PAGE_LAN, &Button, IGraphics::CORNER_NONE))
 	{
 		NewPage = PAGE_LAN;
 	}
 	GameClient()->m_Tooltips.DoToolTip(&s_LanButton, &Button, Localize("LAN"));
 
-	TabBar.VSplitLeft(75.0f, &Button, &TabBar);
+	TabBar.VSplitLeft(110.0f, &Button, &TabBar);
 	static CButtonContainer s_FavoritesButton;
-	if(DoButton_MenuTab(&s_FavoritesButton, FONT_ICON_STAR, g_Config.m_UiPage == PAGE_FAVORITES, &Button, IGraphics::CORNER_NONE))
+	if(DoButton_MenuTab(&s_FavoritesButton, Localize("Favorites"), g_Config.m_UiPage == PAGE_FAVORITES, &Button, IGraphics::CORNER_NONE))
 	{
 		NewPage = PAGE_FAVORITES;
 	}
 	GameClient()->m_Tooltips.DoToolTip(&s_FavoritesButton, &Button, Localize("Favorites"));
+	
+	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
 
 	size_t FavoriteCommunityIndex = 0;
 	static CButtonContainer s_aFavoriteCommunityButtons[5];

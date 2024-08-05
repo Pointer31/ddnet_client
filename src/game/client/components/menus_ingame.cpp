@@ -552,10 +552,10 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool maps)
 	}
 
 	static CListBox s_ListBox;
-	// if (maps)
-	// 	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
-	// else
-	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
+	if (maps)
+		s_ListBox.DoStart(19.0f, TotalShown, g_Config.m_ClMapVotesItemsPerRow, 3, s_CurVoteOption, &List);
+	else
+		s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
 
 	int i = -1;
 	for(CVoteOptionClient *pOption = m_pClient->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext)

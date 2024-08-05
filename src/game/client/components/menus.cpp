@@ -642,7 +642,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_InternetButton, &Button, Localize("Internet"));
 
-		Box.VSplitLeft(80.0f, &Button, &Box);
+		Box.VSplitLeft(100.0f, &Button, &Box);
 		static CButtonContainer s_LanButton;
 		if(DoButton_MenuTab(&s_LanButton, Localize("LAN"), ActivePage == PAGE_LAN, &Button, IGraphics::CORNER_T, &m_aAnimatorsBigPage[BIG_TAB_LAN]))
 		{

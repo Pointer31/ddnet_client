@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <vector>
 
 const int g_MaxKeys = 512;
@@ -58,6 +59,7 @@ public:
 	virtual bool KeyIsPressed(int Key) const = 0;
 	virtual bool KeyPress(int Key, bool CheckCounter = false) const = 0;
 	const char *KeyName(int Key) const { return (Key >= 0 && Key < g_MaxKeys) ? g_aaKeyStrings[Key] : g_aaKeyStrings[0]; }
+	virtual int FindKeyByName(const char *pKeyName) const = 0;
 
 	// joystick
 	class IJoystick
@@ -137,7 +139,7 @@ public:
 	virtual const std::vector<CTouchFingerState> &TouchFingerStates() const = 0;
 
 	// clipboard
-	virtual const char *GetClipboardText() = 0;
+	virtual std::string GetClipboardText() = 0;
 	virtual void SetClipboardText(const char *pText) = 0;
 
 	// text editing

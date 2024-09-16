@@ -33,7 +33,7 @@ static void FormatServerbrowserPing(char (&aBuffer)[N], const CServerInfo *pInfo
 		str_format(aBuffer, sizeof(aBuffer), "%d", pInfo->m_Latency);
 		return;
 	}
-	static const char *LOCATION_NAMES[CServerInfo::NUM_LOCS] = {
+	static const char *const LOCATION_NAMES[CServerInfo::NUM_LOCS] = {
 		"", // LOC_UNKNOWN
 		Localizable("AFR"), // LOC_AFRICA
 		Localizable("ASI"), // LOC_ASIA
@@ -876,11 +876,14 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 			{
 				if(Click == 1)
 				{
-					// Left click: when all are active, only activate one
+					// Left click: when all are active, only activate one and none
 					for(int j = 0; j < MaxItems; ++j)
 					{
-						if(j != ItemIndex)
-							Filter.Add(GetItemName(j));
+						if(const char *pItemName = GetItemName(j);
+							j != ItemIndex &&
+							!((&Filter == &ServerBrowser()->CountriesFilter() && str_comp(pItemName, IServerBrowser::COMMUNITY_COUNTRY_NONE) == 0) ||
+								(&Filter == &ServerBrowser()->TypesFilter() && str_comp(pItemName, IServerBrowser::COMMUNITY_TYPE_NONE) == 0)))
+							Filter.Add(pItemName);
 					}
 				}
 				else if(Click == 2)
@@ -897,7 +900,10 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 				bool AllFilteredExceptUs = true;
 				for(int j = 0; j < MaxItems; ++j)
 				{
-					if(j != ItemIndex && !Filter.Filtered(GetItemName(j)))
+					if(const char *pItemName = GetItemName(j);
+						j != ItemIndex && !Filter.Filtered(pItemName) &&
+						!((&Filter == &ServerBrowser()->CountriesFilter() && str_comp(pItemName, IServerBrowser::COMMUNITY_COUNTRY_NONE) == 0) ||
+							(&Filter == &ServerBrowser()->TypesFilter() && str_comp(pItemName, IServerBrowser::COMMUNITY_TYPE_NONE) == 0)))
 					{
 						AllFilteredExceptUs = false;
 						break;
@@ -905,7 +911,7 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 				}
 				// When last one is removed, re-enable all currently selectable items.
 				// Don't use Clear, to avoid enabling also currently unselectable items.
-				if(AllFilteredExceptUs)
+				if(AllFilteredExceptUs && Active)
 				{
 					for(int j = 0; j < MaxItems; ++j)
 					{
@@ -1478,7 +1484,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 					continue;
 
 				const bool Inside = Ui()->HotItem() == Friend.ListItemId() || Ui()->HotItem() == Friend.RemoveButtonId() || Ui()->HotItem() == Friend.CommunityTooltipId();
-				bool ButtonResult = Ui()->DoButtonLogic(Friend.ListItemId(), 0, &Rect);
+				int ButtonResult = Ui()->DoButtonLogic(Friend.ListItemId(), 0, &Rect);
 				if(Friend.ServerInfo())
 				{
 					GameClient()->m_Tooltips.DoToolTip(Friend.ListItemId(), &Rect, Localize("Click to select server. Double click to join your friend."));
@@ -1560,7 +1566,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 					if(Ui()->DoButtonLogic(Friend.RemoveButtonId(), 0, &RemoveButton))
 					{
 						m_pRemoveFriend = &Friend;
-						ButtonResult = false;
+						ButtonResult = 0;
 					}
 					GameClient()->m_Tooltips.DoToolTip(Friend.RemoveButtonId(), &RemoveButton, Friend.FriendState() == IFriends::FRIEND_PLAYER ? Localize("Click to remove this player from your friends list.") : Localize("Click to remove this clan from your friends list."));
 				}
@@ -1570,7 +1576,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				{
 					str_copy(g_Config.m_UiServerAddress, Friend.ServerInfo()->m_aAddress);
 					m_ServerBrowserShouldRevealSelection = true;
-					if(Ui()->DoDoubleClickLogic(Friend.ListItemId()))
+					if(ButtonResult == 1 && Ui()->DoDoubleClickLogic(Friend.ListItemId()))
 					{
 						Connect(g_Config.m_UiServerAddress);
 					}
@@ -1815,12 +1821,8 @@ bool CMenus::PrintHighlighted(const char *pName, F &&PrintFn)
 
 CTeeRenderInfo CMenus::GetTeeRenderInfo(vec2 Size, const char *pSkinName, bool CustomSkinColors, int CustomSkinColorBody, int CustomSkinColorFeet) const
 {
-	const CSkin *pSkin = m_pClient->m_Skins.Find(pSkinName);
-
 	CTeeRenderInfo TeeInfo;
-	TeeInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
-	TeeInfo.m_ColorableRenderSkin = pSkin->m_ColorableSkin;
-	TeeInfo.m_SkinMetrics = pSkin->m_Metrics;
+	TeeInfo.Apply(m_pClient->m_Skins.Find(pSkinName));
 	TeeInfo.m_CustomColoredSkin = CustomSkinColors;
 	if(CustomSkinColors)
 	{

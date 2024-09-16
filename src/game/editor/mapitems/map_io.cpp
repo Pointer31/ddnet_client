@@ -111,27 +111,8 @@ bool CEditorMap::Save(const char *pFileName)
 		}
 		else
 		{
-			const size_t PixelSize = CImageInfo::PixelSize(CImageInfo::FORMAT_RGBA);
-			const size_t DataSize = (size_t)Item.m_Width * Item.m_Height * PixelSize;
-			if(pImg->m_Format == CImageInfo::FORMAT_RGB)
-			{
-				// Convert to RGBA
-				unsigned char *pDataRGBA = (unsigned char *)malloc(DataSize);
-				unsigned char *pDataRGB = (unsigned char *)pImg->m_pData;
-				for(int j = 0; j < Item.m_Width * Item.m_Height; j++)
-				{
-					pDataRGBA[j * PixelSize] = pDataRGB[j * 3];
-					pDataRGBA[j * PixelSize + 1] = pDataRGB[j * 3 + 1];
-					pDataRGBA[j * PixelSize + 2] = pDataRGB[j * 3 + 2];
-					pDataRGBA[j * PixelSize + 3] = 255;
-				}
-				Item.m_ImageData = Writer.AddData(DataSize, pDataRGBA);
-				free(pDataRGBA);
-			}
-			else
-			{
-				Item.m_ImageData = Writer.AddData(DataSize, pImg->m_pData);
-			}
+			dbg_assert(pImg->m_Format == CImageInfo::FORMAT_RGBA, "Embedded images must be in RGBA format");
+			Item.m_ImageData = Writer.AddData(pImg->DataSize(), pImg->m_pData);
 		}
 		Writer.AddItem(MAPITEMTYPE_IMAGE, i, sizeof(Item), &Item);
 	}
@@ -528,6 +509,15 @@ bool CEditorMap::Load(const char *pFileName, int StorageType, const std::functio
 					pImg->m_Height = ImgInfo.m_Height;
 					pImg->m_Format = ImgInfo.m_Format;
 					pImg->m_pData = ImgInfo.m_pData;
+					if(pImg->m_Format != CImageInfo::FORMAT_RGBA)
+					{
+						uint8_t *pRgbaData = static_cast<uint8_t *>(malloc((size_t)pImg->m_Width * pImg->m_Height * CImageInfo::PixelSize(CImageInfo::FORMAT_RGBA)));
+						ConvertToRGBA(pRgbaData, *pImg);
+						free(pImg->m_pData);
+						pImg->m_pData = pRgbaData;
+						pImg->m_Format = CImageInfo::FORMAT_RGBA;
+					}
+
 					int TextureLoadFlag = m_pEditor->Graphics()->Uses2DTextureArrays() ? IGraphics::TEXLOAD_TO_2D_ARRAY_TEXTURE : IGraphics::TEXLOAD_TO_3D_TEXTURE;
 					if(ImgInfo.m_Width % 16 != 0 || ImgInfo.m_Height % 16 != 0)
 						TextureLoadFlag = 0;

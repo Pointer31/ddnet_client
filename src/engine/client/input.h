@@ -74,14 +74,8 @@ private:
 	float GetJoystickDeadzone();
 
 	bool m_InputGrabbed;
-	char *m_pClipboardText;
 
 	bool m_MouseFocus;
-#if defined(CONF_PLATFORM_ANDROID)
-	int m_NumBackPresses = 0;
-	bool m_BackButtonReleased = true;
-	int64_t m_LastBackPress = -1;
-#endif
 
 	// IME support
 	std::string m_CompositionString;
@@ -136,6 +130,7 @@ public:
 	bool AltIsPressed() const override { return KeyState(KEY_LALT) || KeyState(KEY_RALT); }
 	bool KeyIsPressed(int Key) const override { return KeyState(Key); }
 	bool KeyPress(int Key, bool CheckCounter) const override { return CheckCounter ? (m_aInputCount[Key] == m_InputCounter) : m_aInputCount[Key]; }
+	int FindKeyByName(const char *pKeyName) const override;
 
 	size_t NumJoysticks() const override { return m_vJoysticks.size(); }
 	CJoystick *GetJoystick(size_t Index) override { return &m_vJoysticks[Index]; }
@@ -150,7 +145,7 @@ public:
 
 	const std::vector<CTouchFingerState> &TouchFingerStates() const override;
 
-	const char *GetClipboardText() override;
+	std::string GetClipboardText() override;
 	void SetClipboardText(const char *pText) override;
 
 	void StartTextInput() override;

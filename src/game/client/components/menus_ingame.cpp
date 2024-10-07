@@ -886,6 +886,145 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	}
 }
 
+void CMenus::RenderServerSettings(CUIRect MainView)
+{
+
+	// render background
+	CUIRect Bottom, RconExtension, TabBar, Button;
+	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
+	MainView.Margin(10.0f, &MainView);
+
+	if (!Client()->RconAuthed()) {
+		// CUIRect text;
+		// MainView.VSplitRight(20.0f, &MainView, 0);
+		// MainView.VSplitRight(200.0f, &MainView, &text);
+		const char *pLabel = Localize("You are not authed. Please connect to the remote console [f2] and log in");
+		Ui()->DoLabel(&MainView, pLabel, 14.0f, TEXTALIGN_MC);
+	} else {
+		{	// upper part, gametype controls
+			CUIRect UpperControls;
+			MainView.HSplitTop(200.0f, &UpperControls, &MainView);
+			CUIRect gamemodes;
+			UpperControls.VSplitLeft(150.0f, &gamemodes, &UpperControls);
+
+			CUIRect gamemodes_title;
+			gamemodes.HSplitTop(20.0f, &gamemodes_title, &gamemodes);
+			const char *pLabel = Localize("Gametype");
+			Ui()->DoLabel(&gamemodes_title, pLabel, 14.0f, TEXTALIGN_MC);
+			
+			char gametypeslist[64][64] = {};
+			int gametypecount = 0;
+
+			if (m_pClient->Console()->GetCommandInfo("sv_gametype", CFGFLAG_SERVER, 1)) {
+				const char* gametype_help = m_pClient->Console()->GetCommandInfo("sv_gametype", CFGFLAG_SERVER, 1)->m_pHelp;
+				if (str_find_nocase(gametype_help, "dm")) {str_copy(gametypeslist[gametypecount], "DM", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "ctf")) {str_copy(gametypeslist[gametypecount], "CTF", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "tdm")) {str_copy(gametypeslist[gametypecount], "TDM", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "htf")) {str_copy(gametypeslist[gametypecount], "HTF", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "thtf")) {str_copy(gametypeslist[gametypecount], "THTF", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "lms")) {str_copy(gametypeslist[gametypecount], "LMS", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "lts")) {str_copy(gametypeslist[gametypecount], "LTS", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "ifreeze")) {str_copy(gametypeslist[gametypecount], "iFreeze", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "ndm")) {str_copy(gametypeslist[gametypecount], "nDM", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "ddnet")) {str_copy(gametypeslist[gametypecount], "DDNet", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "mod")) {str_copy(gametypeslist[gametypecount], "mod", 64); gametypecount++;}
+
+			}
+
+			static int s_CurVoteOption = 0;
+			static CListBox s_ListBox;
+			s_ListBox.DoStart(19.0f, gametypecount, 1, 3, s_CurVoteOption, &gamemodes);
+
+			int i = -1;
+			for(int j = 0; j < gametypecount; j++)
+			{
+				i++;
+
+				const CListboxItem Item = s_ListBox.DoNextItem(&gametypeslist[j]);
+				if(!Item.m_Visible)
+					continue;
+
+				CUIRect Label;
+				Item.m_Rect.VMargin(2.0f, &Label);
+				Ui()->DoLabel(&Label, gametypeslist[j], 13.0f, TEXTALIGN_ML);
+			}
+
+			s_CurVoteOption = s_ListBox.DoEnd();
+			m_SrvSettingsSelectedGametype = s_CurVoteOption;
+
+			if (s_ListBox.WasItemActivated()) {
+				// Console()->Print(0, "Menus", "server settings gametype button pressed");
+				// Console()->Print(0, "Menus", gametypeslist[s_CurVoteOption]);
+				char buffer[64];
+				str_format(buffer, sizeof(buffer), "rcon sv_gametype %s", gametypeslist[s_CurVoteOption]);
+				m_pClient->Console()->ExecuteLine(buffer);
+			}
+
+			if (m_pClient->Console()->GetCommandInfo("sv_instagib", CFGFLAG_SERVER, 1)) {
+				CUIRect instagibstuff;
+				UpperControls.VSplitLeft(150.0f, &instagibstuff, &UpperControls);
+
+				instagibstuff.HSplitTop(20.0f, &Button, &instagibstuff);
+				Ui()->DoLabel(&Button, "Instagib", 14.0f, TEXTALIGN_MC);
+
+				instagibstuff.HSplitTop(20.0f, &Button, &instagibstuff);
+				int a = 1;
+				int b = 2;
+				int c = 3;
+				if(DoButton_CheckBox(&a, Localize("None"), m_SrvSettingsSelectedInstagib == 0, &Button))
+				{
+					m_SrvSettingsSelectedInstagib = 0;
+					m_pClient->Console()->ExecuteLine("rcon sv_instagib 0");
+				}
+				instagibstuff.HSplitTop(20.0f, &Button, &instagibstuff);
+				if(DoButton_CheckBox(&b, Localize("Laser"), m_SrvSettingsSelectedInstagib == 1, &Button))
+				{
+					m_SrvSettingsSelectedInstagib = 1;
+					m_pClient->Console()->ExecuteLine("rcon sv_instagib 1");
+				}
+				instagibstuff.HSplitTop(20.0f, &Button, &instagibstuff);
+				if(DoButton_CheckBox(&c, Localize("Grenade"), m_SrvSettingsSelectedInstagib == 2, &Button))
+				{
+					m_SrvSettingsSelectedInstagib = 2;
+					m_pClient->Console()->ExecuteLine("rcon sv_instagib 2");
+				}
+			}
+		}
+
+		{	// bottom row
+			static CButtonContainer s_RemoveVoteButton;
+			CUIRect ReloadButtonPart;
+			MainView.HSplitBottom(30.0f, &MainView, &ReloadButtonPart);
+
+			ReloadButtonPart.VSplitRight(300.0f, &ReloadButtonPart, &Button);
+			
+			if(DoButton_Menu(&s_RemoveVoteButton, Localize("Reload / Change Map"), 0, &Button))
+			{
+				// if (m_pClient->Console()->GetCommandInfo("sv_instagib", CFGFLAG_SERVER, 1)) {
+				// 	Console()->Print(0, "Menus", m_pClient->Console()->GetCommandInfo("sv_instagib", CFGFLAG_SERVER, 1)->m_pName);
+				// 	Console()->Print(0, "Menus", m_pClient->Console()->GetCommandInfo("sv_instagib", CFGFLAG_SERVER, 1)->m_pParams);
+				// 	Console()->Print(0, "Menus", m_pClient->Console()->GetCommandInfo("sv_instagib", CFGFLAG_SERVER, 1)->m_pHelp);
+				// }
+				m_pClient->Console()->ExecuteLine("rcon reload");
+				;
+			}
+
+			if (m_pClient->Console()->GetCommandInfo("hot_reload", CFGFLAG_SERVER, 1)) {
+				CUIRect emptypart;
+				static CButtonContainer s_hotreload;
+				ReloadButtonPart.VSplitRight(10.0f, &ReloadButtonPart, &emptypart);
+				ReloadButtonPart.VSplitRight(200.0f, &ReloadButtonPart, &Button);
+				
+				if(DoButton_Menu(&s_hotreload, Localize("Hot Reload"), 0, &Button))
+				{
+					// Console()->Print(0, "Menus", "server settings test test, hot reload");
+					m_pClient->Console()->ExecuteLine("rcon hot_reload");
+				}
+			}
+		}
+	}
+}
+
 void CMenus::RenderInGameNetwork(CUIRect MainView)
 {
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);

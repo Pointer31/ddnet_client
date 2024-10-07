@@ -270,6 +270,9 @@ protected:
 	CLineInputBuffered<64> m_FilterInput;
 	bool m_ControlPageOpening;
 
+	int m_SrvSettingsSelectedGametype;
+	int m_SrvSettingsSelectedInstagib;
+
 	// demo
 	enum
 	{
@@ -484,6 +487,7 @@ protected:
 	void RenderServerControl(CUIRect MainView);
 	bool RenderServerControlKick(CUIRect MainView, bool FilterSpectators);
 	bool RenderServerControlServer(CUIRect MainView, bool maps);
+	void RenderServerSettings(CUIRect MainView);
 	void RenderIngameHint();
 
 	// found in menus_browser.cpp
@@ -691,6 +695,7 @@ public:
 		PAGE_SETTINGS,
 		PAGE_NETWORK,
 		PAGE_GHOST,
+		PAGE_SERVERSETTINGS,
 
 		PAGE_LENGTH,
 

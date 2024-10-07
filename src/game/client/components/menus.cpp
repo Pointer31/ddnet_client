@@ -722,11 +722,20 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		}
 
 		Box.VSplitLeft(100.0f, &Button, &Box);
-		Box.VSplitLeft(4.0f, nullptr, &Box);
+		// Box.VSplitLeft(4.0f, nullptr, &Box);
 		static CButtonContainer s_CallVoteButton;
-		if(DoButton_MenuTab(&s_CallVoteButton, Localize("Call vote"), ActivePage == PAGE_CALLVOTE, &Button, IGraphics::CORNER_TR))
+		if(DoButton_MenuTab(&s_CallVoteButton, Localize("Call vote"), ActivePage == PAGE_CALLVOTE, &Button, IGraphics::CORNER_NONE))
 		{
 			NewPage = PAGE_CALLVOTE;
+			m_ControlPageOpening = true;
+		}
+
+		Box.VSplitLeft(120.0f, &Button, &Box);
+		Box.VSplitLeft(4.0f, nullptr, &Box);
+		static CButtonContainer s_ServerSettingsButton;
+		if(DoButton_MenuTab(&s_ServerSettingsButton, Localize("Srv settings"), ActivePage == PAGE_SERVERSETTINGS, &Button, IGraphics::CORNER_TR))
+		{
+			NewPage = PAGE_SERVERSETTINGS;
 			m_ControlPageOpening = true;
 		}
 	}
@@ -1151,6 +1160,10 @@ void CMenus::Render()
 			else if(m_GamePage == PAGE_CALLVOTE)
 			{
 				RenderServerControl(MainView);
+			}
+			else if(m_GamePage == PAGE_SERVERSETTINGS)
+			{
+				RenderServerSettings(MainView);
 			}
 			else if(m_GamePage == PAGE_SETTINGS)
 			{

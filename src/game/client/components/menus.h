@@ -95,7 +95,6 @@ class CMenus : public CComponent
 	void DoJoystickBar(const CUIRect *pRect, float Current, float Tolerance, bool Active);
 
 	bool m_SkinListNeedsUpdate = false;
-	void RandomSkin();
 
 	// menus_settings_assets.cpp
 public:
@@ -373,7 +372,7 @@ protected:
 		bool m_IsPlayer;
 		bool m_IsAfk;
 		// skin
-		char m_aSkin[24 + 1];
+		char m_aSkin[MAX_SKIN_LENGTH];
 		bool m_CustomSkinColors;
 		int m_CustomSkinColorBody;
 		int m_CustomSkinColorFeet;
@@ -421,6 +420,7 @@ protected:
 		const void *ListItemId() const { return &m_aName; }
 		const void *RemoveButtonId() const { return &m_FriendState; }
 		const void *CommunityTooltipId() const { return &m_IsPlayer; }
+		const void *SkinTooltipId() const { return &m_aSkin; }
 
 		bool operator<(const CFriendItem &Other) const
 		{

@@ -40,7 +40,7 @@ float CConsole::CResult::GetFloat(unsigned Index) const
 	return str_tofloat(m_apArgs[Index]);
 }
 
-std::optional<ColorHSLA> CConsole::CResult::GetColor(unsigned Index, bool Light) const
+std::optional<ColorHSLA> CConsole::CResult::GetColor(unsigned Index, float DarkestLighting) const
 {
 	if(Index >= m_NumArgs)
 		return std::nullopt;
@@ -51,10 +51,7 @@ std::optional<ColorHSLA> CConsole::CResult::GetColor(unsigned Index, bool Light)
 		unsigned long Value = str_toulong_base(pStr, 10);
 		if(Value == std::numeric_limits<unsigned long>::max())
 			return std::nullopt;
-		const ColorHSLA Hsla = ColorHSLA(Value, true);
-		if(Light)
-			return Hsla.UnclampLighting();
-		return Hsla;
+		return ColorHSLA(Value, true).UnclampLighting(DarkestLighting);
 	}
 	else if(*pStr == '$') // Hex RGB/RGBA
 	{
@@ -514,7 +511,15 @@ void CConsole::ExecuteLineStroked(int Stroke, const char *pStr, int ClientId, bo
 
 				if(Stroke || IsStrokeCommand)
 				{
-					if(int Error = ParseArgs(&Result, pCommand->m_pParams, pCommand->m_pfnCallback == &SColorConfigVariable::CommandCallback))
+					bool IsColor = false;
+					{
+						FCommandCallback pfnCallback = pCommand->m_pfnCallback;
+						void *pUserData = pCommand->m_pUserData;
+						TraverseChain(&pfnCallback, &pUserData);
+						IsColor = pfnCallback == &SColorConfigVariable::CommandCallback;
+					}
+
+					if(int Error = ParseArgs(&Result, pCommand->m_pParams, IsColor))
 					{
 						char aBuf[CMDLINE_LENGTH + 64];
 						if(Error == PARSEARGS_INVALID_INTEGER)

@@ -258,13 +258,13 @@ void CUi::Update(vec2 MouseWorldPos)
 	m_ProgressSpinnerOffset = std::fmod(m_ProgressSpinnerOffset, 1.0f);
 }
 
-void CUi::DebugRender()
+void CUi::DebugRender(float X, float Y)
 {
 	MapScreen();
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "hot=%p nexthot=%p active=%p lastactive=%p", HotItem(), NextHotItem(), ActiveItem(), m_pLastActiveItem);
-	TextRender()->Text(2.0f, Screen()->h - 12.0f, 10.0f, aBuf);
+	TextRender()->Text(X, Y, 10.0f, aBuf);
 }
 
 bool CUi::MouseInside(const CUIRect *pRect) const
@@ -408,6 +408,10 @@ bool CUi::OnInput(const IInput::CEvent &Event)
 			m_HotkeysPressed |= HOTKEY_UP;
 		else if(Event.m_Key == KEY_DOWN)
 			m_HotkeysPressed |= HOTKEY_DOWN;
+		else if(Event.m_Key == KEY_LEFT)
+			m_HotkeysPressed |= HOTKEY_LEFT;
+		else if(Event.m_Key == KEY_RIGHT)
+			m_HotkeysPressed |= HOTKEY_RIGHT;
 		else if(Event.m_Key == KEY_MOUSE_WHEEL_UP)
 			m_HotkeysPressed |= HOTKEY_SCROLL_UP;
 		else if(Event.m_Key == KEY_MOUSE_WHEEL_DOWN)

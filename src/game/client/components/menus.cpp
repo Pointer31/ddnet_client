@@ -665,6 +665,27 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 		TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
 
+		int MaxPage = PAGE_FAVORITES + ServerBrowser()->FavoriteCommunities().size();
+		if(
+			!Ui()->IsPopupOpen() &&
+			CLineInput::GetActiveInput() == nullptr &&
+			(g_Config.m_UiPage >= PAGE_INTERNET && g_Config.m_UiPage <= MaxPage) &&
+			(m_MenuPage >= PAGE_INTERNET && m_MenuPage <= PAGE_FAVORITE_COMMUNITY_5))
+		{
+			if(Input()->KeyPress(KEY_RIGHT))
+			{
+				NewPage = g_Config.m_UiPage + 1;
+				if(NewPage > MaxPage)
+					NewPage = PAGE_INTERNET;
+			}
+			if(Input()->KeyPress(KEY_LEFT))
+			{
+				NewPage = g_Config.m_UiPage - 1;
+				if(NewPage < PAGE_INTERNET)
+					NewPage = MaxPage;
+			}
+		}
+
 		size_t FavoriteCommunityIndex = 0;
 		static CButtonContainer s_aFavoriteCommunityButtons[5];
 		static_assert(std::size(s_aFavoriteCommunityButtons) == (size_t)PAGE_FAVORITE_COMMUNITY_5 - PAGE_FAVORITE_COMMUNITY_1 + 1);
@@ -2272,7 +2293,7 @@ void CMenus::OnRender()
 
 	// render debug information
 	if(g_Config.m_Debug)
-		Ui()->DebugRender();
+		Ui()->DebugRender(2.0f, Ui()->Screen()->h - 12.0f);
 
 	if(Ui()->ConsumeHotkey(CUi::HOTKEY_ESCAPE))
 		SetActive(false);

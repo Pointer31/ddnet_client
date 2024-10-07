@@ -446,14 +446,16 @@ public:
 		HOTKEY_ESCAPE = 1 << 1,
 		HOTKEY_UP = 1 << 2,
 		HOTKEY_DOWN = 1 << 3,
-		HOTKEY_DELETE = 1 << 4,
-		HOTKEY_TAB = 1 << 5,
-		HOTKEY_SCROLL_UP = 1 << 6,
-		HOTKEY_SCROLL_DOWN = 1 << 7,
-		HOTKEY_PAGE_UP = 1 << 8,
-		HOTKEY_PAGE_DOWN = 1 << 9,
-		HOTKEY_HOME = 1 << 10,
-		HOTKEY_END = 1 << 11,
+		HOTKEY_LEFT = 1 << 4,
+		HOTKEY_RIGHT = 1 << 5,
+		HOTKEY_DELETE = 1 << 6,
+		HOTKEY_TAB = 1 << 7,
+		HOTKEY_SCROLL_UP = 1 << 8,
+		HOTKEY_SCROLL_DOWN = 1 << 9,
+		HOTKEY_PAGE_UP = 1 << 10,
+		HOTKEY_PAGE_DOWN = 1 << 11,
+		HOTKEY_HOME = 1 << 12,
+		HOTKEY_END = 1 << 13,
 	};
 
 	void ResetUIElement(CUIElement &UIElement) const;
@@ -468,7 +470,7 @@ public:
 	void SetEnabled(bool Enabled) { m_Enabled = Enabled; }
 	bool Enabled() const { return m_Enabled; }
 	void Update(vec2 MouseWorldPos = vec2(-1.0f, -1.0f));
-	void DebugRender();
+	void DebugRender(float X, float Y);
 
 	vec2 MousePos() const { return m_MousePos; }
 	float MouseX() const { return m_MousePos.x; }

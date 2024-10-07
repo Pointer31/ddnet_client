@@ -123,6 +123,7 @@ enum
 {
 	TEE_EFFECT_FROZEN = 1,
 	TEE_NO_WEAPON = 2,
+	TEE_EFFECT_SPARKLE = 4,
 };
 
 // sprite renderings
@@ -178,6 +179,8 @@ class CRenderTools
 	static void GetRenderTeeBodyScale(float BaseSize, float &BodyScale);
 	static void GetRenderTeeFeetScale(float BaseSize, float &FeetScaleWidth, float &FeetScaleHeight);
 
+	void SelectSprite(const CDataSprite *pSprite, int Flags) const;
+
 	void RenderTee6(const CAnimState *pAnim, const CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos, float Alpha = 1.0f) const;
 	void RenderTee7(const CAnimState *pAnim, const CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos, float Alpha = 1.0f) const;
 
@@ -187,9 +190,8 @@ public:
 
 	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender);
 
-	void SelectSprite(CDataSprite *pSprite, int Flags = 0, int sx = 0, int sy = 0) const;
-	void SelectSprite(int Id, int Flags = 0, int sx = 0, int sy = 0) const;
-	void SelectSprite7(int Id, int Flags = 0, int sx = 0, int sy = 0) const;
+	void SelectSprite(int Id, int Flags = 0) const;
+	void SelectSprite7(int Id, int Flags = 0) const;
 
 	void GetSpriteScale(const CDataSprite *pSprite, float &ScaleX, float &ScaleY) const;
 	void GetSpriteScale(int Id, float &ScaleX, float &ScaleY) const;

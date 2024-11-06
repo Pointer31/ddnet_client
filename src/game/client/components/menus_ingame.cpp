@@ -918,8 +918,14 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 			if (m_pClient->Console()->GetCommandInfo("sv_gametype", CFGFLAG_SERVER, 1)) {
 				const char* gametype_help = m_pClient->Console()->GetCommandInfo("sv_gametype", CFGFLAG_SERVER, 1)->m_pHelp;
 				if (str_find_nocase(gametype_help, "dm")) {str_copy(gametypeslist[gametypecount], "DM", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "idm")) {str_copy(gametypeslist[gametypecount], "iDM", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "gdm")) {str_copy(gametypeslist[gametypecount], "gDM", 64); gametypecount++;}
 				if (str_find_nocase(gametype_help, "ctf")) {str_copy(gametypeslist[gametypecount], "CTF", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "ictf")) {str_copy(gametypeslist[gametypecount], "iCTF", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "gctf")) {str_copy(gametypeslist[gametypecount], "gCTF", 64); gametypecount++;}
 				if (str_find_nocase(gametype_help, "tdm")) {str_copy(gametypeslist[gametypecount], "TDM", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "itdm")) {str_copy(gametypeslist[gametypecount], "iTDM", 64); gametypecount++;}
+				if (str_find_nocase(gametype_help, "gtdm")) {str_copy(gametypeslist[gametypecount], "gTDM", 64); gametypecount++;}
 				if (str_find_nocase(gametype_help, "htf")) {str_copy(gametypeslist[gametypecount], "HTF", 64); gametypecount++;}
 				if (str_find_nocase(gametype_help, "thtf")) {str_copy(gametypeslist[gametypecount], "THTF", 64); gametypecount++;}
 				if (str_find_nocase(gametype_help, "lms")) {str_copy(gametypeslist[gametypecount], "LMS", 64); gametypecount++;}
@@ -1019,6 +1025,56 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 				{
 					// Console()->Print(0, "Menus", "server settings test test, hot reload");
 					m_pClient->Console()->ExecuteLine("rcon hot_reload");
+				}
+			}
+		}
+
+		{
+			CUIRect BottomControls;
+			MainView.HSplitTop(200.0f, &BottomControls, &MainView);
+			CUIRect SliderArea;
+			BottomControls.VSplitLeft(300.0f, &SliderArea, &BottomControls);
+			static int s_CurTimeLimit = 0;
+			static int s_CurScoreLimit = 20;
+			static bool s_Changed = false;
+
+			CUIRect Buttonpart;
+			SliderArea.HSplitTop(40.0f, &Buttonpart, &SliderArea);
+			// Buttonpart.VSplitRight(300.0f, &Buttonpart, &Button);
+			
+			if(m_pClient->Console()->GetCommandInfo("sv_timelimit", CFGFLAG_SERVER, 1) && Ui()->DoScrollbarOption(&s_CurTimeLimit, &s_CurTimeLimit, &Buttonpart, Localize("Timelimit"), 0, 30, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, " min")) {
+				// Console()->Print(0, "Menus", "server settings test test, slider");
+				s_Changed = true;
+			}
+
+			CUIRect Buttonpart2;
+			SliderArea.HSplitTop(40.0f, &Buttonpart2, &SliderArea);
+			// Buttonpart.VSplitRight(300.0f, &Buttonpart, &Button);
+			
+			if(m_pClient->Console()->GetCommandInfo("sv_scorelimit", CFGFLAG_SERVER, 1) && Ui()->DoScrollbarOption(&s_CurScoreLimit, &s_CurScoreLimit, &Buttonpart2, Localize("Scorelimit"), 0, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, " points")) {
+				// Console()->Print(0, "Menus", "server settings test test, slider");
+				s_Changed = true;
+			}
+
+			if (s_Changed) {
+				CUIRect Button; CUIRect Empty;
+				static CButtonContainer s_Apply;
+				SliderArea.HSplitTop(20.0f, &Button, &SliderArea);
+				Button.VSplitLeft(100.0f, &Button, &Empty);
+				
+				if(DoButton_Menu(&s_Apply, Localize("Apply"), 0, &Button))
+				{
+					s_Changed = false;
+					if(m_pClient->Console()->GetCommandInfo("sv_timelimit", CFGFLAG_SERVER, 1)) {
+						char buffer[64];
+						str_format(buffer, sizeof(buffer), "rcon sv_timelimit %i", s_CurTimeLimit);
+						m_pClient->Console()->ExecuteLine(buffer);
+					}
+					if(m_pClient->Console()->GetCommandInfo("sv_scorelimit", CFGFLAG_SERVER, 1)) {
+						char buffer[64];
+						str_format(buffer, sizeof(buffer), "rcon sv_scorelimit %i", s_CurScoreLimit);
+						m_pClient->Console()->ExecuteLine(buffer);
+					}
 				}
 			}
 		}

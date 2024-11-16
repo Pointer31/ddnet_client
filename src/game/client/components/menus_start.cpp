@@ -132,6 +132,15 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 	if(!is_process_alive(m_ServerProcess.m_Process))
 		KillServer();
 
+	if (m_ServerProcess.m_Process) 
+	{
+		static CButtonContainer s_LocalServerJoinButton;
+		static CUIRect JoinButton;
+		Button.VSplitLeft(40, &JoinButton, &Button);
+		if(DoButton_Menu(&s_LocalServerJoinButton, Localize("Join"), 0, &JoinButton, 0, IGraphics::CORNER_ALL, Rounding, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f))) 
+			Console()->ExecuteLine("connect localhost:8303");
+	}
+
 	if(DoButton_Menu(&s_LocalServerButton, m_ServerProcess.m_Process ? Localize("Stop server") : Localize("Run server"), 0, &Button, g_Config.m_ClShowStartMenuImages ? "local_server" : 0, IGraphics::CORNER_ALL, Rounding, 0.5f, m_ServerProcess.m_Process ? ColorRGBA(0.0f, 1.0f, 0.0f, 0.25f) : ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)) || (CheckHotKey(KEY_R) && Input()->KeyPress(KEY_R)))
 	{
 		if(m_ServerProcess.m_Process)

@@ -2636,7 +2636,7 @@ enum class EShellExecuteWindowState
  *
  * @return Handle of the new process, or @link INVALID_PROCESS @endlink on error.
  */
-PROCESS shell_execute(const char *file, EShellExecuteWindowState window_state);
+PROCESS shell_execute(const char *file, EShellExecuteWindowState window_state, char** arguments = NULL);
 
 /**
  * Sends kill signal to a process.

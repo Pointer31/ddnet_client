@@ -12,6 +12,7 @@
 
 #define CLIENT_EXEC "DDNet"
 #define SERVER_EXEC "DDNet-Server"
+#define SERVER_TW_EXEC "tw+_srv"
 
 #if defined(CONF_FAMILY_WINDOWS)
 #define PLAT_EXT ".exe"
@@ -38,6 +39,7 @@
 
 #define PLAT_CLIENT_EXEC CLIENT_EXEC PLAT_EXT
 #define PLAT_SERVER_EXEC SERVER_EXEC PLAT_EXT
+#define PLAT_SERVER_TW_EXEC SERVER_TW_EXEC PLAT_EXT
 
 class CUpdaterFetchTask;
 

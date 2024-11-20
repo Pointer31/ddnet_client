@@ -150,16 +150,29 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 		else
 		{
 			char aBuf[IO_MAX_PATH_LENGTH];
-			Storage()->GetBinaryPath(PLAT_SERVER_EXEC, aBuf, sizeof(aBuf));
+			Storage()->GetBinaryPath(PLAT_SERVER_TW_EXEC, aBuf, sizeof(aBuf));
+			// We first try finding the teeworlds server, before trying to find ddnet server
 			// No / in binary path means to search in $PATH, so it is expected that the file can't be opened. Just try executing anyway.
 			if(str_find(aBuf, "/") == 0 || fs_is_file(aBuf))
 			{
-				m_ServerProcess.m_Process = shell_execute(aBuf, EShellExecuteWindowState::BACKGROUND);
+				char pwd[10] = {};
+				secure_random_password(pwd, sizeof(pwd), 8);
+				char* arguments[3] = {"--rconpwd", pwd, NULL};
+				str_copy(g_Config.m_ClLocalServerRconpwd, pwd);
+				m_ServerProcess.m_Process = shell_execute(aBuf, EShellExecuteWindowState::BACKGROUND, arguments);
 				m_ForceRefreshLanPage = true;
 			}
 			else
 			{
-				Client()->AddWarning(SWarning(Localize("Server executable not found, can't run server")));
+				Storage()->GetBinaryPath(PLAT_SERVER_EXEC, aBuf, sizeof(aBuf));
+				// No / in binary path means to search in $PATH, so it is expected that the file can't be opened. Just try executing anyway.
+				if(str_find(aBuf, "/") == 0 || fs_is_file(aBuf))
+				{
+					m_ServerProcess.m_Process = shell_execute(aBuf, EShellExecuteWindowState::BACKGROUND);
+					m_ForceRefreshLanPage = true;
+				} 
+				else
+					Client()->AddWarning(SWarning(Localize("Server executable not found, can't run server")));
 			}
 		}
 	}

@@ -4151,7 +4151,7 @@ void cmdline_free(int argc, const char **argv)
 }
 
 #if !defined(CONF_PLATFORM_ANDROID)
-PROCESS shell_execute(const char *file, EShellExecuteWindowState window_state)
+PROCESS shell_execute(const char *file, EShellExecuteWindowState window_state, char **arguments)
 {
 #if defined(CONF_FAMILY_WINDOWS)
 	const std::wstring wide_file = windows_utf8_to_wide(file);
@@ -4182,10 +4182,19 @@ PROCESS shell_execute(const char *file, EShellExecuteWindowState window_state)
 		fesetenv(&floating_point_environment);
 	return info.hProcess;
 #elif defined(CONF_FAMILY_UNIX)
-	char *argv[2];
+	char *argv[10];
 	pid_t pid;
 	argv[0] = (char *)file;
 	argv[1] = NULL;
+	for (int i = 2; i < 10; i++)
+		argv[i] = NULL;
+	if (arguments != NULL) {
+		for (int i = 0; i < 8; i++)
+			if (arguments[i] != NULL)
+				argv[i+1] = arguments[i];
+			else
+				break;
+	}
 	pid = fork();
 	if(pid == -1)
 	{

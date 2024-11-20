@@ -2496,6 +2496,12 @@ void CClient::PumpNetwork()
 			SetState(IClient::STATE_LOADING);
 			SetLoadingStateDetail(IClient::LOADING_STATE_DETAIL_INITIAL);
 			SendInfo(CONN_MAIN);
+
+			if (str_comp(m_aConnectAddressStr, "localhost:8303") == 0 && str_comp("", g_Config.m_ClLocalServerRconpwd) != 0) { //auto login on local server
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf), "rcon_auth %s", g_Config.m_ClLocalServerRconpwd);
+				m_pConsole->ExecuteLine(aBuf);
+			}
 		}
 	}
 

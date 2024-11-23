@@ -1056,6 +1056,19 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 				s_Changed = true;
 			}
 
+			CUIRect botControl;
+			static int s_CurBotAmount = 0;
+			CUIRect botControlLevel;
+			static int s_CurBotLevel = 4;
+			SliderArea.HSplitTop(40.0f, &botControl, &SliderArea);
+			SliderArea.HSplitTop(40.0f, &botControlLevel, &SliderArea);
+			if(m_pClient->Console()->GetCommandInfo("sv_bots_preferred_amount", CFGFLAG_SERVER, 1) && Ui()->DoScrollbarOption(&s_CurBotAmount, &s_CurBotAmount, &botControl, Localize("Bots"), 0, 15, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE)) {
+				s_Changed = true;
+			}
+			if(m_pClient->Console()->GetCommandInfo("sv_bots_preferred_level", CFGFLAG_SERVER, 1) && Ui()->DoScrollbarOption(&s_CurBotLevel, &s_CurBotLevel, &botControlLevel, Localize("Lvl"), 1, 6, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE)) {
+				s_Changed = true;
+			}
+
 			if (s_Changed) {
 				CUIRect Button; CUIRect Empty;
 				static CButtonContainer s_Apply;
@@ -1073,6 +1086,16 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 					if(m_pClient->Console()->GetCommandInfo("sv_scorelimit", CFGFLAG_SERVER, 1)) {
 						char buffer[64];
 						str_format(buffer, sizeof(buffer), "rcon sv_scorelimit %i", s_CurScoreLimit);
+						m_pClient->Console()->ExecuteLine(buffer);
+					}
+					if(m_pClient->Console()->GetCommandInfo("sv_bots_preferred_amount", CFGFLAG_SERVER, 1)) {
+						char buffer[64];
+						str_format(buffer, sizeof(buffer), "rcon sv_bots_preferred_amount %i", s_CurBotAmount);
+						m_pClient->Console()->ExecuteLine(buffer);
+					}
+					if(m_pClient->Console()->GetCommandInfo("sv_bots_preferred_level", CFGFLAG_SERVER, 1)) {
+						char buffer[64];
+						str_format(buffer, sizeof(buffer), "rcon sv_bots_preferred_level %i", s_CurBotLevel);
 						m_pClient->Console()->ExecuteLine(buffer);
 					}
 				}

@@ -151,13 +151,15 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 		{
 			char aBuf[IO_MAX_PATH_LENGTH];
 			Storage()->GetBinaryPath(PLAT_SERVER_TW_EXEC, aBuf, sizeof(aBuf));
+			char pwd[10] = {};
+			secure_random_password(pwd, sizeof(pwd), 8);
+			char bBuf[64];
+			str_format(bBuf, sizeof(bBuf), "sv_rcon_password %s", pwd);
+			char* arguments[3] = {bBuf, NULL};
 			// We first try finding the teeworlds server, before trying to find ddnet server
 			// No / in binary path means to search in $PATH, so it is expected that the file can't be opened. Just try executing anyway.
 			if(str_find(aBuf, "/") == 0 || fs_is_file(aBuf))
 			{
-				char pwd[10] = {};
-				secure_random_password(pwd, sizeof(pwd), 8);
-				char* arguments[3] = {"--rconpwd", pwd, NULL};
 				str_copy(g_Config.m_ClLocalServerRconpwd, pwd);
 				m_ServerProcess.m_Process = shell_execute(aBuf, EShellExecuteWindowState::BACKGROUND, arguments);
 				m_ForceRefreshLanPage = true;
@@ -168,7 +170,8 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 				// No / in binary path means to search in $PATH, so it is expected that the file can't be opened. Just try executing anyway.
 				if(str_find(aBuf, "/") == 0 || fs_is_file(aBuf))
 				{
-					m_ServerProcess.m_Process = shell_execute(aBuf, EShellExecuteWindowState::BACKGROUND);
+					str_copy(g_Config.m_ClLocalServerRconpwd, pwd);
+					m_ServerProcess.m_Process = shell_execute(aBuf, EShellExecuteWindowState::BACKGROUND, arguments);
 					m_ForceRefreshLanPage = true;
 				} 
 				else

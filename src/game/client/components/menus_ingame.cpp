@@ -901,6 +901,8 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 		const char *pLabel = Localize("You are not authed. Please connect to the remote console [f2] and log in");
 		Ui()->DoLabel(&MainView, pLabel, 14.0f, TEXTALIGN_MC);
 	} else {
+		char gametypeslist[64][64] = {};
+		static int s_CurGTOption = 0;
 		{	// upper part, gametype controls
 			CUIRect UpperControls;
 			MainView.HSplitTop(200.0f, &UpperControls, &MainView);
@@ -912,7 +914,7 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 			const char *pLabel = Localize("Gametype");
 			Ui()->DoLabel(&gamemodes_title, pLabel, 14.0f, TEXTALIGN_MC);
 			
-			char gametypeslist[64][64] = {};
+			
 			int gametypecount = 0;
 
 			if (m_pClient->Console()->GetCommandInfo("sv_gametype", CFGFLAG_SERVER, 1)) {
@@ -937,9 +939,9 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 
 			}
 
-			static int s_CurVoteOption = 0;
+			
 			static CListBox s_ListBox;
-			s_ListBox.DoStart(19.0f, gametypecount, 1, 3, s_CurVoteOption, &gamemodes);
+			s_ListBox.DoStart(19.0f, gametypecount, 1, 3, s_CurGTOption, &gamemodes);
 
 			int i = -1;
 			for(int j = 0; j < gametypecount; j++)
@@ -955,14 +957,14 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 				Ui()->DoLabel(&Label, gametypeslist[j], 13.0f, TEXTALIGN_ML);
 			}
 
-			s_CurVoteOption = s_ListBox.DoEnd();
-			m_SrvSettingsSelectedGametype = s_CurVoteOption;
+			s_CurGTOption = s_ListBox.DoEnd();
+			m_SrvSettingsSelectedGametype = s_CurGTOption;
 
-			if (s_ListBox.WasItemActivated()) {
+			if (s_ListBox.WasItemSelected()) {
 				// Console()->Print(0, "Menus", "server settings gametype button pressed");
-				// Console()->Print(0, "Menus", gametypeslist[s_CurVoteOption]);
+				// Console()->Print(0, "Menus", gametypeslist[s_CurGTOption]);
 				char buffer[64];
-				str_format(buffer, sizeof(buffer), "rcon sv_gametype %s", gametypeslist[s_CurVoteOption]);
+				str_format(buffer, sizeof(buffer), "rcon sv_gametype %s", gametypeslist[s_CurGTOption]);
 				m_pClient->Console()->ExecuteLine(buffer);
 			}
 
@@ -1036,6 +1038,7 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 			BottomControls.VSplitLeft(300.0f, &SliderArea, &BottomControls);
 			static int s_CurTimeLimit = 0;
 			static int s_CurScoreLimit = 20;
+			static int s_CurLivesLimit = 3;
 			static bool s_Changed = false;
 
 			CUIRect Buttonpart;
@@ -1051,9 +1054,16 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 			SliderArea.HSplitTop(40.0f, &Buttonpart2, &SliderArea);
 			// Buttonpart.VSplitRight(300.0f, &Buttonpart, &Button);
 			
-			if(m_pClient->Console()->GetCommandInfo("sv_scorelimit", CFGFLAG_SERVER, 1) && Ui()->DoScrollbarOption(&s_CurScoreLimit, &s_CurScoreLimit, &Buttonpart2, Localize("Scorelimit"), 0, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, " points")) {
-				// Console()->Print(0, "Menus", "server settings test test, slider");
-				s_Changed = true;
+			if ((str_comp_nocase(gametypeslist[s_CurGTOption], "lms")==0 || str_comp_nocase(gametypeslist[s_CurGTOption], "lts")==0) && m_pClient->Console()->GetCommandInfo("sv_lms_lives", CFGFLAG_SERVER, 1)) {
+				if(m_pClient->Console()->GetCommandInfo("sv_lms_lives", CFGFLAG_SERVER, 1) && Ui()->DoScrollbarOption(&s_CurLivesLimit, &s_CurLivesLimit, &Buttonpart2, Localize("Max lives"), 1, 10, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE)) {
+					// Console()->Print(0, "Menus", "server settings test test, slider");
+					s_Changed = true;
+				}
+			} else {
+				if(m_pClient->Console()->GetCommandInfo("sv_scorelimit", CFGFLAG_SERVER, 1) && Ui()->DoScrollbarOption(&s_CurScoreLimit, &s_CurScoreLimit, &Buttonpart2, Localize("Scorelimit"), 0, str_comp_nocase(gametypeslist[s_CurGTOption], "ctf")==0?1000:200, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, " points")) {
+					// Console()->Print(0, "Menus", "server settings test test, slider");
+					s_Changed = true;
+				}
 			}
 
 			CUIRect botControl;
@@ -1083,7 +1093,11 @@ void CMenus::RenderServerSettings(CUIRect MainView)
 						str_format(buffer, sizeof(buffer), "rcon sv_timelimit %i", s_CurTimeLimit);
 						m_pClient->Console()->ExecuteLine(buffer);
 					}
-					if(m_pClient->Console()->GetCommandInfo("sv_scorelimit", CFGFLAG_SERVER, 1)) {
+					if ((str_comp_nocase(gametypeslist[s_CurGTOption], "lms")==0 || str_comp_nocase(gametypeslist[s_CurGTOption], "lts")==0) && m_pClient->Console()->GetCommandInfo("sv_lms_lives", CFGFLAG_SERVER, 1)) {
+						char buffer[64];
+						str_format(buffer, sizeof(buffer), "rcon sv_lms_lives %i", s_CurLivesLimit);
+						m_pClient->Console()->ExecuteLine(buffer);
+					} else if(m_pClient->Console()->GetCommandInfo("sv_scorelimit", CFGFLAG_SERVER, 1)) {
 						char buffer[64];
 						str_format(buffer, sizeof(buffer), "rcon sv_scorelimit %i", s_CurScoreLimit);
 						m_pClient->Console()->ExecuteLine(buffer);

@@ -742,22 +742,44 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 				NewPage = PAGE_GHOST;
 		}
 
+		int corner = IGraphics::CORNER_TR;
+		if (Client()->RconAuthed() || str_comp(Client()->ConnectAddressString(), "localhost:8303") == 0)
+			corner = IGraphics::CORNER_NONE;
+
 		Box.VSplitLeft(100.0f, &Button, &Box);
 		// Box.VSplitLeft(4.0f, nullptr, &Box);
 		static CButtonContainer s_CallVoteButton;
-		if(DoButton_MenuTab(&s_CallVoteButton, Localize("Call vote"), ActivePage == PAGE_CALLVOTE, &Button, IGraphics::CORNER_NONE))
+		if(DoButton_MenuTab(&s_CallVoteButton, Localize("Call vote"), ActivePage == PAGE_CALLVOTE, &Button, corner))
 		{
 			NewPage = PAGE_CALLVOTE;
 			m_ControlPageOpening = true;
 		}
+		if (Client()->RconAuthed() || str_comp(Client()->ConnectAddressString(), "localhost:8303") == 0) {
+			if (Box.w < 120.0f) {
+				TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+				TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
+				Box.VSplitLeft(40.0f, &Button, &Box);
+				Box.VSplitLeft(4.0f, nullptr, &Box);
+				static CButtonContainer s_ServerSettingsButton;
+				if(DoButton_MenuTab(&s_ServerSettingsButton, FONT_ICON_GEAR, ActivePage == PAGE_SERVERSETTINGS, &Button, IGraphics::CORNER_TR))
+				{
+					NewPage = PAGE_SERVERSETTINGS;
+					m_ControlPageOpening = true;
+				}
+				GameClient()->m_Tooltips.DoToolTip(&s_ServerSettingsButton, &Button, Localize("Srv settings"));
 
-		Box.VSplitLeft(120.0f, &Button, &Box);
-		Box.VSplitLeft(4.0f, nullptr, &Box);
-		static CButtonContainer s_ServerSettingsButton;
-		if(DoButton_MenuTab(&s_ServerSettingsButton, Localize("Srv settings"), ActivePage == PAGE_SERVERSETTINGS, &Button, IGraphics::CORNER_TR))
-		{
-			NewPage = PAGE_SERVERSETTINGS;
-			m_ControlPageOpening = true;
+				TextRender()->SetRenderFlags(0);
+				TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+			} else {
+				Box.VSplitLeft(120.0f, &Button, &Box);
+				Box.VSplitLeft(4.0f, nullptr, &Box);
+				static CButtonContainer s_ServerSettingsButton;
+				if(DoButton_MenuTab(&s_ServerSettingsButton, Localize("Srv settings"), ActivePage == PAGE_SERVERSETTINGS, &Button, IGraphics::CORNER_TR))
+				{
+					NewPage = PAGE_SERVERSETTINGS;
+					m_ControlPageOpening = true;
+				}
+			}
 		}
 	}
 

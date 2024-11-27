@@ -701,6 +701,7 @@ MACRO_CONFIG_INT(ClDemoKeyboardShortcuts, cl_demo_keyboard_shortcuts, 1, 0, 1, C
 // Pointer31's additions
 MACRO_CONFIG_INT(ClMapVotesItemsPerRow, cl_mapvotes_items_per_row, 1, 1, 4, CFGFLAG_SAVE | CFGFLAG_CLIENT, "How many maps per row are displayed in the vote screen")
 MACRO_CONFIG_STR(ClLocalServerRconpwd, cl_local_server_rconpwd, 128, "", CFGFLAG_CLIENT, "potentially the rcon password for local server")
+MACRO_CONFIG_INT(ClExtraParticles, cl_extra_particles, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to enable more particles")
 
 // graphic library
 #if !defined(CONF_ARCH_IA32) && !defined(CONF_PLATFORM_MACOS)

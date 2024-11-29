@@ -1354,6 +1354,11 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 		pTitle = Localize("Save skin");
 		pExtraText = Localize("Are you sure you want to save your skin? If a skin with this name already exists, it will be replaced.");
 	}
+	else if(m_Popup == POPUP_START_SERVER)
+	{
+		pTitle = Localize("Start server");
+		pExtraText = Localize("Please select the type you want to run");
+	}
 
 	CUIRect Box, Part;
 	Box = Screen;
@@ -1874,6 +1879,59 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 		Ui()->DoLabel(&Label, Localize("Name"), 18.0f, TEXTALIGN_ML);
 		Ui()->DoClearableEditBox(&m_SkinNameInput, &TextBox, 12.0f);
 	}
+	else if(m_Popup == POPUP_START_SERVER)
+	{
+		CUIRect Cancel, DDnet, TWplus;
+
+		Box.HSplitBottom(20.f, &Box, &Part);
+		Box.HSplitTop(20.f, &Part, &Box);
+		Part.VMargin(80.0f, &Part);
+
+		Box.HSplitBottom(24.f, &Box, &Cancel);
+		Box.HSplitTop(24.f, &DDnet, &Box);
+		Box.HSplitTop(24.f, &TWplus, &Box);
+
+		Cancel.VMargin(240.0f, &Cancel);
+		DDnet.VMargin(80.0f, &DDnet);
+		TWplus.VMargin(80.0f, &TWplus);
+
+		static CButtonContainer s_ButtonCancel;
+		if(DoButton_Menu(&s_ButtonCancel, Localize("Cancel"), 0, &Cancel) || Ui()->ConsumeHotkey(CUi::HOTKEY_ESCAPE))
+			m_Popup = POPUP_NONE;
+
+
+		char aBuf[IO_MAX_PATH_LENGTH] = "";
+
+		static CButtonContainer s_ButtonDDnet;
+		if(DoButton_Menu(&s_ButtonDDnet, Localize("DDNet"), 0, &DDnet)) {
+			m_Popup = POPUP_NONE;
+			Storage()->GetBinaryPath(PLAT_SERVER_EXEC, aBuf, sizeof(aBuf));
+		}
+
+		static CButtonContainer s_ButtonTWplus;
+		if(DoButton_Menu(&s_ButtonTWplus, Localize("TWplus"), 0, &TWplus)) {
+			m_Popup = POPUP_NONE;
+			Storage()->GetBinaryPath(PLAT_SERVER_TW_EXEC, aBuf, sizeof(aBuf));
+		}
+
+		if (str_comp(aBuf, "") != 0) {
+			char pwd[10] = {};
+			secure_random_password(pwd, sizeof(pwd), 8);
+			char bBuf[64];
+			str_format(bBuf, sizeof(bBuf), "sv_rcon_password %s", pwd);
+			char* arguments[3] = {bBuf, NULL};
+			// No / in binary path means to search in $PATH, so it is expected that the file can't be opened. Just try executing anyway.
+			if(str_find(aBuf, "/") == 0 || fs_is_file(aBuf))
+			{
+				str_copy(g_Config.m_ClLocalServerRconpwd, pwd);
+				m_ServerProcess.m_Process = shell_execute(aBuf, EShellExecuteWindowState::BACKGROUND, arguments);
+				m_ForceRefreshLanPage = true;
+			} 
+			else
+				Client()->AddWarning(SWarning(Localize("Server executable not found, can't run server")));
+		}
+	}
+	
 	else
 	{
 		Box.HSplitBottom(20.f, &Box, &Part);

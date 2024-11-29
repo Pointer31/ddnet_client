@@ -821,6 +821,7 @@ public:
 		POPUP_RESTART,
 		POPUP_WARNING,
 		POPUP_SAVE_SKIN,
+		POPUP_START_SERVER,
 
 		// demo player states
 		DEMOPLAYER_NONE = 0,

@@ -4841,19 +4841,17 @@ int main(int argc, const char **argv)
 	// init client's interfaces
 	pClient->InitInterfaces();
 
-	// execute config file
-	if(pStorage->FileExists(CONFIG_FILE, IStorage::TYPE_ALL))
+	std::vector<const char *> vFailedConfigFiles;
+	if(!pConfigManager->Load(&vFailedConfigFiles))
 	{
-		pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
-		if(!pConsole->ExecuteFile(CONFIG_FILE))
+		char aError[128];
+		for(const char *pConfigFileName : vFailedConfigFiles)
 		{
-			const char *pError = "Failed to load config from '" CONFIG_FILE "'.";
-			log_error("client", "%s", pError);
-			pClient->ShowMessageBox({.m_pTitle = "Config File Error", .m_pMessage = pError});
-			PerformAllCleanup();
-			return -1;
+			str_format(aError, sizeof(aError), "Failed to load config from '%s'.", pConfigFileName);
+			pClient->ShowMessageBox({.m_pTitle = "Config File Error", .m_pMessage = aError});
 		}
-		pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
+		PerformAllCleanup();
+		return -1;
 	}
 
 	// execute autoexec file

@@ -13,6 +13,7 @@
 #include <engine/shared/assertion_logger.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
+#include <engine/shared/infclass.h>
 
 #include <game/version.h>
 
@@ -146,6 +147,9 @@ int main(int argc, const char **argv)
 
 	IGameServer *pGameServer = CreateGameServer();
 	pKernel->RegisterInterface(pGameServer);
+
+	const char aInfclassConfigFile[] = "settings_infclass.cfg";
+	SetInfclassConfigDomainId(pConfigManager->RegisterConfigDomain(aInfclassConfigFile));
 
 	pEngine->Init();
 	pConsole->Init();

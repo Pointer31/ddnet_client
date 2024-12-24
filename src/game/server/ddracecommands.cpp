@@ -835,6 +835,17 @@ void CGameContext::ConSetDDRTeam(IConsole::IResult *pResult, void *pUserData)
 	pController->Teams().SetForceCharacterTeam(Target, Team);
 }
 
+void CGameContext::ConRedirectPlayer(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	auto *pController = pSelf->m_pController;
+
+	int Target = pResult->GetVictim();
+	int Port = pResult->GetInteger(1);
+
+	pSelf->m_pServer->RedirectClient(Target, Port, true);
+}
+
 void CGameContext::ConUninvite(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;

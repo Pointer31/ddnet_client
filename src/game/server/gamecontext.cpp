@@ -3740,6 +3740,7 @@ void CGameContext::RegisterDDRaceCommands()
 	Console()->Register("force_unpause", "v[id]", CFGFLAG_SERVER, ConForcePause, this, "Set force-pause timer of i to 0.");
 
 	Console()->Register("set_team_ddr", "v[id] i[team]", CFGFLAG_SERVER, ConSetDDRTeam, this, "Set ddrace team of a player");
+	Console()->Register("redirect_player", "v[id] i[port]", CFGFLAG_SERVER, ConRedirectPlayer, this, "Redirect player to another port");
 	Console()->Register("uninvite", "v[id] i[team]", CFGFLAG_SERVER, ConUninvite, this, "Uninvite player from team");
 
 	Console()->Register("vote_mute", "v[id] i[seconds] ?r[reason]", CFGFLAG_SERVER, ConVoteMute, this, "Remove v's right to vote for i seconds");

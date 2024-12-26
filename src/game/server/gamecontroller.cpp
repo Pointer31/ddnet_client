@@ -632,6 +632,11 @@ void IGameController::Snap(int SnappingClient)
 		GAMEINFOFLAG_ENTITIES_RACE |
 		GAMEINFOFLAG_RACE;
 	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_HUD_DDRACE;
+	bool hpnotfull = false;
+	if ((pPlayer && pPlayer->GetCharacter() && pPlayer->GetCharacter()->GetHealth() < 10) || (pPlayer2 && pPlayer2->GetCharacter() && pPlayer2->GetCharacter()->GetHealth() < 10))
+		hpnotfull = true;
+	if (hpnotfull)
+		pGameInfoEx->m_Flags2 |= GAMEINFOFLAG2_HUD_HEALTH_ARMOR; 
 	if(g_Config.m_SvNoWeakHook)
 		pGameInfoEx->m_Flags2 |= GAMEINFOFLAG2_NO_WEAK_HOOK;
 	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;

@@ -180,6 +180,9 @@ private:
 	bool m_SetSavePos[NUM_RESCUEMODES];
 	CSaveTee m_RescueTee[NUM_RESCUEMODES];
 
+	// Pointer31's addition
+	int m_LastDamageTick;
+
 public:
 	CGameTeams *Teams() { return m_pTeams; }
 	void SetTeams(CGameTeams *pTeams);
@@ -240,6 +243,7 @@ public:
 	void SetLastAction(int LastAction) { m_LastAction = LastAction; }
 	int GetArmor() const { return m_Armor; }
 	void SetArmor(int Armor) { m_Armor = Armor; }
+	int GetHealth() const { return m_Health; }
 	CCharacterCore GetCore() { return m_Core; }
 	void SetCore(CCharacterCore Core) { m_Core = Core; }
 	const CCharacterCore *Core() const { return &m_Core; }

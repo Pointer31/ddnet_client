@@ -1577,7 +1577,10 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_ColorFeet = pInfo->m_ColorFeet;
 
 					pClient->m_SkinInfo.m_Size = 64;
-					pClient->m_SkinInfo.Apply(m_Skins.Find(pClient->m_aSkinName));
+					if (g_Config.m_ClDuckFilter)
+						pClient->m_SkinInfo.Apply(m_Skins.Find("Scrubby Duck"));
+					else
+						pClient->m_SkinInfo.Apply(m_Skins.Find(pClient->m_aSkinName));
 					pClient->m_SkinInfo.ApplyColors(pClient->m_UseCustomColor, pClient->m_ColorBody, pClient->m_ColorFeet);
 					pClient->UpdateRenderInfo(IsTeamPlay());
 				}

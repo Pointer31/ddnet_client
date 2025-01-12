@@ -1133,6 +1133,7 @@ set(EXPECTED_DATA
   audio/wp_switch-02.wv
   audio/wp_switch-03.wv
   autoexec_server.cfg
+  autoexec_server_twplus.cfg
   blob.png
   censorlist.txt
   communityicons/none.png
@@ -1557,6 +1558,10 @@ set(EXPECTED_DATA
   maps/dm7.map
   maps/dm8.map
   maps/dm9.map
+  maps/dm_gfountain.map
+  maps/dm_jungle_large_tele.map
+  maps/dm_large_tele.map
+  maps/htf_dm1.map
   maps/license.txt
   maps7/Gold\ Mine.map
   maps7/LearnToPlay.map
@@ -1705,6 +1710,7 @@ set(EXPECTED_DATA
   skins/whis.png
   skins/x_ninja.png
   skins/x_spec.png
+  skins/Computer\ WindowsXP_KZ.png
   skins7/beaver.json
   skins7/bluekitty.json
   skins7/bluestripe.json
@@ -1847,6 +1853,9 @@ set(EXPECTED_DATA
   themes/winter.png
   themes/winter_day.map
   themes/winter_night.map
+  themes/jungle_duck.png
+  themes/jungle_duck_day.map
+  themes/jungle_duck_night.map
   wordlist.txt
 )
 

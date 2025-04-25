@@ -2168,6 +2168,47 @@ void CGameContext::OnSayNetMessage(const CNetMsg_Cl_Say *pMsg, int ClientId, con
 	if(Length == 0 || (pMsg->m_pMessage[0] != '/' && (g_Config.m_SvSpamprotection && pPlayer->m_LastChat && pPlayer->m_LastChat + Server()->TickSpeed() * ((31 + Length) / 32) > Server()->Tick())))
 		return;
 
+	// anti adbot
+	if (g_Config.m_SvAntiAdbot && pPlayer->m_MessagesSent < g_Config.m_SvAntiAdbot && !Server()->GetAuthedState(ClientId)) {
+		{
+			int count = 0; // amount of flagged strings (some strings may count more than others)
+			// fancy alphabet detection
+			int fancy_count = 0;
+			const char* alphabet_fancy[] = {
+				"𝕢", "𝕨", "𝕖", "𝕣", "𝕥", "𝕪", "𝕦", "𝕚", "𝕠", "𝕡", "𝕒", "𝕤", "𝕕", "𝕗", "𝕘", "𝕙", "𝕛", "𝕜", "𝕝", "𝕫", "𝕩", "	", "𝕧", "𝕓", "𝕟", "𝕞",
+				"ｑ", "ｗ", "ｅ", "ｒ", "ｔ", "ｙ", "ｕ", "ｉ", "ｏ", "ｐ", "ａ", "ｓ", "ｄ", "ｆ", "ｇ", "ｈ", "ｊ", "ｋ", "ｌ", "ｚ", "ｘ", "ｃ", "ｖ", "ｂ", "ｎ", "ｍ",
+				"🆀", "🆆", "🅴", "🆁", "🆃", "🆈", "🆄", "🅸", "🅾", "🅿", "🅰", "🆂", "🅳", "🅵", "🅶", "🅷", "🅹", "🅺", "🅻", "🆉", "🆇", "🅲", "🆅", "🅱", "🅽", "🅼",
+				"🅀", "🅆", "🄴", "🅁", "🅃", "🅈", "🅄", "🄸", "🄾", "🄿", "🄰", "🅂", "🄳", "🄵", "🄶", "🄷", "🄹", "🄺", "🄻", "🅉", "🅇", "🄲", "🅅", "🄱", "🄽", "🄼",
+				"ⓠ", "ⓦ", "ⓔ", "ⓡ", "ⓣ", "ⓨ", "ⓤ", "ⓘ", "ⓞ", "ⓟ", "ⓐ", "ⓢ", "ⓓ", "ⓕ", "ⓖ", "ⓗ", "ⓙ", "ⓚ", "ⓛ", "ⓩ", "ⓧ", "ⓒ", "ⓥ", "ⓑ", "ⓝ", "ⓜ",
+			};
+			for (int i = 0; i < 130; i++) {
+				if (str_find_nocase(pMsg->m_pMessage, alphabet_fancy[i]))
+					fancy_count++;
+			}
+			if (fancy_count > 3)
+				count += 2;
+			// general needles to disallow
+			const char* disallowedStrings[] = {"krx", "discord.gg", "http", "free", "bot client", "cheat client", "cheat", "hack", "@goodservers", "ultimate", "@ddneting", "tasnet", "Подписывайся", "tg:", "@", "л"};
+			for (int i = 0; i < 16; i++) {
+				if (str_find_nocase(pMsg->m_pMessage, disallowedStrings[i]))
+					count++;
+			}
+			
+			// anti whisper ad bot
+			if ((str_find_nocase(pMsg->m_pMessage, "/whisper") || str_find_nocase(pMsg->m_pMessage, "/w")) && str_find_nocase(pMsg->m_pMessage, "bro, check out this client"))
+				count += 2;
+				
+			if (count >= 2) {
+				char aBuf[128];
+				str_format(aBuf, sizeof(aBuf), "ban %i 15 \"anti-adbot; Please use the ddnet client. https://ddnet.org/\"", ClientId);
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chat/blocked", pMsg->m_pMessage);
+				Console()->ExecuteLine(aBuf);
+				return;
+			}
+		}
+	}
+	pPlayer->m_MessagesSent++;
+
 	int GameTeam = GetDDRaceTeam(pPlayer->GetCid());
 	if(Team)
 		Team = ((pPlayer->GetTeam() == TEAM_SPECTATORS) ? TEAM_SPECTATORS : GameTeam);

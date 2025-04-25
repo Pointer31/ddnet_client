@@ -148,6 +148,8 @@ void CPlayer::Reset()
 	m_RescueMode = RESCUEMODE_AUTO;
 
 	m_CameraInfo.Reset();
+
+	m_MessagesSent = 0;
 }
 
 static int PlayerFlags_SixToSeven(int Flags)

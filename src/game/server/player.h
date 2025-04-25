@@ -128,6 +128,8 @@ public:
 		int m_Max;
 	} m_Latency;
 
+	int m_MessagesSent;
+
 private:
 	const uint32_t m_UniqueClientId;
 	CCharacter *m_pCharacter;

@@ -1345,6 +1345,59 @@ void CGameContext::ConWhisper(IConsole::IResult *pResult, void *pUserData)
 	// This will never be called
 }
 
+void CGameContext::ConGiveIdentity(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	const char *pName = pResult->GetString(0);
+
+	if(!CheckClientId(pResult->m_ClientId))
+		return;
+
+	int TargetClientId = -1;
+	if(pResult->NumArguments() == 1)
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(pSelf->m_apPlayers[i] && !str_comp(pName, pSelf->Server()->ClientName(i)))
+			{
+				TargetClientId = i;
+				break;
+			}
+		}
+	}
+
+	if(TargetClientId < 0)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", "Player not found");
+		return;
+	}
+
+	if(TargetClientId == pResult->m_ClientId)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", "Can't give identity to yourself");
+		return;
+	}
+
+	char aBuf[128] = "unknown";
+	if (pSelf->m_pServer->GetAuthedState(pResult->m_ClientId)) {
+		if(pSelf->ProcessSpamProtection(pResult->m_ClientId))
+			return;
+
+		str_format(aBuf, sizeof(aBuf), "You have been given the identity of '%s', which is '%s'", 
+			pSelf->m_pServer->ClientName(pResult->m_ClientId),
+			pSelf->m_pServer->GetAuthName(pResult->m_ClientId));
+		pSelf->SendChatTarget(TargetClientId, aBuf);
+		str_format(aBuf, sizeof(aBuf), "You have sent your identity to '%s', which is '%s'", 
+			pSelf->m_pServer->ClientName(TargetClientId),
+			pSelf->m_pServer->GetAuthName(pResult->m_ClientId));
+		pSelf->SendChatTarget(pResult->m_ClientId, aBuf);
+	} else {
+		pSelf->SendChatTarget(pResult->m_ClientId, "You are not logged in");
+	}
+	return;
+}
+
+
 void CGameContext::ConSetEyeEmote(IConsole::IResult *pResult,
 	void *pUserData)
 {

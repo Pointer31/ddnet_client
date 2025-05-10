@@ -376,6 +376,8 @@ private:
 
 	// DDRace Console Commands
 
+	static void ConGiveIdentity(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConKillPlayer(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConNinja(IConsole::IResult *pResult, void *pUserData);

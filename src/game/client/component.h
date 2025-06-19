@@ -170,9 +170,11 @@ public:
 	 */
 	virtual void OnWindowResize() {}
 	/**
-	 * Called when skins have been invalidated and must be updated.
+	 * Called when the component should get updated.
+	 *
+	 * The update order depends on the component insertion order.
 	 */
-	virtual void OnRefreshSkins() {}
+	virtual void OnUpdate(){};
 	/**
 	 * Called when the component should get rendered.
 	 *
@@ -212,6 +214,14 @@ public:
 	 * @param Event The input event.
 	 */
 	virtual bool OnInput(const IInput::CEvent &Event) { return false; }
+	/**
+	 * Called with all current touch finger states.
+	 *
+	 * @param vTouchFingerStates The touch finger states to be handled.
+	 *
+	 * @return `true` if the component used the touch events, `false` otherwise
+	 */
+	virtual bool OnTouchState(const std::vector<IInput::CTouchFingerState> &vTouchFingerStates) { return false; }
 };
 
 #endif

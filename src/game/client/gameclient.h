@@ -14,6 +14,7 @@
 #include <game/collision.h>
 #include <game/gamecore.h>
 #include <game/layers.h>
+#include <game/mapbugs.h>
 #include <game/teamscore.h>
 
 #include <game/client/prediction/gameworld.h>
@@ -58,7 +59,10 @@
 #include "components/spectator.h"
 #include "components/statboard.h"
 #include "components/tooltips.h"
+#include "components/touch_controls.h"
 #include "components/voting.h"
+
+#include <vector>
 
 class CGameInfo
 {
@@ -104,6 +108,8 @@ public:
 
 	bool m_NoWeakHookAndBounce;
 	bool m_NoSkinChangeForFrozen;
+
+	bool m_DDRaceTeam;
 };
 
 class CSnapEntities
@@ -146,6 +152,7 @@ public:
 	CSounds m_Sounds;
 	CEmoticon m_Emoticon;
 	CDamageInd m_DamageInd;
+	CTouchControls m_TouchControls;
 	CVoting m_Voting;
 	CSpectator m_Spectator;
 
@@ -189,6 +196,7 @@ private:
 	class IEditor *m_pEditor;
 	class IFriends *m_pFriends;
 	class IFriends *m_pFoes;
+	class IDiscord *m_pDiscord;
 #if defined(CONF_AUTOUPDATE)
 	class IUpdater *m_pUpdater;
 #endif
@@ -227,9 +235,10 @@ private:
 	static void ConchainSpecialDummyInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainRefreshSkins(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainSpecialDummy(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	static void ConchainClTextEntitiesSize(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
+	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneZone(IConsole::IResult *pResult, void *pUserData);
+	static void ConMapbug(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainMenuMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
@@ -298,6 +307,8 @@ public:
 	int m_ServerMode;
 	CGameInfo m_GameInfo;
 
+	char m_aSavedLocalRconPassword[sizeof(g_Config.m_SvRconPassword)] = "";
+
 	int m_DemoSpecId;
 
 	vec2 m_LocalCharacterPos;
@@ -331,12 +342,19 @@ public:
 		int m_HighestClientId;
 
 		// spectate data
-		struct CSpectateInfo
+		class CSpectateInfo
 		{
+		public:
 			bool m_Active;
 			int m_SpectatorId;
 			bool m_UsePosition;
 			vec2 m_Position;
+
+			bool m_HasCameraInfo;
+			float m_Zoom;
+			int m_Deadzone;
+			int m_FollowFactor;
+			int m_SpectatorCount;
 		} m_SpecInfo;
 
 		//
@@ -367,9 +385,43 @@ public:
 	int m_aExpectingTuningSince[NUM_DUMMIES];
 	CTuningParams m_aTuning[NUM_DUMMIES];
 
-	// client data
-	struct CClientData
+	// spectate cursor data
+	class CCursorInfo
 	{
+		friend class CGameClient;
+		static constexpr int CURSOR_SAMPLES = 8; // how many samples to keep
+		static constexpr int SAMPLE_FRAME_WINDOW = 3; // how many samples should be used for polynomial interpolation
+		static constexpr int SAMPLE_FRAME_OFFSET = 2; // how many samples in the past should be included
+		static constexpr double INTERP_DELAY = 4.25; // how many ticks in the past to show, enables extrapolation with smaller value (<= SAMPLE_FRAME_WINDOW - SAMPLE_FRAME_OFFSET + 3)
+		static constexpr double REST_THRESHOLD = 3.0; // how many ticks of the same samples are considered to be resting
+
+		int m_CursorOwnerId;
+		double m_aTargetSamplesTime[CURSOR_SAMPLES];
+		vec2 m_aTargetSamplesData[CURSOR_SAMPLES];
+		int m_NumSamples;
+
+		bool m_Available;
+		int m_Weapon;
+		vec2 m_Target;
+		vec2 m_WorldTarget;
+		vec2 m_Position;
+
+	public:
+		bool IsAvailable() const { return m_Available; }
+		int Weapon() const { return m_Weapon; }
+		vec2 Target() const { return m_Target; }
+		vec2 WorldTarget() const { return m_WorldTarget; }
+		vec2 Position() const { return m_Position; }
+	} m_CursorInfo;
+
+	// client data
+	class CClientData
+	{
+		friend class CGameClient;
+		CGameClient *m_pGameClient;
+		int m_ClientId;
+
+	public:
 		int m_UseCustomColor;
 		int m_ColorBody;
 		int m_ColorFeet;
@@ -378,7 +430,6 @@ public:
 		char m_aClan[MAX_CLAN_LENGTH];
 		int m_Country;
 		char m_aSkinName[MAX_SKIN_LENGTH];
-		int m_SkinColor;
 		int m_Team;
 		int m_Emoticon;
 		float m_EmoticonStartFraction;
@@ -406,7 +457,7 @@ public:
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;
 
-		CTeeRenderInfo m_SkinInfo; // this is what the server reports
+		std::shared_ptr<CManagedTeeRenderInfo> m_pSkinInfo = nullptr; // this is what the server reports
 		CTeeRenderInfo m_RenderInfo; // this is what we use
 
 		float m_Angle;
@@ -440,8 +491,14 @@ public:
 		bool m_SpecCharPresent;
 		vec2 m_SpecChar;
 
-		void UpdateRenderInfo(bool IsTeamPlay);
+		void UpdateSkinInfo();
+		void UpdateSkin7HatSprite(int Dummy);
+		void UpdateSkin7BotDecoration(int Dummy);
+		void UpdateRenderInfo();
 		void Reset();
+		CSkinDescriptor ToSkinDescriptor() const;
+
+		int ClientId() const { return m_ClientId; }
 
 		class CSixup
 		{
@@ -536,11 +593,17 @@ public:
 	virtual void OnFlagGrab(int TeamId);
 	void OnWindowResize() override;
 
+	void InitializeLanguage() override;
 	bool m_LanguageChanged = false;
 	void OnLanguageChange();
 	void HandleLanguageChanged();
 
-	void RefreshSkins();
+	void RefreshSkin(const std::shared_ptr<CManagedTeeRenderInfo> &pManagedTeeRenderInfo);
+	void RefreshSkins(int SkinDescriptorFlags);
+	void OnSkinUpdate(const char *pSkinName);
+	std::shared_ptr<CManagedTeeRenderInfo> CreateManagedTeeRenderInfo(const CTeeRenderInfo &TeeRenderInfo, const CSkinDescriptor &SkinDescriptor);
+	std::shared_ptr<CManagedTeeRenderInfo> CreateManagedTeeRenderInfo(const CClientData &Client);
+	void CollectManagedTeeRenderInfos(const std::function<void(const char *pSkinName)> &ActiveSkinAcceptor);
 
 	void RenderShutdownMessage() override;
 
@@ -563,7 +626,7 @@ public:
 	bool GotWantedSkin7(bool Dummy);
 	void SendInfo(bool Start);
 	void SendDummyInfo(bool Start) override;
-	void SendKill(int ClientId) const;
+	void SendKill() const;
 	void SendReadyChange7();
 
 	int m_NextChangeInfo;
@@ -772,7 +835,9 @@ public:
 	{
 		IGraphics::CTextureHandle m_SpriteParticleSnowflake;
 		IGraphics::CTextureHandle m_SpriteParticleSparkle;
-		IGraphics::CTextureHandle m_aSpriteParticles[2];
+		IGraphics::CTextureHandle m_SpritePulley;
+		IGraphics::CTextureHandle m_SpriteHectagon;
+		IGraphics::CTextureHandle m_aSpriteParticles[4];
 	};
 
 	SClientExtrasSkin m_ExtrasSkin;
@@ -781,7 +846,7 @@ public:
 	const std::vector<CSnapEntities> &SnapEntities() { return m_vSnapEntities; }
 
 	int m_MultiViewTeam;
-	int m_MultiViewPersonalZoom;
+	float m_MultiViewPersonalZoom;
 	bool m_MultiViewShowHud;
 	bool m_MultiViewActivated;
 	bool m_aMultiViewId[MAX_CLIENTS];
@@ -797,7 +862,11 @@ private:
 	bool m_aDDRaceMsgSent[NUM_DUMMIES];
 	int m_aShowOthers[NUM_DUMMIES];
 
+	std::vector<std::shared_ptr<CManagedTeeRenderInfo>> m_vpManagedTeeRenderInfos;
+	void UpdateManagedTeeRenderInfos();
+
 	void UpdatePrediction();
+	void UpdateSpectatorCursor();
 	void UpdateRenderedCharacters();
 
 	int m_aLastUpdateTick[MAX_CLIENTS] = {0};
@@ -810,16 +879,16 @@ private:
 	CCharOrder m_CharOrder;
 	int m_aSwitchStateTeam[NUM_DUMMIES];
 
-	enum
-	{
-		NUM_TUNEZONES = 256
-	};
 	void LoadMapSettings();
+	CMapBugs m_MapBugs;
 	CTuningParams m_aTuningList[NUM_TUNEZONES];
 	CTuningParams *TuningList() { return m_aTuningList; }
 
+	float m_LastShowDistanceZoom;
 	float m_LastZoom;
 	float m_LastScreenAspect;
+	float m_LastDeadzone;
+	float m_LastFollowFactor;
 	bool m_LastDummyConnected;
 
 	void HandleMultiView();

@@ -26,16 +26,17 @@
 
 CHud::CHud()
 {
-	// won't work if zero
-	m_FrameTimeAvg = 0.0f;
 	m_FPSTextContainerIndex.Reset();
 	m_DDRaceEffectsTextContainerIndex.Reset();
 	m_PlayerAngleTextContainerIndex.Reset();
+	m_PlayerPrevAngle = -INFINITY;
 
 	for(int i = 0; i < 2; i++)
 	{
 		m_aPlayerSpeedTextContainers[i].Reset();
+		m_aPlayerPrevSpeed[i] = -INFINITY;
 		m_aPlayerPositionContainers[i].Reset();
+		m_aPlayerPrevPosition[i] = -INFINITY;
 	}
 }
 
@@ -54,10 +55,13 @@ void CHud::ResetHudContainers()
 	TextRender()->DeleteTextContainer(m_FPSTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_DDRaceEffectsTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_PlayerAngleTextContainerIndex);
+	m_PlayerPrevAngle = -INFINITY;
 	for(int i = 0; i < 2; i++)
 	{
 		TextRender()->DeleteTextContainer(m_aPlayerSpeedTextContainers[i]);
+		m_aPlayerPrevSpeed[i] = -INFINITY;
 		TextRender()->DeleteTextContainer(m_aPlayerPositionContainers[i]);
+		m_aPlayerPrevPosition[i] = -INFINITY;
 	}
 }
 
@@ -76,8 +80,11 @@ void CHud::OnReset()
 	m_ServerRecord = -1.0f;
 	m_aPlayerRecord[0] = -1.0f;
 	m_aPlayerRecord[1] = -1.0f;
+	m_aPlayerSpeed[0] = 0;
+	m_aPlayerSpeed[1] = 0;
 	m_aLastPlayerSpeedChange[0] = ESpeedChange::NONE;
 	m_aLastPlayerSpeedChange[1] = ESpeedChange::NONE;
+	m_LastSpectatorCountTick = 0;
 
 	ResetHudContainers();
 }
@@ -85,6 +92,8 @@ void CHud::OnReset()
 void CHud::OnInit()
 {
 	OnReset();
+
+	Graphics()->SetColor(1.0, 1.0, 1.0, 1.0);
 
 	m_HudQuadContainerIndex = Graphics()->CreateQuadContainer(false);
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
@@ -177,7 +186,6 @@ void CHud::RenderScoreHud()
 	// render small score hud
 	if(!(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER))
 	{
-		int GameFlags = m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags;
 		float StartY = 229.0f; // the height of this display is 56, so EndY is 285
 
 		const float ScoreSingleBoxHeight = 18.0f;
@@ -185,7 +193,7 @@ void CHud::RenderScoreHud()
 		bool ForceScoreInfoInit = !m_aScoreInfo[0].m_Initialized || !m_aScoreInfo[1].m_Initialized;
 		m_aScoreInfo[0].m_Initialized = m_aScoreInfo[1].m_Initialized = true;
 
-		if(GameFlags & GAMEFLAG_TEAMS && m_pClient->m_Snap.m_pGameDataObj)
+		if(m_pClient->IsTeamPlay() && m_pClient->m_Snap.m_pGameDataObj)
 		{
 			char aScoreTeam[2][16];
 			str_format(aScoreTeam[TEAM_RED], sizeof(aScoreTeam[TEAM_RED]), "%d", m_pClient->m_Snap.m_pGameDataObj->m_TeamscoreRed);
@@ -211,7 +219,7 @@ void CHud::RenderScoreHud()
 			static float s_TextWidth100 = TextRender()->TextWidth(14.0f, "100", -1, -1.0f);
 			float ScoreWidthMax = maximum(maximum(m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth), s_TextWidth100);
 			float Split = 3.0f;
-			float ImageSize = (GameFlags & GAMEFLAG_FLAGS) ? 16.0f : Split;
+			float ImageSize = (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_FLAGS) ? 16.0f : Split;
 			for(int t = 0; t < 2; t++)
 			{
 				// draw box
@@ -245,7 +253,7 @@ void CHud::RenderScoreHud()
 					TextRender()->RenderTextContainer(m_aScoreInfo[t].m_TextScoreContainerIndex, TColor, TOutlineColor);
 				}
 
-				if(GameFlags & GAMEFLAG_FLAGS)
+				if(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_FLAGS)
 				{
 					int BlinkTimer = (m_pClient->m_aFlagDropTick[t] != 0 &&
 								 (Client()->GameTick(g_Config.m_ClDummy) - m_pClient->m_aFlagDropTick[t]) / Client()->GameTickSpeed() >= 25) ?
@@ -301,7 +309,7 @@ void CHud::RenderScoreHud()
 		{
 			int Local = -1;
 			int aPos[2] = {1, 2};
-			const CNetObj_PlayerInfo *apPlayerInfo[2] = {0, 0};
+			const CNetObj_PlayerInfo *apPlayerInfo[2] = {nullptr, nullptr};
 			int i = 0;
 			for(int t = 0; t < 2 && i < MAX_CLIENTS && m_pClient->m_Snap.m_apInfoByScore[i]; ++i)
 			{
@@ -517,11 +525,9 @@ void CHud::RenderTextInfo()
 #endif
 	if(Showfps)
 	{
-		// calculate avg. fps
-		m_FrameTimeAvg = m_FrameTimeAvg * 0.9f + Client()->RenderFrameTime() * 0.1f;
-		char aBuf[64];
-		int FrameTime = (int)(1.0f / m_FrameTimeAvg + 0.5f);
-		str_format(aBuf, sizeof(aBuf), "%d", FrameTime);
+		char aBuf[16];
+		const int FramesPerSecond = round_to_int(1.0f / Client()->FrameTimeAverage());
+		str_format(aBuf, sizeof(aBuf), "%d", FramesPerSecond);
 
 		static float s_TextWidth0 = TextRender()->TextWidth(12.f, "0", -1, -1.0f);
 		static float s_TextWidth00 = TextRender()->TextWidth(12.f, "00", -1, -1.0f);
@@ -530,7 +536,7 @@ void CHud::RenderTextInfo()
 		static float s_TextWidth00000 = TextRender()->TextWidth(12.f, "00000", -1, -1.0f);
 		static const float s_aTextWidth[5] = {s_TextWidth0, s_TextWidth00, s_TextWidth000, s_TextWidth0000, s_TextWidth00000};
 
-		int DigitIndex = GetDigitsIndex(FrameTime, 4);
+		int DigitIndex = GetDigitsIndex(FramesPerSecond, 4);
 
 		CTextCursor Cursor;
 		TextRender()->SetCursor(&Cursor, m_Width - 10 - s_aTextWidth[DigitIndex], 5, 12, TEXTFLAG_RENDER);
@@ -569,7 +575,7 @@ void CHud::RenderTeambalanceWarning()
 {
 	// render prompt about team-balance
 	bool Flash = time() / (time_freq() / 2) % 2 == 0;
-	if(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS)
+	if(m_pClient->IsTeamPlay())
 	{
 		int TeamDiff = m_pClient->m_Snap.m_aTeamSize[TEAM_RED] - m_pClient->m_Snap.m_aTeamSize[TEAM_BLUE];
 		if(g_Config.m_ClWarningTeambalance && (TeamDiff >= 2 || TeamDiff <= -2))
@@ -587,16 +593,49 @@ void CHud::RenderTeambalanceWarning()
 
 void CHud::RenderCursor()
 {
-	if(!m_pClient->m_Snap.m_pLocalCharacter || Client()->State() == IClient::STATE_DEMOPLAYBACK)
-		return;
+	int CurWeapon = 0;
+	vec2 TargetPos;
+	float Alpha = 1.0f;
 
-	RenderTools()->MapScreenToInterface(m_pClient->m_Camera.m_Center.x, m_pClient->m_Camera.m_Center.y);
+	const vec2 Center = m_pClient->m_Camera.m_Center;
+	float aPoints[4];
+	RenderTools()->MapScreenToWorld(Center.x, Center.y, 100.0f, 100.0f, 100.0f, 0, 0, Graphics()->ScreenAspect(), 1.0f, aPoints);
+	Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
 
-	// render cursor
-	int CurWeapon = maximum(0, m_pClient->m_Snap.m_pLocalCharacter->m_Weapon % NUM_WEAPONS);
-	Graphics()->SetColor(1.f, 1.f, 1.f, 1.f);
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && m_pClient->m_Snap.m_pLocalCharacter)
+	{
+		// Render local cursor
+		CurWeapon = maximum(0, m_pClient->m_Snap.m_pLocalCharacter->m_Weapon % NUM_WEAPONS);
+		TargetPos = m_pClient->m_Controls.m_aTargetPos[g_Config.m_ClDummy];
+	}
+	else
+	{
+		// Render spec cursor
+		if(!g_Config.m_ClSpecCursor || !m_pClient->m_CursorInfo.IsAvailable())
+			return;
+
+		bool RenderSpecCursor = (m_pClient->m_Snap.m_SpecInfo.m_Active && m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW) || Client()->State() == IClient::STATE_DEMOPLAYBACK;
+
+		if(!RenderSpecCursor)
+			return;
+
+		// Calculate factor to keep cursor on screen
+		const vec2 HalfSize = vec2(Center.x - aPoints[0], Center.y - aPoints[1]);
+		const vec2 ScreenPos = (m_pClient->m_CursorInfo.WorldTarget() - Center) / m_pClient->m_Camera.m_Zoom;
+		const float ClampFactor = maximum(
+			1.0f,
+			absolute(ScreenPos.x / HalfSize.x),
+			absolute(ScreenPos.y / HalfSize.y));
+
+		CurWeapon = maximum(0, m_pClient->m_CursorInfo.Weapon() % NUM_WEAPONS);
+		TargetPos = ScreenPos / ClampFactor + Center;
+		if(ClampFactor != 1.0f)
+			Alpha /= 2.0f;
+	}
+
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 	Graphics()->TextureSet(m_pClient->m_GameSkin.m_aSpriteWeaponCursors[CurWeapon]);
-	Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_aCursorOffset[CurWeapon], m_pClient->m_Controls.m_aTargetPos[g_Config.m_ClDummy].x, m_pClient->m_Controls.m_aTargetPos[g_Config.m_ClDummy].y);
+	Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_aCursorOffset[CurWeapon], TargetPos.x, TargetPos.y);
 }
 
 void CHud::PrepareAmmoHealthAndArmorQuads()
@@ -684,16 +723,26 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 		// ammo display
 		float AmmoOffsetY = GameClient()->m_GameInfo.m_HudHealthArmor ? 24 : 0;
 		int CurWeapon = pCharacter->m_Weapon % NUM_WEAPONS;
-		if(CurWeapon >= 0 && m_pClient->m_GameSkin.m_aSpriteWeaponProjectiles[CurWeapon].IsValid())
+		// 0.7 only
+		if(CurWeapon == WEAPON_NINJA)
+		{
+			if(!GameClient()->m_GameInfo.m_HudDDRace && Client()->IsSixup())
+			{
+				const int Max = g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000;
+				float NinjaProgress = std::clamp(pCharacter->m_AmmoCount - Client()->GameTick(g_Config.m_ClDummy), 0, Max) / (float)Max;
+				RenderNinjaBarPos(5 + 10 * 12, 5, 6.f, 24.f, NinjaProgress);
+			}
+		}
+		else if(CurWeapon >= 0 && m_pClient->m_GameSkin.m_aSpriteWeaponProjectiles[CurWeapon].IsValid())
 		{
 			Graphics()->TextureSet(m_pClient->m_GameSkin.m_aSpriteWeaponProjectiles[CurWeapon]);
 			if(AmmoOffsetY > 0)
 			{
-				Graphics()->RenderQuadContainerEx(m_HudQuadContainerIndex, m_aAmmoOffset[CurWeapon] + QuadOffsetSixup, minimum(pCharacter->m_AmmoCount, 10), 0, AmmoOffsetY);
+				Graphics()->RenderQuadContainerEx(m_HudQuadContainerIndex, m_aAmmoOffset[CurWeapon] + QuadOffsetSixup, std::clamp(pCharacter->m_AmmoCount, 0, 10), 0, AmmoOffsetY);
 			}
 			else
 			{
-				Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_aAmmoOffset[CurWeapon] + QuadOffsetSixup, minimum(pCharacter->m_AmmoCount, 10));
+				Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_aAmmoOffset[CurWeapon] + QuadOffsetSixup, std::clamp(pCharacter->m_AmmoCount, 0, 10));
 			}
 		}
 	}
@@ -882,7 +931,7 @@ void CHud::RenderPlayerState(const int ClientId)
 		if(pCharacter->m_aWeapons[WEAPON_NINJA].m_Got)
 		{
 			const int Max = g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000;
-			float NinjaProgress = clamp(pCharacter->m_Ninja.m_ActivationTick + g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000 - Client()->GameTick(g_Config.m_ClDummy), 0, Max) / (float)Max;
+			float NinjaProgress = std::clamp(pCharacter->m_Ninja.m_ActivationTick + g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000 - Client()->GameTick(g_Config.m_ClDummy), 0, Max) / (float)Max;
 			if(NinjaProgress > 0.0f && m_pClient->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
 			{
 				RenderNinjaBarPos(x, y - 12, 6.f, 24.f, NinjaProgress);
@@ -1042,7 +1091,7 @@ void CHud::RenderPlayerState(const int ClientId)
 
 void CHud::RenderNinjaBarPos(const float x, float y, const float Width, const float Height, float Progress, const float Alpha)
 {
-	Progress = clamp(Progress, 0.0f, 1.0f);
+	Progress = std::clamp(Progress, 0.0f, 1.0f);
 
 	// what percentage of the end pieces is used for the progress indicator and how much is the rest
 	// half of the ends are used for the progress display
@@ -1191,6 +1240,78 @@ void CHud::RenderNinjaBarPos(const float x, float y, const float Width, const fl
 	Graphics()->WrapNormal();
 }
 
+void CHud::RenderSpectatorCount()
+{
+	if(!g_Config.m_ClShowhudSpectatorCount)
+	{
+		return;
+	}
+
+	int Count = 0;
+	if(Client()->IsSixup())
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(i == m_pClient->m_aLocalIds[0] || (m_pClient->Client()->DummyConnected() && i == m_pClient->m_aLocalIds[1]))
+				continue;
+
+			if(Client()->m_TranslationContext.m_aClients[i].m_PlayerFlags7 & protocol7::PLAYERFLAG_WATCHING)
+			{
+				Count++;
+			}
+		}
+	}
+	else
+	{
+		Count = m_pClient->m_Snap.m_SpecInfo.m_SpectatorCount;
+	}
+
+	if(Count == 0)
+	{
+		m_LastSpectatorCountTick = Client()->GameTick(g_Config.m_ClDummy);
+		return;
+	}
+
+	// 1 second delay
+	if(Client()->GameTick(g_Config.m_ClDummy) < m_LastSpectatorCountTick + Client()->GameTickSpeed())
+		return;
+
+	char aBuf[16];
+	str_format(aBuf, sizeof(aBuf), "%d", Count);
+
+	const float Fontsize = 6.0f;
+	const float BoxHeight = 14.f;
+	const float BoxWidth = 13.f + TextRender()->TextWidth(Fontsize, aBuf);
+
+	float StartX = m_Width - BoxWidth;
+	float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
+	if(g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle)
+	{
+		StartY -= 4;
+	}
+	StartY -= GetMovementInformationBoxHeight();
+
+	if(g_Config.m_ClShowhudScore)
+	{
+		StartY -= 56;
+	}
+
+	if(g_Config.m_ClShowhudDummyActions && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER) && Client()->DummyConnected())
+	{
+		StartY = StartY - 29.0f - 4; // dummy actions height and padding
+	}
+
+	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
+
+	float y = StartY + BoxHeight / 3;
+	float x = StartX + 2;
+
+	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+	TextRender()->Text(x, y, Fontsize, FontIcons::FONT_ICON_EYE, -1.0f);
+	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+	TextRender()->Text(x + Fontsize + 3.f, y, Fontsize, aBuf, -1.0f);
+}
+
 void CHud::RenderDummyActions()
 {
 	if(!g_Config.m_ClShowhudDummyActions || (m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER) || !Client()->DummyConnected())
@@ -1255,26 +1376,29 @@ inline int CHud::GetDigitsIndex(int Value, int Max)
 
 inline float CHud::GetMovementInformationBoxHeight()
 {
-	float BoxHeight = 3 * MOVEMENT_INFORMATION_LINE_HEIGHT * (g_Config.m_ClShowhudPlayerPosition + g_Config.m_ClShowhudPlayerSpeed) + 2 * MOVEMENT_INFORMATION_LINE_HEIGHT * g_Config.m_ClShowhudPlayerAngle;
+	if(m_pClient->m_Snap.m_SpecInfo.m_Active && (m_pClient->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW || m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorId].m_SpecCharPresent))
+		return g_Config.m_ClShowhudPlayerPosition ? 3.0f * MOVEMENT_INFORMATION_LINE_HEIGHT + 2.0f : 0.0f;
+	float BoxHeight = 3.0f * MOVEMENT_INFORMATION_LINE_HEIGHT * (g_Config.m_ClShowhudPlayerPosition + g_Config.m_ClShowhudPlayerSpeed) + 2.0f * MOVEMENT_INFORMATION_LINE_HEIGHT * g_Config.m_ClShowhudPlayerAngle;
 	if(g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle)
 	{
-		BoxHeight += 2;
+		BoxHeight += 2.0f;
 	}
 	return BoxHeight;
 }
 
-void CHud::UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, char *pPrevValue, size_t Size)
+void CHud::UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, float &PrevValue)
 {
+	Value = std::round(Value * 100.0f) / 100.0f; // Round to 2dp
+	if(TextContainer.Valid() && PrevValue == Value)
+		return;
+	PrevValue = Value;
+
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "%.2f", Value);
 
-	if(!TextContainer.Valid() || str_comp(pPrevValue, aBuf) != 0)
-	{
-		CTextCursor Cursor;
-		TextRender()->SetCursor(&Cursor, 0, 0, FontSize, TEXTFLAG_RENDER);
-		TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
-		str_copy(pPrevValue, aBuf, Size);
-	}
+	CTextCursor Cursor;
+	TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
 }
 
 void CHud::RenderMovementInformationTextContainer(STextContainerIndex &TextContainer, const ColorRGBA &Color, float X, float Y)
@@ -1285,11 +1409,64 @@ void CHud::RenderMovementInformationTextContainer(STextContainerIndex &TextConta
 	}
 }
 
-void CHud::RenderMovementInformation(const int ClientId)
+CHud::CMovementInformation CHud::GetMovementInformation(int ClientId, int Conn) const
 {
+	CMovementInformation Out;
+	if(ClientId == SPEC_FREEVIEW)
+	{
+		Out.m_Pos = m_pClient->m_Camera.m_Center / 32.0f;
+	}
+	else if(m_pClient->m_aClients[ClientId].m_SpecCharPresent)
+	{
+		Out.m_Pos = m_pClient->m_aClients[ClientId].m_SpecChar / 32.0f;
+	}
+	else
+	{
+		const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev;
+		const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur;
+		const float IntraTick = Client()->IntraGameTick(Conn);
+
+		// To make the player position relative to blocks we need to divide by the block size
+		Out.m_Pos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
+
+		const vec2 Vel = mix(vec2(pPrevChar->m_VelX, pPrevChar->m_VelY), vec2(pCurChar->m_VelX, pCurChar->m_VelY), IntraTick);
+
+		float VelspeedX = Vel.x / 256.0f * Client()->GameTickSpeed();
+		if(Vel.x >= -1.0f && Vel.x <= 1.0f)
+		{
+			VelspeedX = 0.0f;
+		}
+		float VelspeedY = Vel.y / 256.0f * Client()->GameTickSpeed();
+		if(Vel.y >= -128.0f && Vel.y <= 128.0f)
+		{
+			VelspeedY = 0.0f;
+		}
+		// We show the speed in Blocks per Second (Bps) and therefore have to divide by the block size
+		Out.m_Speed.x = VelspeedX / 32.0f;
+		float VelspeedLength = length(vec2(Vel.x, Vel.y) / 256.0f) * Client()->GameTickSpeed();
+		// Todo: Use Velramp tuning of each individual player
+		// Since these tuning parameters are almost never changed, the default values are sufficient in most cases
+		float Ramp = VelocityRamp(VelspeedLength, m_pClient->m_aTuning[Conn].m_VelrampStart, m_pClient->m_aTuning[Conn].m_VelrampRange, m_pClient->m_aTuning[Conn].m_VelrampCurvature);
+		Out.m_Speed.x *= Ramp;
+		Out.m_Speed.y = VelspeedY / 32.0f;
+
+		float Angle = m_pClient->m_Players.GetPlayerTargetAngle(pPrevChar, pCurChar, ClientId, IntraTick);
+		if(Angle < 0.0f)
+		{
+			Angle += 2.0f * pi;
+		}
+		Out.m_Angle = Angle * 180.0f / pi;
+	}
+	return Out;
+}
+
+void CHud::RenderMovementInformation()
+{
+	const int ClientId = m_pClient->m_Snap.m_SpecInfo.m_Active ? m_pClient->m_Snap.m_SpecInfo.m_SpectatorId : m_pClient->m_Snap.m_LocalClientId;
+	const bool PosOnly = ClientId == SPEC_FREEVIEW || (m_pClient->m_aClients[ClientId].m_SpecCharPresent);
 	// Draw the infomations depending on settings: Position, speed and target angle
 	// This display is only to present the available information from the last snapshot, not to interpolate or predict
-	if(!g_Config.m_ClShowhudPlayerPosition && !g_Config.m_ClShowhudPlayerSpeed && !g_Config.m_ClShowhudPlayerAngle)
+	if(!g_Config.m_ClShowhudPlayerPosition && (PosOnly || (!g_Config.m_ClShowhudPlayerSpeed && !g_Config.m_ClShowhudPlayerAngle)))
 	{
 		return;
 	}
@@ -1300,52 +1477,19 @@ void CHud::RenderMovementInformation(const int ClientId)
 	const float BoxWidth = 62.0f;
 
 	float StartX = m_Width - BoxWidth;
-	float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
+	float StartY = 285.0f - BoxHeight - 4.0f; // 4 units distance to the next display;
 	if(g_Config.m_ClShowhudScore)
 	{
-		StartY -= 56;
+		StartY -= 56.0f;
 	}
 
 	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
 
-	const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev;
-	const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur;
-	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
+	const CMovementInformation Info = GetMovementInformation(ClientId, g_Config.m_ClDummy);
 
-	// To make the player position relative to blocks we need to divide by the block size
-	const vec2 Pos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
-
-	const vec2 Vel = mix(vec2(pPrevChar->m_VelX, pPrevChar->m_VelY), vec2(pCurChar->m_VelX, pCurChar->m_VelY), IntraTick);
-
-	float VelspeedX = Vel.x / 256.0f * Client()->GameTickSpeed();
-	if(Vel.x >= -1 && Vel.x <= 1)
-	{
-		VelspeedX = 0;
-	}
-	float VelspeedY = Vel.y / 256.0f * Client()->GameTickSpeed();
-	if(Vel.y >= -128 && Vel.y <= 128)
-	{
-		VelspeedY = 0;
-	}
-	// We show the speed in Blocks per Second (Bps) and therefore have to divide by the block size
-	float DisplaySpeedX = VelspeedX / 32;
-	float VelspeedLength = length(vec2(Vel.x, Vel.y) / 256.0f) * Client()->GameTickSpeed();
-	// Todo: Use Velramp tuning of each individual player
-	// Since these tuning parameters are almost never changed, the default values are sufficient in most cases
-	float Ramp = VelocityRamp(VelspeedLength, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampStart, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampRange, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampCurvature);
-	DisplaySpeedX *= Ramp;
-	float DisplaySpeedY = VelspeedY / 32;
-
-	float Angle = m_pClient->m_Players.GetPlayerTargetAngle(pPrevChar, pCurChar, ClientId, IntraTick);
-	if(Angle < 0)
-	{
-		Angle += 2.0f * pi;
-	}
-	float DisplayAngle = Angle * 180.0f / pi;
-
-	float y = StartY + LineSpacer * 2;
-	float xl = StartX + 2;
-	float xr = m_Width - 2;
+	float y = StartY + LineSpacer * 2.0f;
+	float xl = StartX + 2.0f;
+	float xr = m_Width - 2.0f;
 
 	if(g_Config.m_ClShowhudPlayerPosition)
 	{
@@ -1353,15 +1497,18 @@ void CHud::RenderMovementInformation(const int ClientId)
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		TextRender()->Text(xl, y, Fontsize, "X:", -1.0f);
-		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[0], Fontsize, Pos.x, m_aaPlayerPositionText[0], sizeof(m_aaPlayerPositionText[0]));
+		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[0], Fontsize, Info.m_Pos.x, m_aPlayerPrevPosition[0]);
 		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[0], TextRender()->DefaultTextColor(), xr, y);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		TextRender()->Text(xl, y, Fontsize, "Y:", -1.0f);
-		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[1], Fontsize, Pos.y, m_aaPlayerPositionText[1], sizeof(m_aaPlayerPositionText[1]));
+		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[1], Fontsize, Info.m_Pos.y, m_aPlayerPrevPosition[1]);
 		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[1], TextRender()->DefaultTextColor(), xr, y);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 	}
+
+	if(PosOnly)
+		return;
 
 	if(g_Config.m_ClShowhudPlayerSpeed)
 	{
@@ -1371,18 +1518,18 @@ void CHud::RenderMovementInformation(const int ClientId)
 		const char aaCoordinates[][4] = {"X:", "Y:"};
 		for(int i = 0; i < 2; i++)
 		{
-			ColorRGBA Color(1, 1, 1, 1);
+			ColorRGBA Color(1.0f, 1.0f, 1.0f, 1.0f);
 			if(m_aLastPlayerSpeedChange[i] == ESpeedChange::INCREASE)
-				Color = ColorRGBA(0, 1, 0, 1);
+				Color = ColorRGBA(0.0f, 1.0f, 0.0f, 1.0f);
 			if(m_aLastPlayerSpeedChange[i] == ESpeedChange::DECREASE)
-				Color = ColorRGBA(1, 0.5f, 0.5f, 1);
+				Color = ColorRGBA(1.0f, 0.5f, 0.5f, 1.0f);
 			TextRender()->Text(xl, y, Fontsize, aaCoordinates[i], -1.0f);
-			UpdateMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Fontsize, i == 0 ? DisplaySpeedX : DisplaySpeedY, m_aaPlayerSpeedText[i], sizeof(m_aaPlayerSpeedText[i]));
+			UpdateMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Fontsize, i == 0 ? Info.m_Speed.x : Info.m_Speed.y, m_aPlayerPrevSpeed[i]);
 			RenderMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Color, xr, y);
 			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 		}
 
-		TextRender()->TextColor(1, 1, 1, 1);
+		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	if(g_Config.m_ClShowhudPlayerAngle)
@@ -1390,7 +1537,7 @@ void CHud::RenderMovementInformation(const int ClientId)
 		TextRender()->Text(xl, y, Fontsize, Localize("Angle:"), -1.0f);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
-		UpdateMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, Fontsize, DisplayAngle, m_aPlayerAngleText, sizeof(m_aPlayerAngleText));
+		UpdateMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, Fontsize, Info.m_Angle, m_PlayerPrevAngle);
 		RenderMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, TextRender()->DefaultTextColor(), xr, y);
 	}
 }
@@ -1408,18 +1555,43 @@ void CHud::RenderSpectatorHud()
 	}
 	else if(m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW)
 	{
-		str_format(aBuf, sizeof(aBuf), Localize("Following %s", "Spectating"), m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorId].m_aName);
+		const auto &Player = m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorId];
+		if(g_Config.m_ClShowIds)
+			str_format(aBuf, sizeof(aBuf), Localize("Following %d: %s", "Spectating"), Player.ClientId(), Player.m_aName);
+		else
+			str_format(aBuf, sizeof(aBuf), Localize("Following %s", "Spectating"), Player.m_aName);
 	}
 	else
 	{
 		str_copy(aBuf, Localize("Free-View"));
 	}
 	TextRender()->Text(m_Width - 174.0f, m_Height - 15.0f + (15.f - 8.f) / 2.f, 8.0f, aBuf, -1.0f);
+
+	// draw the camera info
+	if(m_pClient->m_Camera.SpectatingPlayer() && m_pClient->m_Camera.CanUseAutoSpecCamera() && g_Config.m_ClSpecAutoSync)
+	{
+		bool AutoSpecCameraEnabled = m_pClient->m_Camera.m_AutoSpecCamera;
+		const char *pLabelText = Localize("AUTO", "Spectating Camera Mode Icon");
+		const float TextWidth = TextRender()->TextWidth(6.0f, pLabelText);
+
+		constexpr float RightMargin = 4.0f;
+		constexpr float IconWidth = 6.0f;
+		constexpr float Padding = 3.0f;
+		const float TagWidth = IconWidth + TextWidth + Padding * 3.0f;
+		const float TagX = m_Width - RightMargin - TagWidth;
+		Graphics()->DrawRect(TagX, m_Height - 12.0f, TagWidth, 10.0f, ColorRGBA(1.0f, 1.0f, 1.0f, AutoSpecCameraEnabled ? 0.50f : 0.10f), IGraphics::CORNER_ALL, 2.5f);
+		TextRender()->TextColor(1, 1, 1, AutoSpecCameraEnabled ? 1.0f : 0.65f);
+		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+		TextRender()->Text(TagX + Padding, m_Height - 10.0f, 6.0f, FontIcons::FONT_ICON_CAMERA, -1.0f);
+		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+		TextRender()->Text(TagX + Padding + IconWidth + Padding, m_Height - 10.0f, 6.0f, pLabelText, -1.0f);
+		TextRender()->TextColor(1, 1, 1, 1);
+	}
 }
 
 void CHud::RenderLocalTime(float x)
 {
-	if(!g_Config.m_ClShowLocalTimeAlways && !m_pClient->m_Scoreboard.Active())
+	if(!g_Config.m_ClShowLocalTimeAlways && !m_pClient->m_Scoreboard.IsActive())
 		return;
 
 	// draw the box
@@ -1505,7 +1677,8 @@ void CHud::OnRender()
 			{
 				RenderPlayerState(m_pClient->m_Snap.m_LocalClientId);
 			}
-			RenderMovementInformation(m_pClient->m_Snap.m_LocalClientId);
+			RenderSpectatorCount();
+			RenderMovementInformation();
 			RenderDDRaceEffects();
 		}
 		else if(m_pClient->m_Snap.m_SpecInfo.m_Active)
@@ -1523,10 +1696,7 @@ void CHud::OnRender()
 			{
 				RenderPlayerState(SpectatorId);
 			}
-			if(SpectatorId != SPEC_FREEVIEW)
-			{
-				RenderMovementInformation(SpectatorId);
-			}
+			RenderMovementInformation();
 			RenderSpectatorHud();
 		}
 

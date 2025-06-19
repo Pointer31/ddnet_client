@@ -73,7 +73,7 @@ class CGameConsole : public CComponent
 		int m_CompletionCommandStart = 0;
 		int m_CompletionCommandEnd = 0;
 
-		char m_aUser[32];
+		char m_aUser[64];
 		bool m_UserGot;
 		bool m_UsernameReq;
 
@@ -112,7 +112,6 @@ class CGameConsole : public CComponent
 		void PrintLine(const char *pLine, int Len, ColorRGBA PrintColor) REQUIRES(!m_BacklogPendingLock);
 		int GetLinesToScroll(int Direction, int LinesToScroll);
 		void ScrollToCenter(int StartLine, int EndLine);
-		void ClearSearch();
 		void Dump() REQUIRES(!m_BacklogPendingLock);
 
 		const char *GetString() const { return m_Input.GetString(); }
@@ -135,6 +134,8 @@ class CGameConsole : public CComponent
 		void UpdateEntryTextAttributes(CBacklogEntry *pEntry) const;
 
 	private:
+		void SetSearching(bool Searching);
+		void ClearSearch();
 		void UpdateSearch();
 
 		friend class CGameConsole;
@@ -157,8 +158,10 @@ class CGameConsole : public CComponent
 	bool m_WantsSelectionCopy = false;
 	CUi::CTouchState m_TouchState;
 
-	static const ColorRGBA ms_SearchHighlightColor;
-	static const ColorRGBA ms_SearchSelectedColor;
+	static inline constexpr ColorRGBA ms_SearchHighlightColor = ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f);
+	static inline constexpr ColorRGBA ms_SearchSelectedColor = ColorRGBA(1.0f, 1.0f, 0.0f, 1.0f);
+
+	int PossibleMaps(const char *pStr, IConsole::FPossibleCallback pfnCallback = IConsole::EmptyPossibleCommandCallback, void *pUser = nullptr);
 
 	static void PossibleCommandsRenderCallback(int Index, const char *pStr, void *pUser);
 	static void ConToggleLocalConsole(IConsole::IResult *pResult, void *pUserData);
@@ -169,6 +172,8 @@ class CGameConsole : public CComponent
 	static void ConDumpRemoteConsole(IConsole::IResult *pResult, void *pUserData);
 	static void ConConsolePageUp(IConsole::IResult *pResult, void *pUserData);
 	static void ConConsolePageDown(IConsole::IResult *pResult, void *pUserData);
+	static void ConConsolePageTop(IConsole::IResult *pResult, void *pUserData);
+	static void ConConsolePageBottom(IConsole::IResult *pResult, void *pUserData);
 	static void ConchainConsoleOutputLevel(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 public:
@@ -176,6 +181,7 @@ public:
 	{
 		CONSOLETYPE_LOCAL = 0,
 		CONSOLETYPE_REMOTE,
+		NUM_CONSOLETYPES
 	};
 
 	CGameConsole();
@@ -195,6 +201,6 @@ public:
 	void Prompt(char (&aPrompt)[32]);
 
 	void Toggle(int Type);
-	bool IsClosed() { return m_ConsoleState == CONSOLE_CLOSED; }
+	bool IsActive() const { return m_ConsoleState != CONSOLE_CLOSED; }
 };
 #endif

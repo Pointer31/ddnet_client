@@ -48,7 +48,7 @@ void CScore::ExecPlayerThread(
 bool CScore::RateLimitPlayer(int ClientId)
 {
 	CPlayer *pPlayer = GameServer()->m_apPlayers[ClientId];
-	if(pPlayer == 0)
+	if(pPlayer == nullptr)
 		return true;
 	if(pPlayer->m_LastSqlQuery + (int64_t)g_Config.m_SvSqlQueriesDelay * Server()->TickSpeed() >= Server()->Tick())
 		return true;
@@ -264,7 +264,7 @@ void CScore::RandomMap(int ClientId, int Stars)
 	Tmp->m_Stars = Stars;
 	str_copy(Tmp->m_aCurrentMap, Server()->GetMapName(), sizeof(Tmp->m_aCurrentMap));
 	str_copy(Tmp->m_aServerType, g_Config.m_SvServerType, sizeof(Tmp->m_aServerType));
-	str_copy(Tmp->m_aRequestingPlayer, GameServer()->Server()->ClientName(ClientId), sizeof(Tmp->m_aRequestingPlayer));
+	str_copy(Tmp->m_aRequestingPlayer, ClientId == -1 ? "nameless tee" : GameServer()->Server()->ClientName(ClientId), sizeof(Tmp->m_aRequestingPlayer));
 
 	m_pPool->Execute(CScoreWorker::RandomMap, std::move(Tmp), "random map");
 }
@@ -278,7 +278,7 @@ void CScore::RandomUnfinishedMap(int ClientId, int Stars)
 	Tmp->m_Stars = Stars;
 	str_copy(Tmp->m_aCurrentMap, Server()->GetMapName(), sizeof(Tmp->m_aCurrentMap));
 	str_copy(Tmp->m_aServerType, g_Config.m_SvServerType, sizeof(Tmp->m_aServerType));
-	str_copy(Tmp->m_aRequestingPlayer, GameServer()->Server()->ClientName(ClientId), sizeof(Tmp->m_aRequestingPlayer));
+	str_copy(Tmp->m_aRequestingPlayer, ClientId == -1 ? "nameless tee" : GameServer()->Server()->ClientName(ClientId), sizeof(Tmp->m_aRequestingPlayer));
 
 	m_pPool->Execute(CScoreWorker::RandomUnfinishedMap, std::move(Tmp), "random unfinished map");
 }
@@ -331,7 +331,7 @@ void CScore::SaveTeam(int ClientId, const char *pCode, const char *pServer)
 			Tmp->m_aCode,
 			Tmp->m_aGeneratedCode);
 	}
-	pController->Teams().KillSavedTeam(ClientId, Team);
+	pController->Teams().KillCharacterOrTeam(ClientId, Team);
 	GameServer()->SendChatTeam(Team, aBuf);
 	m_pPool->ExecuteWrite(CScoreWorker::SaveTeam, std::move(Tmp), "save team");
 }

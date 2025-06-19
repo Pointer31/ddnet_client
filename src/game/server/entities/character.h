@@ -4,6 +4,8 @@
 #define GAME_SERVER_ENTITIES_CHARACTER_H
 
 #include <game/server/entity.h>
+
+#include <game/race_state.h>
 #include <game/server/save.h>
 
 class CGameTeams;
@@ -13,20 +15,22 @@ struct CAntibotCharacterData;
 
 enum
 {
-	FAKETUNE_FREEZE = 1,
-	FAKETUNE_SOLO = 2,
-	FAKETUNE_NOJUMP = 4,
-	FAKETUNE_NOCOLL = 8,
-	FAKETUNE_NOHOOK = 16,
-	FAKETUNE_JETPACK = 32,
-	FAKETUNE_NOHAMMER = 64,
+	FAKETUNE_FREEZE = 1 << 0,
+	FAKETUNE_SOLO = 1 << 1,
+	FAKETUNE_NOJUMP = 1 << 2,
+	FAKETUNE_NOCOLL = 1 << 3,
+	FAKETUNE_NOHOOK = 1 << 4,
+	FAKETUNE_JETPACK = 1 << 5,
+	FAKETUNE_NOHAMMER = 1 << 6,
 };
 
 class CCharacter : public CEntity
 {
 	MACRO_ALLOC_POOL_ID()
 
-	friend class CSaveTee; // need to use core
+	// need to use core
+	friend class CSaveTee;
+	friend class CSaveHotReloadTee;
 
 public:
 	CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput);
@@ -193,16 +197,15 @@ public:
 	void GiveAllWeapons();
 	void ResetPickups();
 	void ResetJumps();
-	int m_DDRaceState;
+	ERaceState m_DDRaceState;
 	int Team();
-	bool CanCollide(int ClientId);
+	bool CanCollide(int ClientId) override;
 	bool SameTeam(int ClientId);
 	void StopRecording();
 	bool m_NinjaJetpack;
 	int m_TeamBeforeSuper;
 	int m_FreezeTime;
 	bool m_FrozenLastTick;
-	bool m_FreezeHammer;
 	int m_TuneZone;
 	int m_TuneZoneOld;
 	int m_PainSoundTimer;
@@ -266,14 +269,6 @@ public:
 
 	CSaveTee &GetLastRescueTeeRef(int Mode = RESCUEMODE_AUTO) { return m_RescueTee[Mode]; }
 	CTuningParams *GetTuning(int Zone) { return Zone ? &TuningList()[Zone] : Tuning(); }
-};
-
-enum
-{
-	DDRACE_NONE = 0,
-	DDRACE_STARTED,
-	DDRACE_CHEAT, // no time and won't start again unless ordered by a mod or death
-	DDRACE_FINISHED
 };
 
 #endif

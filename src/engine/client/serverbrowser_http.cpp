@@ -465,7 +465,6 @@ bool CServerBrowserHttp::Parse(json_value *pJson, std::vector<CServerInfo> *pvSe
 		}
 		if(CServerInfo2::FromJson(&ParsedInfo, &Info))
 		{
-			log_debug("serverbrowser_http", "skipped due to info, i=%d", i);
 			// Only skip the current server on parsing
 			// failure; the server info is "user input" by
 			// the game server and can be set to arbitrary
@@ -503,7 +502,6 @@ bool CServerBrowserHttp::Parse(json_value *pJson, std::vector<CServerInfo> *pvSe
 			NETADDR ParsedAddr;
 			if(ServerbrowserParseUrl(&ParsedAddr, Addresses[a]))
 			{
-				// log_debug("serverbrowser_http", "unknown address, i=%d a=%d", i, a);
 				// Skip unknown addresses.
 				continue;
 			}
@@ -532,7 +530,7 @@ static const char *DEFAULT_SERVERLIST_URLS[] = {
 IServerBrowserHttp *CreateServerBrowserHttp(IEngine *pEngine, IStorage *pStorage, IHttp *pHttp, const char *pPreviousBestUrl)
 {
 	char aaUrls[CChooseMaster::MAX_URLS][256];
-	const char *apUrls[CChooseMaster::MAX_URLS] = {0};
+	const char *apUrls[CChooseMaster::MAX_URLS] = {nullptr};
 	const char **ppUrls = apUrls;
 	int NumUrls = 0;
 	CLineReader LineReader;

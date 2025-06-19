@@ -14,10 +14,44 @@
 #include "console.h"
 #include "linereader.h"
 
+#include <algorithm>
 #include <iterator> // std::size
 #include <new>
 
 // todo: rework this
+
+CConsole::CResult::CResult(int ClientId) :
+	IResult(ClientId)
+{
+	mem_zero(m_aStringStorage, sizeof(m_aStringStorage));
+	m_pArgsStart = nullptr;
+	m_pCommand = nullptr;
+	mem_zero(m_apArgs, sizeof(m_apArgs));
+}
+
+CConsole::CResult::CResult(const CResult &Other) :
+	IResult(Other)
+{
+	mem_copy(m_aStringStorage, Other.m_aStringStorage, sizeof(m_aStringStorage));
+	m_pArgsStart = m_aStringStorage + (Other.m_pArgsStart - Other.m_aStringStorage);
+	m_pCommand = m_aStringStorage + (Other.m_pCommand - Other.m_aStringStorage);
+	for(unsigned i = 0; i < Other.m_NumArgs; ++i)
+		m_apArgs[i] = m_aStringStorage + (Other.m_apArgs[i] - Other.m_aStringStorage);
+}
+
+void CConsole::CResult::AddArgument(const char *pArg)
+{
+	m_apArgs[m_NumArgs++] = pArg;
+}
+
+void CConsole::CResult::RemoveArgument(unsigned Index)
+{
+	dbg_assert(Index < m_NumArgs, "invalid argument index");
+	for(unsigned i = Index; i < m_NumArgs - 1; i++)
+		m_apArgs[i] = m_apArgs[i + 1];
+
+	m_apArgs[m_NumArgs--] = nullptr;
+}
 
 const char *CConsole::CResult::GetString(unsigned Index) const
 {
@@ -95,6 +129,11 @@ const IConsole::CCommandInfo *CConsole::CCommand::NextCommandInfo(int AccessLeve
 	return pInfo;
 }
 
+void CConsole::CCommand::SetAccessLevel(int AccessLevel)
+{
+	m_AccessLevel = std::clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_USER));
+}
+
 const IConsole::CCommandInfo *CConsole::FirstCommandInfo(int AccessLevel, int FlagMask) const
 {
 	for(const CCommand *pCommand = m_pFirstCommand; pCommand; pCommand = pCommand->m_pNext)
@@ -103,7 +142,7 @@ const IConsole::CCommandInfo *CConsole::FirstCommandInfo(int AccessLevel, int Fl
 			return pCommand;
 	}
 
-	return 0;
+	return nullptr;
 }
 
 // the maximum number of tokens occurs in a string of length CONSOLE_MAX_STR_LENGTH with tokens size 1 separated by single spaces
@@ -209,7 +248,7 @@ int CConsole::ParseArgs(CResult *pResult, const char *pFormat, bool IsColor)
 			}
 			else
 			{
-				char *pVictim = 0;
+				char *pVictim = nullptr;
 
 				pResult->AddArgument(pStr);
 				if(Command == 'v')
@@ -369,6 +408,11 @@ void CConsole::InitChecksum(CChecksumData *pData) const
 	}
 }
 
+void CConsole::SetAccessLevel(int AccessLevel)
+{
+	m_AccessLevel = std::clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_USER));
+}
+
 bool CConsole::LineIsValid(const char *pStr)
 {
 	if(!pStr || *pStr == 0)
@@ -378,7 +422,7 @@ bool CConsole::LineIsValid(const char *pStr)
 	{
 		CResult Result(-1);
 		const char *pEnd = pStr;
-		const char *pNextPart = 0;
+		const char *pNextPart = nullptr;
 		int InString = 0;
 
 		while(*pEnd)
@@ -429,7 +473,7 @@ void CConsole::ExecuteLineStroked(int Stroke, const char *pStr, int ClientId, bo
 	{
 		CResult Result(ClientId);
 		const char *pEnd = pStr;
-		const char *pNextPart = 0;
+		const char *pNextPart = nullptr;
 		int InString = 0;
 
 		while(*pEnd)
@@ -612,7 +656,7 @@ CConsole::CCommand *CConsole::FindCommand(const char *pName, int FlagMask)
 		}
 	}
 
-	return 0x0;
+	return nullptr;
 }
 
 void CConsole::ExecuteLine(const char *pStr, int ClientId, bool InterpretSemicolons)
@@ -631,11 +675,15 @@ void CConsole::ExecuteLineFlag(const char *pStr, int FlagMask, int ClientId, boo
 
 bool CConsole::ExecuteFile(const char *pFilename, int ClientId, bool LogFailure, int StorageType)
 {
-	// make sure that this isn't being executed already
+	int Count = 0;
+	// make sure that this isn't being executed already and that recursion limit isn't met
 	for(CExecFile *pCur = m_pFirstExec; pCur; pCur = pCur->m_pPrev)
-		if(str_comp(pFilename, pCur->m_pFilename) == 0)
-			return false;
+	{
+		Count++;
 
+		if(str_comp(pFilename, pCur->m_pFilename) == 0 || Count > FILE_RECURSION_LIMIT)
+			return false;
+	}
 	if(!m_pStorage)
 		return false;
 
@@ -722,7 +770,7 @@ void CConsole::ConCommandStatus(IResult *pResult, void *pUser)
 
 	for(CCommand *pCommand = pConsole->m_pFirstCommand; pCommand; pCommand = pCommand->m_pNext)
 	{
-		if(pCommand->m_Flags & pConsole->m_FlagMask && pCommand->GetAccessLevel() >= clamp(pResult->GetInteger(0), (int)ACCESS_LEVEL_ADMIN, (int)ACCESS_LEVEL_USER))
+		if(pCommand->m_Flags & pConsole->m_FlagMask && pCommand->GetAccessLevel() >= std::clamp(pResult->GetInteger(0), (int)ACCESS_LEVEL_ADMIN, (int)ACCESS_LEVEL_USER))
 		{
 			int Length = str_length(pCommand->m_pName);
 			if(Used + Length + 2 < (int)(sizeof(aBuf)))
@@ -774,17 +822,17 @@ CConsole::CConsole(int FlagMask)
 {
 	m_FlagMask = FlagMask;
 	m_AccessLevel = ACCESS_LEVEL_ADMIN;
-	m_pRecycleList = 0;
+	m_pRecycleList = nullptr;
 	m_TempCommands.Reset();
 	m_StoreCommands = true;
 	m_apStrokeStr[0] = "0";
 	m_apStrokeStr[1] = "1";
-	m_pFirstCommand = 0;
-	m_pFirstExec = 0;
-	m_pfnTeeHistorianCommandCallback = 0;
-	m_pTeeHistorianCommandUserdata = 0;
+	m_pFirstCommand = nullptr;
+	m_pFirstExec = nullptr;
+	m_pfnTeeHistorianCommandCallback = nullptr;
+	m_pTeeHistorianCommandUserdata = nullptr;
 
-	m_pStorage = 0;
+	m_pStorage = nullptr;
 
 	// register some basic commands
 	Register("echo", "r[text]", CFGFLAG_SERVER, Con_Echo, this, "Echo the text");
@@ -860,7 +908,7 @@ void CConsole::AddCommandSorted(CCommand *pCommand)
 		if(m_pFirstCommand && m_pFirstCommand->m_pNext)
 			pCommand->m_pNext = m_pFirstCommand;
 		else
-			pCommand->m_pNext = 0;
+			pCommand->m_pNext = nullptr;
 		m_pFirstCommand = pCommand;
 	}
 	else
@@ -882,7 +930,7 @@ void CConsole::Register(const char *pName, const char *pParams,
 {
 	CCommand *pCommand = FindCommand(pName, Flags);
 	bool DoAdd = false;
-	if(pCommand == 0)
+	if(pCommand == nullptr)
 	{
 		pCommand = new CCommand();
 		DoAdd = true;
@@ -930,8 +978,8 @@ void CConsole::RegisterTemp(const char *pName, const char *pParams, int Flags, c
 		pCommand->m_pParams = pMem;
 	}
 
-	pCommand->m_pfnCallback = 0;
-	pCommand->m_pUserData = 0;
+	pCommand->m_pfnCallback = nullptr;
+	pCommand->m_pUserData = nullptr;
 	pCommand->m_Flags = Flags;
 	pCommand->m_Temp = true;
 
@@ -943,7 +991,7 @@ void CConsole::DeregisterTemp(const char *pName)
 	if(!m_pFirstCommand)
 		return;
 
-	CCommand *pRemoved = 0;
+	CCommand *pRemoved = nullptr;
 
 	// remove temp entry from command list
 	if(m_pFirstCommand->m_Temp && str_comp(m_pFirstCommand->m_pName, pName) == 0)
@@ -989,7 +1037,7 @@ void CConsole::DeregisterTempAll()
 	}
 
 	m_TempCommands.Reset();
-	m_pRecycleList = 0;
+	m_pRecycleList = nullptr;
 }
 
 void CConsole::Con_Chain(IResult *pResult, void *pUserData)
@@ -1047,7 +1095,7 @@ const IConsole::CCommandInfo *CConsole::GetCommandInfo(const char *pName, int Fl
 		}
 	}
 
-	return 0;
+	return nullptr;
 }
 
 std::unique_ptr<IConsole> CreateConsole(int FlagMask) { return std::make_unique<CConsole>(FlagMask); }
@@ -1069,7 +1117,7 @@ bool CConsole::CResult::HasVictim() const
 
 void CConsole::CResult::SetVictim(int Victim)
 {
-	m_Victim = clamp<int>(Victim, VICTIM_NONE, MAX_CLIENTS - 1);
+	m_Victim = std::clamp<int>(Victim, VICTIM_NONE, MAX_CLIENTS - 1);
 }
 
 void CConsole::CResult::SetVictim(const char *pVictim)
@@ -1079,5 +1127,5 @@ void CConsole::CResult::SetVictim(const char *pVictim)
 	else if(!str_comp(pVictim, "all"))
 		m_Victim = VICTIM_ALL;
 	else
-		m_Victim = clamp<int>(str_toint(pVictim), 0, MAX_CLIENTS - 1);
+		m_Victim = std::clamp<int>(str_toint(pVictim), 0, MAX_CLIENTS - 1);
 }

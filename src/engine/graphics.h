@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <vector>
 
 #define GRAPHICS_TYPE_UNSIGNED_BYTE 0x1401
@@ -223,6 +224,7 @@ public:
 	virtual void WarnPngliteIncompatibleImages(bool Warn) = 0;
 	virtual void SetWindowParams(int FullscreenMode, bool IsBorderless) = 0;
 	virtual bool SetWindowScreen(int Index) = 0;
+	virtual bool SwitchWindowScreen(int Index) = 0;
 	virtual bool SetVSync(bool State) = 0;
 	virtual bool SetMultiSampling(uint32_t ReqMultiSamplingCount, uint32_t &MultiSamplingCountBackend) = 0;
 	virtual int GetWindowScreen() = 0;
@@ -231,6 +233,7 @@ public:
 	virtual void ResizeToScreen() = 0;
 	virtual void GotResized(int w, int h, int RefreshRate) = 0;
 	virtual void UpdateViewport(int X, int Y, int W, int H, bool ByResize) = 0;
+	virtual bool IsScreenKeyboardShown() = 0;
 
 	/**
 	* Listens to a resize event of the canvas, which is usually caused by a window resize.
@@ -297,7 +300,7 @@ public:
 	// specific render functions
 	virtual void RenderTileLayer(int BufferContainerIndex, const ColorRGBA &Color, char **pOffsets, unsigned int *pIndicedVertexDrawNum, size_t NumIndicesOffset) = 0;
 	virtual void RenderBorderTiles(int BufferContainerIndex, const ColorRGBA &Color, char *pIndexBufferOffset, const vec2 &Offset, const vec2 &Scale, uint32_t DrawNum) = 0;
-	virtual void RenderQuadLayer(int BufferContainerIndex, SQuadRenderInfo *pQuadInfo, size_t QuadNum, int QuadOffset) = 0;
+	virtual void RenderQuadLayer(int BufferContainerIndex, SQuadRenderInfo *pQuadInfo, size_t QuadNum, int QuadOffset, bool Grouped = false) = 0;
 	virtual void RenderText(int BufferContainerIndex, int TextQuadNum, int TextureSize, int TextureTextIndex, int TextureTextOutlineIndex, const ColorRGBA &TextColor, const ColorRGBA &TextOutlineColor) = 0;
 
 	// opengl 3.3 functions
@@ -369,26 +372,11 @@ public:
 		CQuadItem() {}
 		CQuadItem(float x, float y, float w, float h) :
 			m_X(x), m_Y(y), m_Width(w), m_Height(h) {}
-		void Set(float x, float y, float w, float h)
-		{
-			m_X = x;
-			m_Y = y;
-			m_Width = w;
-			m_Height = h;
-		}
-
-		CFreeformItem ToFreeForm() const
-		{
-			return CFreeformItem(m_X, m_Y, m_X + m_Width, m_Y, m_X, m_Y + m_Height, m_X + m_Width, m_Y + m_Height);
-		}
 	};
 	virtual void QuadsDraw(CQuadItem *pArray, int Num) = 0;
 	virtual void QuadsDrawTL(const CQuadItem *pArray, int Num) = 0;
 
 	virtual void QuadsTex3DDrawTL(const CQuadItem *pArray, int Num) = 0;
-
-	virtual const GL_STexCoord *GetCurTextureCoordinates() = 0;
-	virtual const GL_SColor *GetCurColor() = 0;
 
 	virtual int CreateQuadContainer(bool AutomaticUpload = true) = 0;
 	virtual void QuadContainerChangeAutomaticUpload(int ContainerIndex, bool AutomaticUpload) = 0;
@@ -482,7 +470,7 @@ public:
 	// this function always returns the pixels in RGB
 	virtual TGLBackendReadPresentedImageData &GetReadPresentedImageDataFuncUnsafe() = 0;
 
-	virtual SWarning *GetCurWarning() = 0;
+	virtual std::optional<SWarning> CurrentWarning() = 0;
 
 	// returns true if the error msg was shown
 	virtual bool ShowMessageBox(unsigned Type, const char *pTitle, const char *pMsg) = 0;

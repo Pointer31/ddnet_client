@@ -3,6 +3,7 @@
 #define GAME_SERVER_TEAMS_H
 
 #include <engine/shared/config.h>
+#include <game/race_state.h>
 #include <game/server/gamecontext.h>
 #include <game/teamscore.h>
 
@@ -114,16 +115,17 @@ public:
 	void ResetInvited(int Team);
 	void SetClientInvited(int Team, int ClientId, bool Invited);
 
-	int GetDDRaceState(CPlayer *Player);
+	ERaceState GetDDRaceState(const CPlayer *Player) const;
 	int GetStartTime(CPlayer *Player);
 	float *GetCurrentTimeCp(CPlayer *Player);
-	void SetDDRaceState(CPlayer *Player, int DDRaceState);
+	void SetDDRaceState(CPlayer *Player, ERaceState DDRaceState);
 	void SetStartTime(CPlayer *Player, int StartTime);
 	void SetLastTimeCp(CPlayer *Player, int LastTimeCp);
-	void KillSavedTeam(int ClientId, int Team);
+	void KillCharacterOrTeam(int ClientId, int Team);
 	void ResetSavedTeam(int ClientId, int Team);
 	void RequestTeamSwap(CPlayer *pPlayer, CPlayer *pTargetPlayer, int Team);
 	void SwapTeamCharacters(CPlayer *pPrimaryPlayer, CPlayer *pTargetPlayer, int Team);
+	void CancelTeamSwap(CPlayer *pPlayer, int Team);
 	void ProcessSaveTeam();
 
 	int GetFirstEmptyTeam() const;
@@ -209,7 +211,12 @@ public:
 		if(Team < TEAM_FLOCK || Team >= TEAM_SUPER)
 			return false;
 		if(g_Config.m_SvTeam != SV_TEAM_FORCED_SOLO && Team == TEAM_FLOCK)
+		{
+			if(m_pGameContext->PracticeByDefault())
+				return true;
+
 			return false;
+		}
 
 		return m_aPractice[Team];
 	}

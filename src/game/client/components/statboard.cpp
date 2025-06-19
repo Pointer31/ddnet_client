@@ -152,7 +152,7 @@ void CStatboard::RenderGlobalStats()
 	float StatboardContentWidth = 260.0f;
 	float StatboardContentHeight = 750.0f;
 
-	const CNetObj_PlayerInfo *apPlayers[MAX_CLIENTS] = {0};
+	const CNetObj_PlayerInfo *apPlayers[MAX_CLIENTS] = {nullptr};
 	int NumPlayers = 0;
 
 	// sort red or dm players by score
@@ -165,7 +165,7 @@ void CStatboard::RenderGlobalStats()
 	}
 
 	// sort blue players by score after
-	if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS)
+	if(m_pClient->IsTeamPlay())
 	{
 		for(const auto *pInfo : m_pClient->m_Snap.m_apInfoByScore)
 		{
@@ -413,7 +413,7 @@ void CStatboard::AutoStatCSV()
 		char aDate[20], aFilename[IO_MAX_PATH_LENGTH];
 		str_timestamp(aDate, sizeof(aDate));
 		str_format(aFilename, sizeof(aFilename), "screenshots/auto/stats_%s.csv", aDate);
-		IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorage::TYPE_ALL);
+		IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 
 		if(File)
 		{
@@ -461,7 +461,7 @@ void CStatboard::FormatStats(char *pDest, size_t DestSize)
 	// player stats
 
 	// sort players
-	const CNetObj_PlayerInfo *apPlayers[MAX_CLIENTS] = {0};
+	const CNetObj_PlayerInfo *apPlayers[MAX_CLIENTS] = {nullptr};
 	int NumPlayers = 0;
 
 	// sort red or dm players by score
@@ -474,7 +474,7 @@ void CStatboard::FormatStats(char *pDest, size_t DestSize)
 	}
 
 	// sort blue players by score after
-	if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS)
+	if(m_pClient->IsTeamPlay())
 	{
 		for(const auto *pInfo : m_pClient->m_Snap.m_apInfoByScore)
 		{
@@ -521,7 +521,7 @@ void CStatboard::FormatStats(char *pDest, size_t DestSize)
 			m_pClient->m_aClients[pInfo->m_ClientId].m_Team, // Team
 			ReplaceCommata(m_pClient->m_aClients[pInfo->m_ClientId].m_aName).c_str(), // Name
 			ReplaceCommata(m_pClient->m_aClients[pInfo->m_ClientId].m_aClan).c_str(), // Clan
-			clamp(pInfo->m_Score, -999, 999), // Score
+			std::clamp(pInfo->m_Score, -999, 999), // Score
 			pStats->m_Frags, // Frags
 			pStats->m_Deaths, // Deaths
 			pStats->m_Suicides, // Suicides

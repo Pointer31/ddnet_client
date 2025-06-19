@@ -61,8 +61,8 @@ void CDraggerBeam::Tick()
 	// When the dragger can no longer reach the target player, the dragger beam dissolves
 	int IsReachable =
 		m_IgnoreWalls ?
-			!GameServer()->Collision()->IntersectNoLaserNW(m_Pos, pTarget->m_Pos, 0, 0) :
-			!GameServer()->Collision()->IntersectNoLaser(m_Pos, pTarget->m_Pos, 0, 0);
+			!GameServer()->Collision()->IntersectNoLaserNoWalls(m_Pos, pTarget->m_Pos, nullptr, nullptr) :
+			!GameServer()->Collision()->IntersectNoLaser(m_Pos, pTarget->m_Pos, nullptr, nullptr);
 	if(!IsReachable ||
 		distance(pTarget->m_Pos, m_Pos) >= g_Config.m_SvDraggerRange || !pTarget->IsAlive())
 	{
@@ -109,7 +109,7 @@ void CDraggerBeam::Snap(int SnappingClient)
 		return;
 	}
 
-	int Subtype = (m_IgnoreWalls ? 1 : 0) | (clamp(round_to_int(m_Strength - 1.f), 0, 2) << 1);
+	int Subtype = (m_IgnoreWalls ? 1 : 0) | (std::clamp(round_to_int(m_Strength - 1.f), 0, 2) << 1);
 
 	int StartTick = m_EvalTick;
 	if(StartTick < Server()->Tick() - 4)

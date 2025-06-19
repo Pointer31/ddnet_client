@@ -63,8 +63,8 @@ void CDebugHud::RenderNetCorrections()
 	str_format(aBuf, sizeof(aBuf), "%d", pCharacter == nullptr ? -1 : pCharacter->m_TeleCheckpoint);
 	RenderRow("Checkpoint:", aBuf);
 
-	str_format(aBuf, sizeof(aBuf), "%d", pCharacter == nullptr ? -1 : pCharacter->m_TuneZone);
-	RenderRow("Tune zone:", aBuf);
+	str_format(aBuf, sizeof(aBuf), "%d / %d", pCharacter == nullptr ? -1 : pCharacter->GetPureTuneZone(), pCharacter == nullptr ? -1 : pCharacter->GetOverriddenTuneZone());
+	RenderRow("Tune zone (pure / override):", aBuf);
 
 	str_format(aBuf, sizeof(aBuf), "%.2f", m_pClient->m_Snap.m_pLocalCharacter->m_X / 32.0f);
 	RenderRow("Pos.x:", aBuf);
@@ -96,7 +96,7 @@ void CDebugHud::RenderTuning()
 
 	const CTuningParams StandardTuning;
 	const CTuningParams *pGlobalTuning = m_pClient->GetTuning(0);
-	const CTuningParams *pZoneTuning = !m_pClient->m_GameWorld.m_WorldConfig.m_UseTuneZones || pCharacter == nullptr ? nullptr : m_pClient->GetTuning(pCharacter->m_TuneZone);
+	const CTuningParams *pZoneTuning = !m_pClient->m_GameWorld.m_WorldConfig.m_UseTuneZones || pCharacter == nullptr ? nullptr : m_pClient->GetTuning(pCharacter->GetOverriddenTuneZone());
 	const CTuningParams *pActiveTuning = pZoneTuning == nullptr ? pGlobalTuning : pZoneTuning;
 
 	const float Height = 300.0f;
@@ -208,11 +208,11 @@ void CDebugHud::RenderTuning()
 
 		m_ZoomedInGraph.Init(0.0f, 0.0f);
 		PreviousRampedSpeed = 1.0f;
-		MiddleOfZoomedInGraph = m_SpeedTurningPoint;
+		m_MiddleOfZoomedInGraph = m_SpeedTurningPoint;
 		for(int64_t i = 0; i < GRAPH_MAX_VALUES; i++)
 		{
 			// This is a calculation of the speed values per second on the X axis, from (MiddleOfZoomedInGraph - 64 * StepSize) to (MiddleOfZoomedInGraph + 64 * StepSize)
-			const float Speed = MiddleOfZoomedInGraph - 64 * StepSizeZoomedInGraph + i * StepSizeZoomedInGraph;
+			const float Speed = m_MiddleOfZoomedInGraph - 64 * StepSizeZoomedInGraph + i * StepSizeZoomedInGraph;
 			const float Ramp = VelocityRamp(Speed, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampStart, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampRange, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampCurvature);
 			const float RampedSpeed = Speed * Ramp;
 			if(RampedSpeed >= PreviousRampedSpeed)
@@ -239,7 +239,7 @@ void CDebugHud::RenderTuning()
 	m_RampGraph.Render(Graphics(), TextRender(), GraphX, GraphY, GraphW, GraphH, aBuf);
 	str_format(aBuf, sizeof(aBuf), "Max Velspeed before it ramps off:  %.2f Bps", m_SpeedTurningPoint / 32);
 	TextRender()->Text(GraphX, GraphY - GraphFontSize, GraphFontSize, aBuf);
-	str_format(aBuf, sizeof(aBuf), "Zoomed in on turning point (Velspeed %d to %d)", ((int)MiddleOfZoomedInGraph - 64 * StepSizeZoomedInGraph) / 32, ((int)MiddleOfZoomedInGraph + 64 * StepSizeZoomedInGraph) / 32);
+	str_format(aBuf, sizeof(aBuf), "Zoomed in on turning point (Velspeed %d to %d)", ((int)m_MiddleOfZoomedInGraph - 64 * StepSizeZoomedInGraph) / 32, ((int)m_MiddleOfZoomedInGraph + 64 * StepSizeZoomedInGraph) / 32);
 	m_ZoomedInGraph.Render(Graphics(), TextRender(), GraphX + GraphW + GraphSpacing, GraphY, GraphW, GraphH, aBuf);
 }
 

@@ -736,6 +736,8 @@ MACRO_CONFIG_STR(ClLocalServerRconpwd, cl_local_server_rconpwd, 128, "", CFGFLAG
 MACRO_CONFIG_INT(ClExtraParticles, cl_extra_particles, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to enable more particles")
 MACRO_CONFIG_INT(ClConfirmKillTime, cl_confirm_kill_time, 5, -1, 1440, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Confirmation message before killing self after game time (in minutes, -1 to turn off, 0 to always turn on)")
 MACRO_CONFIG_INT(ClDuckFilter, cl_duck_filter, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Replace all skins with a duck skin")
+MACRO_CONFIG_INT(ClOldDoorLaser, cl_old_door_laser, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Use old door laser end")
+MACRO_CONFIG_INT(ClOldFreezeLaser, cl_old_freeze_laser, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Use old freeze laser end")
 
 // graphic library
 #if !defined(CONF_ARCH_IA32) && !defined(CONF_PLATFORM_MACOS)

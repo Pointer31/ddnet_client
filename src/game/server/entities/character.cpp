@@ -1411,7 +1411,9 @@ void CCharacter::HandleSkippableTiles(int Index)
 		return;
 	}
 
-	// slow death tile
+	
+
+	// slow death / slowdeath tile
 	if ((Collision()->GetFrontCollisionAt(m_Pos.x + GetProximityRadius() / 3.f, m_Pos.y - GetProximityRadius() / 3.f) == TILE_DEATH ||
 		   Collision()->GetFrontCollisionAt(m_Pos.x + GetProximityRadius() / 3.f, m_Pos.y + GetProximityRadius() / 3.f) == TILE_DEATH ||
 		   Collision()->GetFrontCollisionAt(m_Pos.x - GetProximityRadius() / 3.f, m_Pos.y - GetProximityRadius() / 3.f) == TILE_DEATH ||
@@ -1434,6 +1436,17 @@ void CCharacter::HandleSkippableTiles(int Index)
 				m_Health++; m_LastDamageTick = Server()->Tick();
 				GameServer()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH, TeamMask());
 			}
+		}
+	}
+
+	
+	{ // Pointer31 teleports
+		const int mapIndex = Collision()->GetMapIndex(m_Pos); 
+		if (Collision()->GetSwitchType(mapIndex) == 11) {
+			m_Core.m_Pos.x = m_Core.m_Pos.x + 32*(-128 + Collision()->GetSwitchNumber(mapIndex));
+			m_Core.m_Pos.y = m_Core.m_Pos.y + 32*(-128 + Collision()->GetSwitchDelay(mapIndex));
+			m_Core.m_HookPos.x = m_Core.m_HookPos.x + 32*(-128 + Collision()->GetSwitchNumber(mapIndex));
+			m_Core.m_HookPos.y = m_Core.m_HookPos.y + 32*(-128 + Collision()->GetSwitchDelay(mapIndex));
 		}
 	}
 

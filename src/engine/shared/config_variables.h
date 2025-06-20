@@ -738,6 +738,7 @@ MACRO_CONFIG_INT(ClConfirmKillTime, cl_confirm_kill_time, 5, -1, 1440, CFGFLAG_S
 MACRO_CONFIG_INT(ClDuckFilter, cl_duck_filter, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Replace all skins with a duck skin")
 MACRO_CONFIG_INT(ClOldDoorLaser, cl_old_door_laser, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Use old door laser end")
 MACRO_CONFIG_INT(ClOldFreezeLaser, cl_old_freeze_laser, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Use old freeze laser end")
+MACRO_CONFIG_INT(ClOldClientConsole, cl_old_client_console, 0, 0, 2, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Use old client console")
 
 // graphic library
 #if !defined(CONF_ARCH_IA32) && !defined(CONF_PLATFORM_MACOS)

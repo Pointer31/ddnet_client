@@ -39,13 +39,13 @@ void CEffects::AirJump(vec2 Pos, float Alpha)
 	p.m_FlowAffected = 0.0f;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 
 	p.m_Pos = Pos + vec2(6.0f, 16.0f);
-	m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 
 	if(g_Config.m_SndGame)
-		m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_AIRJUMP, 1.0f, Pos);
+		GameClient()->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_AIRJUMP, 1.0f, Pos);
 }
 
 void CEffects::LaserBounce(vec2 Pos, float Alpha)
@@ -71,13 +71,13 @@ void CEffects::LaserBounce(vec2 Pos, float Alpha)
 		p.m_Color.a = Alpha;
 		p.m_StartAlpha = Alpha;
 		p.m_Collides = false;
-		m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
 }
 
 void CEffects::DamageIndicator(vec2 Pos, vec2 Dir, float Alpha)
 {
-	m_pClient->m_DamageInd.Create(Pos, Dir, Alpha);
+	GameClient()->m_DamageInd.Create(Pos, Dir, Alpha);
 }
 
 void CEffects::PowerupShine(vec2 Pos, vec2 Size, float Alpha)
@@ -100,7 +100,7 @@ void CEffects::PowerupShine(vec2 Pos, vec2 Size, float Alpha)
 	p.m_FlowAffected = 0.0f;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 }
 
 void CEffects::FreezingFlakes(vec2 Pos, vec2 Size, float Alpha)
@@ -127,7 +127,7 @@ void CEffects::FreezingFlakes(vec2 Pos, vec2 Size, float Alpha)
 	p.m_Collides = false;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
 }
 
 void CEffects::SparkleTrail(vec2 Pos, float Alpha)
@@ -147,7 +147,7 @@ void CEffects::SparkleTrail(vec2 Pos, float Alpha)
 	p.m_StartAlpha = Alpha;
 	p.m_EndAlpha = std::min(0.2f, Alpha);
 	p.m_Collides = false;
-	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
 }
 
 void CEffects::SmokeTrail(vec2 Pos, vec2 Vel, float Alpha, float TimePassed)
@@ -167,7 +167,7 @@ void CEffects::SmokeTrail(vec2 Pos, vec2 Vel, float Alpha, float TimePassed)
 	p.m_Gravity = random_float(-500.0f);
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p, TimePassed);
+	GameClient()->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p, TimePassed);
 }
 
 void CEffects::SkidTrail(vec2 Pos, vec2 Vel, int Direction, float Alpha)
@@ -186,7 +186,7 @@ void CEffects::SkidTrail(vec2 Pos, vec2 Vel, int Direction, float Alpha)
 		p.m_Gravity = random_float(-500.0f);
 		p.m_Color = ColorRGBA(0.75f, 0.75f, 0.75f, Alpha);
 		p.m_StartAlpha = Alpha;
-		m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
 	if(g_Config.m_SndGame)
 	{
@@ -194,7 +194,7 @@ void CEffects::SkidTrail(vec2 Pos, vec2 Vel, int Direction, float Alpha)
 		if(Now - m_SkidSoundTimer > time_freq() / 10)
 		{
 			m_SkidSoundTimer = Now;
-			m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_SKID, 1.0f, Pos);
+			GameClient()->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_SKID, 1.0f, Pos);
 		}
 	}
 }
@@ -214,7 +214,7 @@ void CEffects::BulletTrail(vec2 Pos, float Alpha, float TimePassed)
 	p.m_Friction = 0.7f;
 	p.m_Color.a *= Alpha;
 	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p, TimePassed);
+	GameClient()->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p, TimePassed);
 }
 
 void CEffects::PlayerSpawn(vec2 Pos, float Alpha)
@@ -235,10 +235,10 @@ void CEffects::PlayerSpawn(vec2 Pos, float Alpha)
 		p.m_Friction = 0.7f;
 		p.m_Color = ColorRGBA(0xb5 / 255.0f, 0x50 / 255.0f, 0xcb / 255.0f, Alpha);
 		p.m_StartAlpha = Alpha;
-		m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
 	if(g_Config.m_SndGame)
-		m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_SPAWN, 1.0f, Pos);
+		GameClient()->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_SPAWN, 1.0f, Pos);
 }
 
 void CEffects::PlayerDeath(vec2 Pos, int ClientId, float Alpha)
@@ -253,26 +253,26 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientId, float Alpha)
 		// m_RenderInfo.m_CustomColoredSkin Defines if in the context of the game the color is being customized,
 		// Using this value if the game is teams (red and blue), this value will be true even if the skin is with the normal color.
 		// And will use the team body color to create player death effect instead of tee color
-		if(m_pClient->Client()->IsSixup())
+		if(GameClient()->Client()->IsSixup())
 		{
-			if(m_pClient->m_aClients[ClientId].m_RenderInfo.m_aSixup[g_Config.m_ClDummy].m_aUseCustomColors[protocol7::SKINPART_BODY])
+			if(GameClient()->m_aClients[ClientId].m_RenderInfo.m_aSixup[g_Config.m_ClDummy].m_aUseCustomColors[protocol7::SKINPART_BODY])
 			{
-				BloodColor = m_pClient->m_aClients[ClientId].m_RenderInfo.m_aSixup[g_Config.m_ClDummy].m_aColors[protocol7::SKINPART_BODY];
+				BloodColor = GameClient()->m_aClients[ClientId].m_RenderInfo.m_aSixup[g_Config.m_ClDummy].m_aColors[protocol7::SKINPART_BODY];
 			}
 			else
 			{
-				BloodColor = m_pClient->m_aClients[ClientId].m_RenderInfo.m_aSixup[g_Config.m_ClDummy].m_BloodColor;
+				BloodColor = GameClient()->m_aClients[ClientId].m_RenderInfo.m_aSixup[g_Config.m_ClDummy].m_BloodColor;
 			}
 		}
 		else
 		{
-			if(m_pClient->m_aClients[ClientId].m_RenderInfo.m_CustomColoredSkin)
+			if(GameClient()->m_aClients[ClientId].m_RenderInfo.m_CustomColoredSkin)
 			{
-				BloodColor = m_pClient->m_aClients[ClientId].m_RenderInfo.m_ColorBody;
+				BloodColor = GameClient()->m_aClients[ClientId].m_RenderInfo.m_ColorBody;
 			}
 			else
 			{
-				BloodColor = m_pClient->m_aClients[ClientId].m_RenderInfo.m_BloodColor;
+				BloodColor = GameClient()->m_aClients[ClientId].m_RenderInfo.m_BloodColor;
 			}
 		}
 	}
@@ -294,7 +294,7 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientId, float Alpha)
 		ColorRGBA c = BloodColor.v4() * random_float(0.75f, 1.0f);
 		p.m_Color = ColorRGBA(c.r, c.g, c.b, 0.75f * Alpha);
 		p.m_StartAlpha = Alpha;
-		m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
 }
 
@@ -327,7 +327,7 @@ void CEffects::Confetti(vec2 Pos, float Alpha)
 		ColorRGBA c = aConfettiColors[(rand() % std::size(aConfettiColors))];
 		p.m_Color = c.WithMultipliedAlpha(0.75f * Alpha);
 		p.m_StartAlpha = Alpha;
-		m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
 
 	// broader confettis
@@ -348,7 +348,7 @@ void CEffects::Confetti(vec2 Pos, float Alpha)
 		ColorRGBA c = aConfettiColors[(rand() % std::size(aConfettiColors))];
 		p.m_Color = c.WithMultipliedAlpha(0.75f * Alpha);
 		p.m_StartAlpha = Alpha;
-		m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
 }
 
@@ -362,7 +362,7 @@ void CEffects::Explosion(vec2 Pos, float Alpha)
 				continue;
 
 			float a = 1 - (length(vec2(x, y)) / length(vec2(8.0f, 8.0f)));
-			m_pClient->m_Flow.Add(Pos + vec2(x, y) * 16.0f, normalize(vec2(x, y)) * 5000.0f * a, 10.0f);
+			GameClient()->m_Flow.Add(Pos + vec2(x, y) * 16.0f, normalize(vec2(x, y)) * 5000.0f * a, 10.0f);
 		}
 
 	// add the explosion
@@ -376,7 +376,7 @@ void CEffects::Explosion(vec2 Pos, float Alpha)
 	p.m_Rot = random_angle();
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_EXPLOSIONS, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_EXPLOSIONS, &p);
 
 	if (g_Config.m_ClExtraParticles)
 		for(int i = 0; i < 14; i++)
@@ -396,7 +396,7 @@ void CEffects::Explosion(vec2 Pos, float Alpha)
 			p.m_EndAlpha = 0.0f;
 			p.m_UseAlphaFading = true;
 			if (Collision()->CheckPoint(p.m_Pos))
-				m_pClient->m_Particles.Add(CParticles::GROUP_EXPLOSIONS, &p);
+				GameClient()->m_Particles.Add(CParticles::GROUP_EXPLOSIONS, &p);
 		}
 
 	// Nudge position slightly to edge of closest tile so the
@@ -436,7 +436,7 @@ void CEffects::Explosion(vec2 Pos, float Alpha)
 		p.m_Color = mix(vec4(0.75f, 0.75f, 0.75f, 1.0f), vec4(0.5f, 0.5f, 0.5f, 1.0f), random_float());
 		p.m_Color.a *= Alpha;
 		p.m_StartAlpha = p.m_Color.a;
-		m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
 }
 
@@ -453,9 +453,9 @@ void CEffects::HammerHit(vec2 Pos, float Alpha)
 	p.m_Rot = random_angle();
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_EXPLOSIONS, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_EXPLOSIONS, &p);
 	if(g_Config.m_SndGame)
-		m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
+		GameClient()->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
 }
 
 void CEffects::OnRender()
@@ -475,5 +475,5 @@ void CEffects::OnRender()
 	FUpdateClock(m_Add100hz, m_LastUpdate100hz, 100);
 
 	if(m_Add50hz)
-		m_pClient->m_Flow.Update();
+		GameClient()->m_Flow.Update();
 }

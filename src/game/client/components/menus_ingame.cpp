@@ -858,70 +858,40 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll, bool
 	if (maps)
 		s_ListBox.DoStart(19.0f, TotalShown, g_Config.m_ClMapVotesItemsPerRow, 3, s_CurVoteOption, &List);
 	else
-		s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
+		s_ListBox.DoStart(19.0f, TotalShown, g_Config.m_ClVotesItemsPerRow, 3, s_CurVoteOption, &List);
 
-	i = -1;
+	i = 0;
 	for(CVoteOptionClient *pOption = GameClient()->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext, i++)
 	{
 		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
 			continue;
 
-		bool is_map_vote = (str_startswith_nocase(pOption->m_aDescription, "Map: ") || 
-							str_startswith_nocase(pOption->m_aDescription, "(XS) ") || 
-							str_startswith_nocase(pOption->m_aDescription, "(S) ") || 
-							str_startswith_nocase(pOption->m_aDescription, "(M) ") || 
-							str_startswith_nocase(pOption->m_aDescription, "(L) ") || 
-							str_startswith_nocase(pOption->m_aDescription, "(XL) ") || 
-							str_utf8_find_nocase(pOption->m_aDescription, "  "));
-		if (!maps && is_map_vote)
-			continue;
-		if (maps && !is_map_vote)
-			continue;
+		if (g_Config.m_ClMapVotes) {
+			bool is_map_vote = (str_startswith_nocase(pOption->m_aDescription, "Map: ") || 
+								str_startswith_nocase(pOption->m_aDescription, "(XS) ") || 
+								str_startswith_nocase(pOption->m_aDescription, "(S) ") || 
+								str_startswith_nocase(pOption->m_aDescription, "(M) ") || 
+								str_startswith_nocase(pOption->m_aDescription, "(L) ") || 
+								str_startswith_nocase(pOption->m_aDescription, "(XL) ") || 
+								str_utf8_find_nocase(pOption->m_aDescription, "  "));
+			if (!maps && is_map_vote)
+				continue;
+			if (maps && !is_map_vote)
+				continue;
+		}
 
 		if(NumVoteOptions < Total) {
 			aIndices[NumVoteOptions] = i;
 		}
 		NumVoteOptions++;
-		// aIndices[NumVoteOptions] = i;
 
 		const CListboxItem Item = s_ListBox.DoNextItem(pOption);
 		if(!Item.m_Visible)
 			continue;
 
-		if (is_map_vote) {
-			CUIRect left; CUIRect right;
-			Item.m_Rect.VSplitMid(&left, &right);
-
-			CUIRect Label1;
-			left.VMargin(-2.0f, &Label1);
-			Ui()->DoLabel(&Label1, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
-
-			CUIRect Label2;
-			right.VMargin(-2.0f, &Label2);
-
-			TextRender()->TextColor(0.0, 0.0, 0.0, 0); // none/unknown
-			char* temp_text = "Theme";
-			if (str_utf8_find_nocase(pOption->m_aDescription, "        ")) // dark
-				{TextRender()->TextColor(0.2, 0, 0.2, 1); temp_text = "Dark";}
-			else if (str_utf8_find_nocase(pOption->m_aDescription, "       ")) // sky
-				{TextRender()->TextColor(0.6, 0.6, 0.7, 1); temp_text = "Sky";}
-			else if (str_utf8_find_nocase(pOption->m_aDescription, "      ")) // desert
-				{TextRender()->TextColor(1, 0.7, 0.5, 1); temp_text = "Desert";}
-			else if (str_utf8_find_nocase(pOption->m_aDescription, "     ")) // snow
-				{TextRender()->TextColor(0.9, 0.9, 1, 1); temp_text = "Snow";}
-			else if (str_utf8_find_nocase(pOption->m_aDescription, "    ")) // jungle
-				{TextRender()->TextColor(0.2, 0.7, 0.2, 1); temp_text = "Jungle";}
-			else if (str_utf8_find_nocase(pOption->m_aDescription, "   ")) // grass
-				{TextRender()->TextColor(0.5, 1, 0.5, 1); temp_text = "Grass";}
-
-			const char* text = temp_text;
-			Ui()->DoLabel(&Label2, text, 13.0f, TEXTALIGN_ML);
-			TextRender()->TextColor(TextRender()->DefaultTextColor());
-		} else {
-			CUIRect Label;
-			Item.m_Rect.VMargin(2.0f, &Label);
-			Ui()->DoLabel(&Label, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
-		}
+		CUIRect Label;
+		Item.m_Rect.VMargin(2.0f, &Label);
+		Ui()->DoLabel(&Label, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
 	}
 
 	Selected = s_ListBox.DoEnd();
@@ -1011,15 +981,17 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		MainView.HSplitBottom(90.0f, &MainView, &RconExtension);
 
 	// tab bar
-	TabBar.VSplitLeft(TabBar.w / 4, &Button, &TabBar);
+	TabBar.VSplitLeft(TabBar.w / (3 + g_Config.m_ClMapVotes), &Button, &TabBar);
 	static CButtonContainer s_Button0;
 	if(DoButton_MenuTab(&s_Button0, Localize("Change settings"), s_ControlPage == EServerControlTab::SETTINGS, &Button, IGraphics::CORNER_NONE))
 		s_ControlPage = EServerControlTab::SETTINGS;
 
-	TabBar.VSplitLeft(TabBar.w / 3, &Button, &TabBar);
-	static CButtonContainer s_Button3;
-	if(DoButton_MenuTab(&s_Button3, Localize("Change map"), s_ControlPage == EServerControlTab::SETTINGS_MAPS, &Button, IGraphics::CORNER_NONE))
-		s_ControlPage = EServerControlTab::SETTINGS_MAPS;
+	if (g_Config.m_ClMapVotes) {
+		TabBar.VSplitLeft(TabBar.w / 3, &Button, &TabBar);
+		static CButtonContainer s_Button3;
+		if(DoButton_MenuTab(&s_Button3, Localize("Change map"), s_ControlPage == EServerControlTab::SETTINGS_MAPS, &Button, IGraphics::CORNER_NONE))
+			s_ControlPage = EServerControlTab::SETTINGS_MAPS;
+	}
 
 	TabBar.VSplitMid(&Button, &TabBar);
 	static CButtonContainer s_Button1;

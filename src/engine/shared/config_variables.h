@@ -734,7 +734,9 @@ MACRO_CONFIG_INT(ClDemoShowPause, cl_demo_show_pause, 1, 0, 1, CFGFLAG_SAVE | CF
 MACRO_CONFIG_INT(ClDemoKeyboardShortcuts, cl_demo_keyboard_shortcuts, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable keyboard shortcuts in demo player")
 
 // Pointer31's additions
+MACRO_CONFIG_INT(ClMapVotes, cl_mapvotes, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to enable map voting screen")
 MACRO_CONFIG_INT(ClMapVotesItemsPerRow, cl_mapvotes_items_per_row, 1, 1, 4, CFGFLAG_SAVE | CFGFLAG_CLIENT, "How many maps per row are displayed in the vote screen")
+MACRO_CONFIG_INT(ClVotesItemsPerRow, cl_votes_items_per_row, 1, 1, 4, CFGFLAG_SAVE | CFGFLAG_CLIENT, "How many votes per row are displayed in the vote screen")
 MACRO_CONFIG_STR(ClLocalServerRconpwd, cl_local_server_rconpwd, 128, "", CFGFLAG_CLIENT, "potentially the rcon password for local server")
 MACRO_CONFIG_INT(ClExtraParticles, cl_extra_particles, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to enable more particles")
 MACRO_CONFIG_INT(ClConfirmKillTime, cl_confirm_kill_time, 5, -1, 1440, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Confirmation message before killing self after game time (in minutes, -1 to turn off, 0 to always turn on)")

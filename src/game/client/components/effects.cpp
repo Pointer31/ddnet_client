@@ -296,6 +296,31 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientId, float Alpha)
 		p.m_StartAlpha = Alpha;
 		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 	}
+
+	// Pointer31's
+	if (g_Config.m_ClBloodParticles) {
+		for(int i = 0; i < 64; i++)
+		{
+			CParticle p;
+			p.SetDefault();
+			p.m_Spr = SPRITE_PART_SPLAT01 + (rand() % 3);
+			p.m_Pos = Pos;
+			p.m_Vel = random_direction() * (random_float(0.1f, 1.1f) * 700.0f);
+			p.m_LifeSpan = random_float(1.4f, 1.9f);
+			p.m_StartSize = random_float(14.0f, 30.0f);
+			p.m_EndSize = 10.0f;
+			p.m_Rot = random_angle();
+			p.m_Rotspeed = random_float(-0.5f, 0.5f) * pi;
+			p.m_Gravity = 1200.0f;
+			p.m_Friction = 0.99f;
+			ColorRGBA c = vec4(0.9f, 0.1f, 0.1f, 1.0f);
+			p.m_Color = ColorRGBA(c.r, c.g, c.b, 0.75f * Alpha);
+			p.m_StartAlpha = Alpha;
+			p.m_EndAlpha = 0.0f;
+			p.m_UseAlphaFading = true;
+			GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
+		}
+	}
 }
 
 void CEffects::Confetti(vec2 Pos, float Alpha)

@@ -860,7 +860,7 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll, bool
 	else
 		s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
 
-	i = 0;
+	i = -1;
 	for(CVoteOptionClient *pOption = GameClient()->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext, i++)
 	{
 		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
@@ -881,6 +881,7 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll, bool
 		if(NumVoteOptions < Total) {
 			aIndices[NumVoteOptions] = i;
 		}
+		NumVoteOptions++;
 		// aIndices[NumVoteOptions] = i;
 
 		const CListboxItem Item = s_ListBox.DoNextItem(pOption);

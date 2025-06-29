@@ -837,9 +837,11 @@ void CMenus::RenderServerInfoMotd(CUIRect Motd)
 bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll, bool maps)
 {
 	CUIRect List = MainView;
+	int Total = GameClient()->m_Voting.m_NumVoteOptions;
 	int NumVoteOptions = 0;
 	int aIndices[MAX_VOTE_OPTIONS];
 	int Selected = -1;
+	static int s_CurVoteOption = 0;
 	int TotalShown = 0;
 
 	int i = 0;
@@ -854,9 +856,9 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll, bool
 
 	static CListBox s_ListBox;
 	if (maps)
-		s_ListBox.DoStart(19.0f, TotalShown, g_Config.m_ClMapVotesItemsPerRow, 3, Selected, &List);
+		s_ListBox.DoStart(19.0f, TotalShown, g_Config.m_ClMapVotesItemsPerRow, 3, s_CurVoteOption, &List);
 	else
-		s_ListBox.DoStart(19.0f, TotalShown, 1, 3, Selected, &List);
+		s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
 
 	i = 0;
 	for(CVoteOptionClient *pOption = GameClient()->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext, i++)
@@ -876,11 +878,10 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll, bool
 		if (maps && !is_map_vote)
 			continue;
 
-		// if(NumVoteOptions < Total)
-		// 	aIndices[NumVoteOptions] = i;
-
-		aIndices[NumVoteOptions] = i;
-		NumVoteOptions++;
+		if(NumVoteOptions < Total) {
+			aIndices[NumVoteOptions] = i;
+		}
+		// aIndices[NumVoteOptions] = i;
 
 		const CListboxItem Item = s_ListBox.DoNextItem(pOption);
 		if(!Item.m_Visible)
@@ -923,9 +924,11 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll, bool
 	}
 
 	Selected = s_ListBox.DoEnd();
-	if(UpdateScroll)
-		s_ListBox.ScrollToSelected();
-	m_CallvoteSelectedOption = Selected != -1 ? aIndices[Selected] : -1;
+	s_CurVoteOption = Selected;
+	if(s_CurVoteOption < Total)
+		// s_ListBox.ScrollToSelected();
+	m_CallvoteSelectedOption = aIndices[s_CurVoteOption];
+	//= Selected != -1 ? aIndices[Selected] : -1;
 	return s_ListBox.WasItemActivated();
 }
 

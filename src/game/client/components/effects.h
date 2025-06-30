@@ -33,6 +33,7 @@ public:
 	void Explosion(vec2 Pos, float Alpha);
 	void HammerHit(vec2 Pos, float Alpha, float Volume);
 	void AirJump(vec2 Pos, float Alpha, float Volume);
+	void LaserBounce(vec2 Pos, float Alpha = 1.0f);
 	void DamageIndicator(vec2 Pos, vec2 Dir, float Alpha);
 	void PlayerSpawn(vec2 Pos, float Alpha, float Volume);
 	void PlayerDeath(vec2 Pos, int ClientId, float Alpha);

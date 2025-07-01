@@ -457,7 +457,7 @@ void CPlayer::Snap(int SnappingClient)
 							SpectatorCount++;
 					}
 				}
-				pDDNetSpectatorInfo->m_SpectatorCount = SpectatorCount;
+				pDDNetSpectatorInfo->m_SpectatorCount = g_Config.m_SvDisableSpectatorCount ? 0 : SpectatorCount;
 			}
 		}
 	}

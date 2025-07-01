@@ -775,3 +775,5 @@ MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG
 /*
  * Add config variables for mods below this comment to avoid merge conflicts.
  */
+
+ MACRO_CONFIG_INT(SvDisableSpectatorCount, sv_disable_spectator_count, 0, 0, 1, CFGFLAG_SERVER, "Whether to disable showing spectator counts")

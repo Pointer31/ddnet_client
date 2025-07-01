@@ -106,10 +106,6 @@ int main(int argc, const char **argv)
 	signal(SIGINT, HandleSigIntTerm);
 	signal(SIGTERM, HandleSigIntTerm);
 
-#if defined(CONF_EXCEPTION_HANDLING)
-	init_exception_handler();
-#endif
-
 	CServer *pServer = CreateServer();
 	pServer->SetLoggers(pFutureFileLogger, std::move(pStdoutLogger));
 
@@ -117,23 +113,28 @@ int main(int argc, const char **argv)
 	pKernel->RegisterInterface(pServer);
 
 	// create the components
-	IEngine *pEngine = CreateEngine(GAME_NAME, pFutureConsoleLogger, 2 * std::thread::hardware_concurrency() + 2);
+	IEngine *pEngine = CreateEngine(GAME_NAME, pFutureConsoleLogger);
 	pKernel->RegisterInterface(pEngine);
 
-	IStorage *pStorage = CreateStorage(IStorage::STORAGETYPE_SERVER, argc, argv);
+	IStorage *pStorage = CreateStorage(IStorage::EInitializationType::SERVER, argc, argv);
+	if(!pStorage)
+	{
+		log_error("server", "failed to initialize storage");
+		return -1;
+	}
 	pKernel->RegisterInterface(pStorage);
 
 	pFutureAssertionLogger->Set(CreateAssertionLogger(pStorage, GAME_NAME));
 
-#if defined(CONF_EXCEPTION_HANDLING)
-	char aBuf[IO_MAX_PATH_LENGTH];
-	char aBufName[IO_MAX_PATH_LENGTH];
-	char aDate[64];
-	str_timestamp(aDate, sizeof(aDate));
-	str_format(aBufName, sizeof(aBufName), "dumps/" GAME_NAME "-Server_%s_crash_log_%s_%d_%s.RTP", CONF_PLATFORM_STRING, aDate, pid(), GIT_SHORTREV_HASH != nullptr ? GIT_SHORTREV_HASH : "");
-	pStorage->GetCompletePath(IStorage::TYPE_SAVE, aBufName, aBuf, sizeof(aBuf));
-	set_exception_handler_log_file(aBuf);
-#endif
+	{
+		char aBuf[IO_MAX_PATH_LENGTH];
+		char aBufName[IO_MAX_PATH_LENGTH];
+		char aDate[64];
+		str_timestamp(aDate, sizeof(aDate));
+		str_format(aBufName, sizeof(aBufName), "dumps/" GAME_NAME "-Server_%s_crash_log_%s_%d_%s.RTP", CONF_PLATFORM_STRING, aDate, pid(), GIT_SHORTREV_HASH != nullptr ? GIT_SHORTREV_HASH : "");
+		pStorage->GetCompletePath(IStorage::TYPE_SAVE, aBufName, aBuf, sizeof(aBuf));
+		crashdump_init_if_available(aBuf);
+	}
 
 	IConsole *pConsole = CreateConsole(CFGFLAG_SERVER | CFGFLAG_ECON).release();
 	pKernel->RegisterInterface(pConsole);
@@ -176,6 +177,8 @@ int main(int argc, const char **argv)
 	pConfigManager->SetReadOnly("sv_max_clients", true);
 	pConfigManager->SetReadOnly("sv_test_cmds", true);
 	pConfigManager->SetReadOnly("sv_rescue", true);
+	pConfigManager->SetReadOnly("sv_port", true);
+	pConfigManager->SetReadOnly("bindaddr", true);
 
 	if(g_Config.m_Logfile[0])
 	{
@@ -236,7 +239,7 @@ std::vector<std::string> FetchAndroidServerCommandQueue()
 	return vResult;
 }
 
-JNI_EXPORTED_FUNCTION(ANDROID_PACKAGE_NAME, NativeServer, runServer, jint, JNIEnv *pEnv, jobject Object, jstring WorkingDirectory)
+JNI_EXPORTED_FUNCTION(ANDROID_PACKAGE_NAME, NativeServer, runServer, jint, JNIEnv *pEnv, jobject Object, jstring WorkingDirectory, jobjectArray ArgumentsArray)
 {
 	// Set working directory to external storage location. This is not possible
 	// in Java so we pass the intended working directory to the native code.
@@ -248,8 +251,27 @@ JNI_EXPORTED_FUNCTION(ANDROID_PACKAGE_NAME, NativeServer, runServer, jint, JNIEn
 		return -1001;
 	}
 
-	const char *apArgs[] = {GAME_NAME};
-	return main(std::size(apArgs), apArgs);
+	const jsize NumArguments = pEnv->GetArrayLength(ArgumentsArray);
+
+	std::vector<std::string> vArguments;
+	vArguments.reserve(NumArguments + 1);
+	vArguments.push_back(std::string(pWorkingDirectory) + "/" + GAME_NAME "-Server");
+	for(jsize ArgumentIndex = 0; ArgumentIndex < NumArguments; ArgumentIndex++)
+	{
+		jstring ArgumentString = (jstring)pEnv->GetObjectArrayElement(ArgumentsArray, ArgumentIndex);
+		const char *pArgumentString = pEnv->GetStringUTFChars(ArgumentString, nullptr);
+		vArguments.emplace_back(pArgumentString);
+		pEnv->ReleaseStringUTFChars(ArgumentString, pArgumentString);
+	}
+
+	std::vector<const char *> vpArguments;
+	vpArguments.reserve(vArguments.size());
+	for(const std::string &Argument : vArguments)
+	{
+		vpArguments.emplace_back(Argument.c_str());
+	}
+
+	return main(vpArguments.size(), vpArguments.data());
 }
 
 JNI_EXPORTED_FUNCTION(ANDROID_PACKAGE_NAME, NativeServer, executeCommand, void, JNIEnv *pEnv, jobject Object, jstring Command)

@@ -100,7 +100,7 @@ void CMenus::RenderGame(CUIRect MainView)
 			}
 			else
 			{
-				Client()->DummyDisconnect(0);
+				Client()->DummyDisconnect(nullptr);
 				SetActive(false);
 			}
 		}
@@ -120,15 +120,15 @@ void CMenus::RenderGame(CUIRect MainView)
 
 	bool Paused = false;
 	bool Spec = false;
-	if(m_pClient->m_Snap.m_LocalClientId >= 0)
+	if(GameClient()->m_Snap.m_LocalClientId >= 0)
 	{
-		Paused = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Paused;
-		Spec = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Spec;
+		Paused = GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_Paused;
+		Spec = GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_Spec;
 	}
 
-	if(m_pClient->m_Snap.m_pLocalInfo && m_pClient->m_Snap.m_pGameInfoObj && !Paused && !Spec)
+	if(GameClient()->m_Snap.m_pLocalInfo && GameClient()->m_Snap.m_pGameInfoObj && !Paused && !Spec)
 	{
-		if(m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS)
+		if(GameClient()->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS)
 		{
 			ButtonBar.VSplitLeft(120.0f, &Button, &ButtonBar);
 			ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
@@ -137,54 +137,54 @@ void CMenus::RenderGame(CUIRect MainView)
 			{
 				if(g_Config.m_ClDummy == 0 || Client()->DummyConnected())
 				{
-					m_pClient->SendSwitchTeam(TEAM_SPECTATORS);
+					GameClient()->SendSwitchTeam(TEAM_SPECTATORS);
 					SetActive(false);
 				}
 			}
 		}
 
-		if(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS)
+		if(GameClient()->IsTeamPlay())
 		{
-			if(m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_RED)
+			if(GameClient()->m_Snap.m_pLocalInfo->m_Team != TEAM_RED)
 			{
-				ButtonBar.VSplitLeft(120.0f, &Button, &ButtonBar);
+				ButtonBar.VSplitLeft(100.0f, &Button, &ButtonBar);
 				ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
 				static CButtonContainer s_JoinRedButton;
 				if(!Client()->DummyConnecting() && DoButton_Menu(&s_JoinRedButton, Localize("Join red"), 0, &Button))
 				{
-					m_pClient->SendSwitchTeam(TEAM_RED);
+					GameClient()->SendSwitchTeam(TEAM_RED);
 					SetActive(false);
 				}
 			}
 
-			if(m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_BLUE)
+			if(GameClient()->m_Snap.m_pLocalInfo->m_Team != TEAM_BLUE)
 			{
-				ButtonBar.VSplitLeft(120.0f, &Button, &ButtonBar);
+				ButtonBar.VSplitLeft(100.0f, &Button, &ButtonBar);
 				ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
 				static CButtonContainer s_JoinBlueButton;
 				if(!Client()->DummyConnecting() && DoButton_Menu(&s_JoinBlueButton, Localize("Join blue"), 0, &Button))
 				{
-					m_pClient->SendSwitchTeam(TEAM_BLUE);
+					GameClient()->SendSwitchTeam(TEAM_BLUE);
 					SetActive(false);
 				}
 			}
 		}
 		else
 		{
-			if(m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_RED)
+			if(GameClient()->m_Snap.m_pLocalInfo->m_Team != TEAM_RED)
 			{
 				ButtonBar.VSplitLeft(120.0f, &Button, &ButtonBar);
 				ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
 				static CButtonContainer s_JoinGameButton;
 				if(!Client()->DummyConnecting() && DoButton_Menu(&s_JoinGameButton, Localize("Join game"), 0, &Button))
 				{
-					m_pClient->SendSwitchTeam(TEAM_RED);
+					GameClient()->SendSwitchTeam(TEAM_RED);
 					SetActive(false);
 				}
 			}
 		}
 
-		if(m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS && (ShowDDRaceButtons || !(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS)))
+		if(GameClient()->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS && (ShowDDRaceButtons || !GameClient()->IsTeamPlay()))
 		{
 			ButtonBar.VSplitLeft(65.0f, &Button, &ButtonBar);
 			ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
@@ -192,15 +192,15 @@ void CMenus::RenderGame(CUIRect MainView)
 			static CButtonContainer s_KillButton;
 			if(DoButton_Menu(&s_KillButton, Localize("Kill"), 0, &Button))
 			{
-				m_pClient->SendKill(-1);
+				GameClient()->SendKill();
 				SetActive(false);
 			}
 		}
 	}
 
-	if(m_pClient->m_ReceivedDDNetPlayer && m_pClient->m_Snap.m_pLocalInfo && m_pClient->m_Snap.m_pGameInfoObj && (ShowDDRaceButtons || !(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS)))
+	if(GameClient()->m_ReceivedDDNetPlayer && GameClient()->m_Snap.m_pLocalInfo && (ShowDDRaceButtons || !GameClient()->IsTeamPlay()))
 	{
-		if(m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS || Paused || Spec)
+		if(GameClient()->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS || Paused || Spec)
 		{
 			ButtonBar.VSplitLeft((!Paused && !Spec) ? 65.0f : 120.0f, &Button, &ButtonBar);
 			ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
@@ -212,6 +212,23 @@ void CMenus::RenderGame(CUIRect MainView)
 				SetActive(false);
 			}
 		}
+	}
+
+	if(GameClient()->m_Snap.m_pLocalInfo && (GameClient()->m_Snap.m_pLocalInfo->m_Team == TEAM_SPECTATORS || Paused || Spec))
+	{
+		ButtonBar.VSplitLeft(32.0f, &Button, &ButtonBar);
+		ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
+
+		static CButtonContainer s_AutoCameraButton;
+
+		bool Active = GameClient()->m_Camera.m_AutoSpecCamera && GameClient()->m_Camera.SpectatingPlayer() && GameClient()->m_Camera.CanUseAutoSpecCamera();
+		bool Enabled = g_Config.m_ClSpecAutoSync;
+		if(Ui()->DoButton_FontIcon(&s_AutoCameraButton, FONT_ICON_CAMERA, !Active, &Button, BUTTONFLAG_LEFT, IGraphics::CORNER_ALL, Enabled))
+		{
+			GameClient()->m_Camera.ToggleAutoSpecCamera();
+		}
+		GameClient()->m_Camera.UpdateAutoSpecCameraTooltip();
+		GameClient()->m_Tooltips.DoToolTip(&s_AutoCameraButton, &Button, GameClient()->m_Camera.AutoSpecCameraTooltip());
 	}
 
 	if(g_Config.m_ClTouchControls)
@@ -270,7 +287,7 @@ void CMenus::RenderTouchControlsEditor(CUIRect MainView)
 	Ui()->DoLabel(&Label, Localize("Edit touch controls"), 20.0f, TEXTALIGN_MC);
 
 	static CButtonContainer s_OpenHelpButton;
-	if(DoButton_FontIcon(&s_OpenHelpButton, FONT_ICON_QUESTION, 0, &Button))
+	if(Ui()->DoButton_FontIcon(&s_OpenHelpButton, FONT_ICON_QUESTION, 0, &Button, BUTTONFLAG_LEFT))
 	{
 		Client()->ViewLink(Localize("https://wiki.ddnet.org/wiki/Touch_controls"));
 	}
@@ -398,7 +415,7 @@ void CMenus::PopupConfirmDisconnect()
 
 void CMenus::PopupConfirmDisconnectDummy()
 {
-	Client()->DummyDisconnect(0);
+	Client()->DummyDisconnect(nullptr);
 	SetActive(false);
 }
 
@@ -482,14 +499,14 @@ void CMenus::RenderPlayers(CUIRect MainView)
 	RenderTools()->RenderIcon(IMAGE_GUIICONS, SPRITE_GUIICON_FRIEND, &Button);
 
 	int TotalPlayers = 0;
-	for(const auto &pInfoByName : m_pClient->m_Snap.m_apInfoByName)
+	for(const auto &pInfoByName : GameClient()->m_Snap.m_apInfoByName)
 	{
 		if(!pInfoByName)
 			continue;
 
 		int Index = pInfoByName->m_ClientId;
 
-		if(Index == m_pClient->m_Snap.m_LocalClientId)
+		if(Index == GameClient()->m_Snap.m_LocalClientId)
 			continue;
 
 		TotalPlayers++;
@@ -503,14 +520,14 @@ void CMenus::RenderPlayers(CUIRect MainView)
 
 	for(int i = 0, Count = 0; i < MAX_CLIENTS; ++i)
 	{
-		if(!m_pClient->m_Snap.m_apInfoByName[i])
+		if(!GameClient()->m_Snap.m_apInfoByName[i])
 			continue;
 
-		int Index = m_pClient->m_Snap.m_apInfoByName[i]->m_ClientId;
-		if(Index == m_pClient->m_Snap.m_LocalClientId)
+		int Index = GameClient()->m_Snap.m_apInfoByName[i]->m_ClientId;
+		if(Index == GameClient()->m_Snap.m_LocalClientId)
 			continue;
 
-		CGameClient::CClientData &CurrentClient = m_pClient->m_aClients[Index];
+		CGameClient::CClientData &CurrentClient = GameClient()->m_aClients[Index];
 		const CListboxItem Item = s_ListBox.DoNextItem(&CurrentClient);
 
 		Count++;
@@ -535,7 +552,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
 		vec2 TeeRenderPos(Button.x + Button.h / 2, Button.y + Button.h / 2 + OffsetToMid.y);
 		RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
-		Ui()->DoButtonLogic(&s_aPlayerIds[Index][3], 0, &Button);
+		Ui()->DoButtonLogic(&s_aPlayerIds[Index][3], 0, &Button, BUTTONFLAG_NONE);
 		GameClient()->m_Tooltips.DoToolTip(&s_aPlayerIds[Index][3], &Button, CurrentClient.m_aSkinName);
 
 		Player.HSplitTop(1.5f, nullptr, &Player);
@@ -545,7 +562,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		Ui()->DoLabel(&Player, CurrentClient.m_aName, 14.0f, TEXTALIGN_ML);
 		Ui()->DoLabel(&Button, CurrentClient.m_aClan, 14.0f, TEXTALIGN_ML);
 
-		m_pClient->m_CountryFlags.Render(CurrentClient.m_Country, ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f),
+		GameClient()->m_CountryFlags.Render(CurrentClient.m_Country, ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f),
 			Button2.x, Button2.y + Button2.h / 2.0f - 0.75f * Button2.h / 2.0f, 1.5f * Button2.h, 0.75f * Button2.h);
 
 		// ignore chat button
@@ -576,11 +593,11 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		if(DoButton_Toggle(&s_aPlayerIds[Index][2], CurrentClient.m_Friend, &Button, true))
 		{
 			if(CurrentClient.m_Friend)
-				m_pClient->Friends()->RemoveFriend(CurrentClient.m_aName, CurrentClient.m_aClan);
+				GameClient()->Friends()->RemoveFriend(CurrentClient.m_aName, CurrentClient.m_aClan);
 			else
-				m_pClient->Friends()->AddFriend(CurrentClient.m_aName, CurrentClient.m_aClan);
+				GameClient()->Friends()->AddFriend(CurrentClient.m_aName, CurrentClient.m_aClan);
 
-			m_pClient->Client()->ServerBrowserUpdate();
+			GameClient()->Client()->ServerBrowserUpdate();
 		}
 	}
 
@@ -589,55 +606,68 @@ void CMenus::RenderPlayers(CUIRect MainView)
 
 void CMenus::RenderServerInfo(CUIRect MainView)
 {
-	if(!m_pClient->m_Snap.m_pLocalInfo)
-		return;
+	const float FontSizeTitle = 32.0f;
+	const float FontSizeBody = 20.0f;
 
-	// fetch server info
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
 
-	// render background
+	CUIRect ServerInfo, GameInfo, Motd;
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
+	MainView.Margin(10.0f, &MainView);
+	MainView.HSplitMid(&ServerInfo, &Motd, 10.0f);
+	ServerInfo.VSplitMid(&ServerInfo, &GameInfo, 10.0f);
 
-	CUIRect View, ServerInfo, GameInfo, Motd;
+	ServerInfo.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	ServerInfo.Margin(10.0f, &ServerInfo);
 
-	float x = 0.0f;
-	float y = 0.0f;
+	CUIRect Label;
+	ServerInfo.HSplitTop(FontSizeTitle, &Label, &ServerInfo);
+	ServerInfo.HSplitTop(5.0f, nullptr, &ServerInfo);
+	Ui()->DoLabel(&Label, Localize("Server info"), FontSizeTitle, TEXTALIGN_ML);
 
-	char aBuf[1024];
+	ServerInfo.HSplitTop(FontSizeBody, &Label, &ServerInfo);
+	ServerInfo.HSplitTop(FontSizeBody, nullptr, &ServerInfo);
+	Ui()->DoLabel(&Label, CurrentServerInfo.m_aName, FontSizeBody, TEXTALIGN_ML);
 
-	// set view to use for all sub-modules
-	MainView.Margin(10.0f, &View);
+	ServerInfo.HSplitTop(FontSizeBody, &Label, &ServerInfo);
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Address"), CurrentServerInfo.m_aAddress);
+	Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
 
-	// serverinfo
-	View.HSplitTop(View.h / 2 - 5.0f, &ServerInfo, &Motd);
-	ServerInfo.VSplitLeft(View.w / 2 - 5.0f, &ServerInfo, &GameInfo);
-	ServerInfo.Draw(ColorRGBA(1, 1, 1, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	if(GameClient()->m_Snap.m_pLocalInfo)
+	{
+		ServerInfo.HSplitTop(FontSizeBody, &Label, &ServerInfo);
+		str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Ping"), GameClient()->m_Snap.m_pLocalInfo->m_Latency);
+		Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
+	}
 
-	ServerInfo.Margin(5.0f, &ServerInfo);
+	ServerInfo.HSplitTop(FontSizeBody, &Label, &ServerInfo);
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Version"), CurrentServerInfo.m_aVersion);
+	Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
 
-	x = 5.0f;
-	y = 0.0f;
+	ServerInfo.HSplitTop(FontSizeBody, &Label, &ServerInfo);
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Password"), CurrentServerInfo.m_Flags & SERVER_FLAG_PASSWORD ? Localize("Yes") : Localize("No"));
+	Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
 
-	TextRender()->Text(ServerInfo.x + x, ServerInfo.y + y, 32, Localize("Server info"), -1.0f);
-	y += 32.0f + 5.0f;
+	const CCommunity *pCommunity = ServerBrowser()->Community(CurrentServerInfo.m_aCommunityId);
+	if(pCommunity != nullptr)
+	{
+		ServerInfo.HSplitTop(FontSizeBody, &Label, &ServerInfo);
+		str_format(aBuf, sizeof(aBuf), "%s:", Localize("Community"));
+		Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
 
-	mem_zero(aBuf, sizeof(aBuf));
-	str_format(
-		aBuf,
-		sizeof(aBuf),
-		"%s\n\n"
-		"%s: %s\n"
-		"%s: %d\n"
-		"%s: %s\n"
-		"%s: %s\n",
-		CurrentServerInfo.m_aName,
-		Localize("Address"), CurrentServerInfo.m_aAddress,
-		Localize("Ping"), m_pClient->m_Snap.m_pLocalInfo->m_Latency,
-		Localize("Version"), CurrentServerInfo.m_aVersion,
-		Localize("Password"), CurrentServerInfo.m_Flags & 1 ? Localize("Yes") : Localize("No"));
-
-	TextRender()->Text(ServerInfo.x + x, ServerInfo.y + y, 20, aBuf, ServerInfo.w - 10.0f);
+		const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
+		if(pIcon != nullptr)
+		{
+			Label.VSplitLeft(TextRender()->TextWidth(FontSizeBody, aBuf) + 8.0f, nullptr, &Label);
+			Label.VSplitLeft(2.0f * Label.h, &Label, nullptr);
+			m_CommunityIcons.Render(pIcon, Label, true);
+			static char s_CommunityTooltipButtonId;
+			Ui()->DoButtonLogic(&s_CommunityTooltipButtonId, 0, &Label, BUTTONFLAG_NONE);
+			GameClient()->m_Tooltips.DoToolTip(&s_CommunityTooltipButtonId, &Label, pCommunity->Name());
+		}
+	}
 
 	// copy info button
 	{
@@ -664,51 +694,99 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	// favorite checkbox
 	{
 		CUIRect Button;
-		NETADDR ServerAddr = Client()->ServerAddress();
-		TRISTATE IsFavorite = Favorites()->IsFavorite(&ServerAddr, 1);
+		TRISTATE IsFavorite = Favorites()->IsFavorite(CurrentServerInfo.m_aAddresses, CurrentServerInfo.m_NumAddresses);
 		ServerInfo.HSplitBottom(20.0f, &ServerInfo, &Button);
 		static int s_AddFavButton = 0;
 		if(DoButton_CheckBox(&s_AddFavButton, Localize("Favorite"), IsFavorite != TRISTATE::NONE, &Button))
 		{
 			if(IsFavorite != TRISTATE::NONE)
-				Favorites()->Remove(&ServerAddr, 1);
+				Favorites()->Remove(CurrentServerInfo.m_aAddresses, CurrentServerInfo.m_NumAddresses);
 			else
-				Favorites()->Add(&ServerAddr, 1);
+				Favorites()->Add(CurrentServerInfo.m_aAddresses, CurrentServerInfo.m_NumAddresses);
 		}
 	}
 
-	// gameinfo
-	GameInfo.VSplitLeft(10.0f, 0x0, &GameInfo);
-	GameInfo.Draw(ColorRGBA(1, 1, 1, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	GameInfo.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	GameInfo.Margin(10.0f, &GameInfo);
 
-	GameInfo.Margin(5.0f, &GameInfo);
+	GameInfo.HSplitTop(FontSizeTitle, &Label, &GameInfo);
+	GameInfo.HSplitTop(5.0f, nullptr, &GameInfo);
+	Ui()->DoLabel(&Label, Localize("Game info"), FontSizeTitle, TEXTALIGN_ML);
 
-	x = 5.0f;
-	y = 0.0f;
+	GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Game type"), CurrentServerInfo.m_aGameType);
+	Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
 
-	TextRender()->Text(GameInfo.x + x, GameInfo.y + y, 32, Localize("Game info"), -1.0f);
-	y += 32.0f + 5.0f;
+	GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Map"), CurrentServerInfo.m_aMap);
+	Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
 
-	if(m_pClient->m_Snap.m_pGameInfoObj)
+	const auto *pGameInfoObj = GameClient()->m_Snap.m_pGameInfoObj;
+	if(pGameInfoObj)
 	{
-		mem_zero(aBuf, sizeof(aBuf));
-		str_format(
-			aBuf,
-			sizeof(aBuf),
-			"\n\n"
-			"%s: %s\n"
-			"%s: %s\n"
-			"%s: %d\n"
-			"%s: %d\n"
-			"\n"
-			"%s: %d/%d\n",
-			Localize("Game type"), CurrentServerInfo.m_aGameType,
-			Localize("Map"), CurrentServerInfo.m_aMap,
-			Localize("Score limit"), m_pClient->m_Snap.m_pGameInfoObj->m_ScoreLimit,
-			Localize("Time limit"), m_pClient->m_Snap.m_pGameInfoObj->m_TimeLimit,
-			Localize("Players"), m_pClient->m_Snap.m_NumPlayers, CurrentServerInfo.m_MaxClients);
-		TextRender()->Text(GameInfo.x + x, GameInfo.y + y, 20, aBuf, GameInfo.w - 10.0f);
+		if(pGameInfoObj->m_ScoreLimit)
+		{
+			GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+			str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Score limit"), pGameInfoObj->m_ScoreLimit);
+			Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
+		}
+
+		if(pGameInfoObj->m_TimeLimit)
+		{
+			GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+			str_format(aBuf, sizeof(aBuf), Localize("Time limit: %d min"), pGameInfoObj->m_TimeLimit);
+			Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
+		}
+
+		if(pGameInfoObj->m_RoundCurrent && pGameInfoObj->m_RoundNum)
+		{
+			GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+			str_format(aBuf, sizeof(aBuf), Localize("Round %d/%d"), pGameInfoObj->m_RoundCurrent, pGameInfoObj->m_RoundNum);
+			Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
+		}
 	}
+
+	if(GameClient()->m_GameInfo.m_DDRaceTeam)
+	{
+		const char *pTeamMode = nullptr;
+		switch(Config()->m_SvTeam)
+		{
+		case SV_TEAM_FORBIDDEN:
+			pTeamMode = Localize("forbidden", "Team status");
+			break;
+		case SV_TEAM_ALLOWED:
+			if(g_Config.m_SvSoloServer)
+				pTeamMode = Localize("solo", "Team status");
+			else
+				pTeamMode = Localize("allowed", "Team status");
+			break;
+		case SV_TEAM_MANDATORY:
+			pTeamMode = Localize("required", "Team status");
+			break;
+		case SV_TEAM_FORCED_SOLO:
+			pTeamMode = Localize("solo", "Team status");
+			break;
+		default:
+			dbg_assert(false, "unknown team mode");
+		}
+		if((Config()->m_SvTeam == SV_TEAM_ALLOWED || Config()->m_SvTeam == SV_TEAM_MANDATORY) && (Config()->m_SvMinTeamSize != CConfig::ms_SvMinTeamSize || Config()->m_SvMaxTeamSize != CConfig::ms_SvMaxTeamSize))
+		{
+			if(Config()->m_SvMinTeamSize != CConfig::ms_SvMinTeamSize && Config()->m_SvMaxTeamSize != CConfig::ms_SvMaxTeamSize)
+				str_format(aBuf, sizeof(aBuf), "%s: %s (%s %d, %s %d)", Localize("Teams"), pTeamMode, Localize("minimum", "Team size"), Config()->m_SvMinTeamSize, Localize("maximum", "Team size"), Config()->m_SvMaxTeamSize);
+			else if(Config()->m_SvMinTeamSize != CConfig::ms_SvMinTeamSize)
+				str_format(aBuf, sizeof(aBuf), "%s: %s (%s %d)", Localize("Teams"), pTeamMode, Localize("minimum", "Team size"), Config()->m_SvMinTeamSize);
+			else
+				str_format(aBuf, sizeof(aBuf), "%s: %s (%s %d)", Localize("Teams"), pTeamMode, Localize("maximum", "Team size"), Config()->m_SvMaxTeamSize);
+		}
+		else
+			str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Teams"), pTeamMode);
+		GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+		Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
+	}
+
+	GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+	str_format(aBuf, sizeof(aBuf), "%s: %d/%d", Localize("Players"), GameClient()->m_Snap.m_NumPlayers, CurrentServerInfo.m_MaxClients);
+	Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
 
 	RenderServerInfoMotd(Motd);
 }
@@ -716,17 +794,15 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 void CMenus::RenderServerInfoMotd(CUIRect Motd)
 {
 	const float MotdFontSize = 16.0f;
-	Motd.HSplitTop(10.0f, nullptr, &Motd);
-	Motd.Draw(ColorRGBA(1, 1, 1, 0.25f), IGraphics::CORNER_ALL, 10.0f);
-	Motd.HMargin(5.0f, &Motd);
-	Motd.VMargin(10.0f, &Motd);
+	Motd.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+	Motd.Margin(10.0f, &Motd);
 
 	CUIRect MotdHeader;
 	Motd.HSplitTop(2.0f * MotdFontSize, &MotdHeader, &Motd);
 	Motd.HSplitTop(5.0f, nullptr, &Motd);
-	TextRender()->Text(MotdHeader.x, MotdHeader.y, 2.0f * MotdFontSize, Localize("MOTD"), -1.0f);
+	Ui()->DoLabel(&MotdHeader, Localize("MOTD"), 2.0f * MotdFontSize, TEXTALIGN_ML);
 
-	if(!m_pClient->m_Motd.ServerMotd()[0])
+	if(!GameClient()->m_Motd.ServerMotd()[0])
 		return;
 
 	static CScrollRegion s_ScrollRegion;
@@ -738,14 +814,14 @@ void CMenus::RenderServerInfoMotd(CUIRect Motd)
 
 	static float s_MotdHeight = 0.0f;
 	static int64_t s_MotdLastUpdateTime = -1;
-	if(!m_MotdTextContainerIndex.Valid() || s_MotdLastUpdateTime == -1 || s_MotdLastUpdateTime != m_pClient->m_Motd.ServerMotdUpdateTime())
+	if(!m_MotdTextContainerIndex.Valid() || s_MotdLastUpdateTime == -1 || s_MotdLastUpdateTime != GameClient()->m_Motd.ServerMotdUpdateTime())
 	{
 		CTextCursor Cursor;
 		TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, MotdFontSize, TEXTFLAG_RENDER);
 		Cursor.m_LineWidth = Motd.w;
-		TextRender()->RecreateTextContainer(m_MotdTextContainerIndex, &Cursor, m_pClient->m_Motd.ServerMotd());
+		TextRender()->RecreateTextContainer(m_MotdTextContainerIndex, &Cursor, GameClient()->m_Motd.ServerMotd());
 		s_MotdHeight = Cursor.Height();
-		s_MotdLastUpdateTime = m_pClient->m_Motd.ServerMotdUpdateTime();
+		s_MotdLastUpdateTime = GameClient()->m_Motd.ServerMotdUpdateTime();
 	}
 
 	CUIRect MotdTextArea;
@@ -758,34 +834,33 @@ void CMenus::RenderServerInfoMotd(CUIRect Motd)
 	s_ScrollRegion.End();
 }
 
-bool CMenus::RenderServerControlServer(CUIRect MainView)
+bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll)
 {
 	CUIRect List = MainView;
-	int Total = m_pClient->m_Voting.m_NumVoteOptions;
 	int NumVoteOptions = 0;
 	int aIndices[MAX_VOTE_OPTIONS];
-	static int s_CurVoteOption = 0;
+	int Selected = -1;
 	int TotalShown = 0;
 
-	for(CVoteOptionClient *pOption = m_pClient->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext)
+	int i = 0;
+	for(CVoteOptionClient *pOption = GameClient()->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext, i++)
 	{
 		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
 			continue;
+		if(i == m_CallvoteSelectedOption)
+			Selected = TotalShown;
 		TotalShown++;
 	}
 
 	static CListBox s_ListBox;
-	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
+	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, Selected, &List);
 
-	int i = -1;
-	for(CVoteOptionClient *pOption = m_pClient->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext)
+	i = 0;
+	for(CVoteOptionClient *pOption = GameClient()->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext, i++)
 	{
-		i++;
 		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
 			continue;
-
-		if(NumVoteOptions < Total)
-			aIndices[NumVoteOptions] = i;
+		aIndices[NumVoteOptions] = i;
 		NumVoteOptions++;
 
 		const CListboxItem Item = s_ListBox.DoNextItem(pOption);
@@ -797,27 +872,28 @@ bool CMenus::RenderServerControlServer(CUIRect MainView)
 		Ui()->DoLabel(&Label, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
 	}
 
-	s_CurVoteOption = s_ListBox.DoEnd();
-	if(s_CurVoteOption < Total)
-		m_CallvoteSelectedOption = aIndices[s_CurVoteOption];
+	Selected = s_ListBox.DoEnd();
+	if(UpdateScroll)
+		s_ListBox.ScrollToSelected();
+	m_CallvoteSelectedOption = Selected != -1 ? aIndices[Selected] : -1;
 	return s_ListBox.WasItemActivated();
 }
 
-bool CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
+bool CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators, bool UpdateScroll)
 {
 	int NumOptions = 0;
 	int Selected = -1;
 	int aPlayerIds[MAX_CLIENTS];
-	for(const auto &pInfoByName : m_pClient->m_Snap.m_apInfoByName)
+	for(const auto &pInfoByName : GameClient()->m_Snap.m_apInfoByName)
 	{
 		if(!pInfoByName)
 			continue;
 
 		int Index = pInfoByName->m_ClientId;
-		if(Index == m_pClient->m_Snap.m_LocalClientId || (FilterSpectators && pInfoByName->m_Team == TEAM_SPECTATORS))
+		if(Index == GameClient()->m_Snap.m_LocalClientId || (FilterSpectators && pInfoByName->m_Team == TEAM_SPECTATORS))
 			continue;
 
-		if(!str_utf8_find_nocase(m_pClient->m_aClients[Index].m_aName, m_FilterInput.GetString()))
+		if(!str_utf8_find_nocase(GameClient()->m_aClients[Index].m_aName, m_FilterInput.GetString()))
 			continue;
 
 		if(m_CallvoteSelectedPlayer == Index)
@@ -838,7 +914,7 @@ bool CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
 		CUIRect TeeRect, Label;
 		Item.m_Rect.VSplitLeft(Item.m_Rect.h, &TeeRect, &Label);
 
-		CTeeRenderInfo TeeInfo = m_pClient->m_aClients[aPlayerIds[i]].m_RenderInfo;
+		CTeeRenderInfo TeeInfo = GameClient()->m_aClients[aPlayerIds[i]].m_RenderInfo;
 		TeeInfo.m_Size = TeeRect.h;
 
 		const CAnimState *pIdleState = CAnimState::GetIdle();
@@ -848,10 +924,12 @@ bool CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
 
 		RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
 
-		Ui()->DoLabel(&Label, m_pClient->m_aClients[aPlayerIds[i]].m_aName, 16.0f, TEXTALIGN_ML);
+		Ui()->DoLabel(&Label, GameClient()->m_aClients[aPlayerIds[i]].m_aName, 16.0f, TEXTALIGN_ML);
 	}
 
 	Selected = s_ListBox.DoEnd();
+	if(UpdateScroll)
+		s_ListBox.ScrollToSelected();
 	m_CallvoteSelectedPlayer = Selected != -1 ? aPlayerIds[Selected] : -1;
 	return s_ListBox.WasItemActivated();
 }
@@ -897,16 +975,6 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	Bottom.HMargin(5.0f, &Bottom);
 	Bottom.HSplitTop(5.0f, nullptr, &Bottom);
 
-	bool Call = false;
-	if(s_ControlPage == EServerControlTab::SETTINGS)
-		Call = RenderServerControlServer(MainView);
-	else if(s_ControlPage == EServerControlTab::KICKVOTE)
-		Call = RenderServerControlKick(MainView, false);
-	else if(s_ControlPage == EServerControlTab::SPECVOTE)
-		Call = RenderServerControlKick(MainView, true);
-
-	// vote menu
-
 	// render quick search
 	CUIRect QuickSearch;
 	Bottom.VSplitLeft(5.0f, nullptr, &Bottom);
@@ -917,10 +985,19 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		Ui()->SetActiveItem(&m_FilterInput);
 		m_FilterInput.SelectAll();
 	}
-	Ui()->DoEditBox_Search(&m_FilterInput, &QuickSearch, 14.0f, !Ui()->IsPopupOpen() && m_pClient->m_GameConsole.IsClosed());
+	bool Searching = Ui()->DoEditBox_Search(&m_FilterInput, &QuickSearch, 14.0f, !Ui()->IsPopupOpen() && !GameClient()->m_GameConsole.IsActive());
+
+	// vote menu
+	bool Call = false;
+	if(s_ControlPage == EServerControlTab::SETTINGS)
+		Call = RenderServerControlServer(MainView, Searching);
+	else if(s_ControlPage == EServerControlTab::KICKVOTE)
+		Call = RenderServerControlKick(MainView, false, Searching);
+	else if(s_ControlPage == EServerControlTab::SPECVOTE)
+		Call = RenderServerControlKick(MainView, true, Searching);
 
 	// call vote
-	Bottom.VSplitRight(10.0f, &Bottom, 0);
+	Bottom.VSplitRight(10.0f, &Bottom, nullptr);
 	Bottom.VSplitRight(120.0f, &Bottom, &Button);
 
 	static CButtonContainer s_CallVoteButton;
@@ -928,25 +1005,28 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	{
 		if(s_ControlPage == EServerControlTab::SETTINGS)
 		{
-			m_pClient->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString());
-			if(g_Config.m_UiCloseWindowAfterChangingSetting)
-				SetActive(false);
+			if(0 <= m_CallvoteSelectedOption && m_CallvoteSelectedOption < GameClient()->m_Voting.m_NumVoteOptions)
+			{
+				GameClient()->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString());
+				if(g_Config.m_UiCloseWindowAfterChangingSetting)
+					SetActive(false);
+			}
 		}
 		else if(s_ControlPage == EServerControlTab::KICKVOTE)
 		{
 			if(m_CallvoteSelectedPlayer >= 0 && m_CallvoteSelectedPlayer < MAX_CLIENTS &&
-				m_pClient->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
+				GameClient()->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
 			{
-				m_pClient->m_Voting.CallvoteKick(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString());
+				GameClient()->m_Voting.CallvoteKick(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString());
 				SetActive(false);
 			}
 		}
 		else if(s_ControlPage == EServerControlTab::SPECVOTE)
 		{
 			if(m_CallvoteSelectedPlayer >= 0 && m_CallvoteSelectedPlayer < MAX_CLIENTS &&
-				m_pClient->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
+				GameClient()->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
 			{
-				m_pClient->m_Voting.CallvoteSpectate(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString());
+				GameClient()->m_Voting.CallvoteSpectate(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString());
 				SetActive(false);
 			}
 		}
@@ -955,12 +1035,12 @@ void CMenus::RenderServerControl(CUIRect MainView)
 
 	// render kick reason
 	CUIRect Reason;
-	Bottom.VSplitRight(20.0f, &Bottom, 0);
+	Bottom.VSplitRight(20.0f, &Bottom, nullptr);
 	Bottom.VSplitRight(200.0f, &Bottom, &Reason);
 	const char *pLabel = Localize("Reason:");
 	Ui()->DoLabel(&Reason, pLabel, 14.0f, TEXTALIGN_ML);
 	float w = TextRender()->TextWidth(14.0f, pLabel, -1, -1.0f);
-	Reason.VSplitLeft(w + 10.0f, 0, &Reason);
+	Reason.VSplitLeft(w + 10.0f, nullptr, &Reason);
 	if(Input()->KeyPress(KEY_R) && Input()->ModifierIsPressed())
 	{
 		Ui()->SetActiveItem(&m_CallvoteReasonInput);
@@ -969,7 +1049,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	Ui()->DoEditBox(&m_CallvoteReasonInput, &Reason, 14.0f);
 
 	// vote option loading indicator
-	if(s_ControlPage == EServerControlTab::SETTINGS && m_pClient->m_Voting.IsReceivingOptions())
+	if(s_ControlPage == EServerControlTab::SETTINGS && GameClient()->m_Voting.IsReceivingOptions())
 	{
 		CUIRect Spinner, LoadingLabel;
 		Bottom.VSplitLeft(20.0f, nullptr, &Bottom);
@@ -984,12 +1064,12 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	if(Client()->RconAuthed())
 	{
 		// background
-		RconExtension.HSplitTop(10.0f, 0, &RconExtension);
+		RconExtension.HSplitTop(10.0f, nullptr, &RconExtension);
 		RconExtension.HSplitTop(20.0f, &Bottom, &RconExtension);
-		RconExtension.HSplitTop(5.0f, 0, &RconExtension);
+		RconExtension.HSplitTop(5.0f, nullptr, &RconExtension);
 
 		// force vote
-		Bottom.VSplitLeft(5.0f, 0, &Bottom);
+		Bottom.VSplitLeft(5.0f, nullptr, &Bottom);
 		Bottom.VSplitLeft(120.0f, &Button, &Bottom);
 
 		static CButtonContainer s_ForceVoteButton;
@@ -997,23 +1077,23 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		{
 			if(s_ControlPage == EServerControlTab::SETTINGS)
 			{
-				m_pClient->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString(), true);
+				GameClient()->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString(), true);
 			}
 			else if(s_ControlPage == EServerControlTab::KICKVOTE)
 			{
 				if(m_CallvoteSelectedPlayer >= 0 && m_CallvoteSelectedPlayer < MAX_CLIENTS &&
-					m_pClient->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
+					GameClient()->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
 				{
-					m_pClient->m_Voting.CallvoteKick(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString(), true);
+					GameClient()->m_Voting.CallvoteKick(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString(), true);
 					SetActive(false);
 				}
 			}
 			else if(s_ControlPage == EServerControlTab::SPECVOTE)
 			{
 				if(m_CallvoteSelectedPlayer >= 0 && m_CallvoteSelectedPlayer < MAX_CLIENTS &&
-					m_pClient->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
+					GameClient()->m_Snap.m_apPlayerInfos[m_CallvoteSelectedPlayer])
 				{
-					m_pClient->m_Voting.CallvoteSpectate(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString(), true);
+					GameClient()->m_Voting.CallvoteSpectate(m_CallvoteSelectedPlayer, m_CallvoteReasonInput.GetString(), true);
 					SetActive(false);
 				}
 			}
@@ -1023,32 +1103,32 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		if(s_ControlPage == EServerControlTab::SETTINGS)
 		{
 			// remove vote
-			Bottom.VSplitRight(10.0f, &Bottom, 0);
-			Bottom.VSplitRight(120.0f, 0, &Button);
+			Bottom.VSplitRight(10.0f, &Bottom, nullptr);
+			Bottom.VSplitRight(120.0f, nullptr, &Button);
 			static CButtonContainer s_RemoveVoteButton;
 			if(DoButton_Menu(&s_RemoveVoteButton, Localize("Remove"), 0, &Button))
-				m_pClient->m_Voting.RemovevoteOption(m_CallvoteSelectedOption);
+				GameClient()->m_Voting.RemovevoteOption(m_CallvoteSelectedOption);
 
 			// add vote
 			RconExtension.HSplitTop(20.0f, &Bottom, &RconExtension);
-			Bottom.VSplitLeft(5.0f, 0, &Bottom);
+			Bottom.VSplitLeft(5.0f, nullptr, &Bottom);
 			Bottom.VSplitLeft(250.0f, &Button, &Bottom);
 			Ui()->DoLabel(&Button, Localize("Vote description:"), 14.0f, TEXTALIGN_ML);
 
-			Bottom.VSplitLeft(20.0f, 0, &Button);
+			Bottom.VSplitLeft(20.0f, nullptr, &Button);
 			Ui()->DoLabel(&Button, Localize("Vote command:"), 14.0f, TEXTALIGN_ML);
 
 			static CLineInputBuffered<VOTE_DESC_LENGTH> s_VoteDescriptionInput;
 			static CLineInputBuffered<VOTE_CMD_LENGTH> s_VoteCommandInput;
 			RconExtension.HSplitTop(20.0f, &Bottom, &RconExtension);
-			Bottom.VSplitRight(10.0f, &Bottom, 0);
+			Bottom.VSplitRight(10.0f, &Bottom, nullptr);
 			Bottom.VSplitRight(120.0f, &Bottom, &Button);
 			static CButtonContainer s_AddVoteButton;
 			if(DoButton_Menu(&s_AddVoteButton, Localize("Add"), 0, &Button))
 				if(!s_VoteDescriptionInput.IsEmpty() && !s_VoteCommandInput.IsEmpty())
-					m_pClient->m_Voting.AddvoteOption(s_VoteDescriptionInput.GetString(), s_VoteCommandInput.GetString());
+					GameClient()->m_Voting.AddvoteOption(s_VoteDescriptionInput.GetString(), s_VoteCommandInput.GetString());
 
-			Bottom.VSplitLeft(5.0f, 0, &Bottom);
+			Bottom.VSplitLeft(5.0f, nullptr, &Bottom);
 			Bottom.VSplitLeft(250.0f, &Button, &Bottom);
 			Ui()->DoEditBox(&s_VoteDescriptionInput, &Button, 14.0f);
 
@@ -1068,7 +1148,7 @@ void CMenus::RenderInGameNetwork(CUIRect MainView)
 	int NewPage = g_Config.m_UiPage;
 
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
+	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
 
 	TabBar.VSplitLeft(75.0f, &Button, &TabBar);
 	static CButtonContainer s_InternetButton;
@@ -1101,7 +1181,7 @@ void CMenus::RenderInGameNetwork(CUIRect MainView)
 	{
 		TabBar.VSplitLeft(75.0f, &Button, &TabBar);
 		const int Page = PAGE_FAVORITE_COMMUNITY_1 + FavoriteCommunityIndex;
-		if(DoButton_MenuTab(&s_aFavoriteCommunityButtons[FavoriteCommunityIndex], FONT_ICON_ELLIPSIS, g_Config.m_UiPage == Page, &Button, IGraphics::CORNER_NONE, nullptr, nullptr, nullptr, nullptr, 10.0f, FindCommunityIcon(pCommunity->Id())))
+		if(DoButton_MenuTab(&s_aFavoriteCommunityButtons[FavoriteCommunityIndex], FONT_ICON_ELLIPSIS, g_Config.m_UiPage == Page, &Button, IGraphics::CORNER_NONE, nullptr, nullptr, nullptr, nullptr, 10.0f, m_CommunityIcons.Find(pCommunity->Id())))
 		{
 			NewPage = Page;
 		}
@@ -1132,10 +1212,10 @@ int CMenus::GhostlistFetchCallback(const CFsFileInfo *pInfo, int IsDir, int Stor
 		return 0;
 
 	char aFilename[IO_MAX_PATH_LENGTH];
-	str_format(aFilename, sizeof(aFilename), "%s/%s", pSelf->m_pClient->m_Ghost.GetGhostDir(), pInfo->m_pName);
+	str_format(aFilename, sizeof(aFilename), "%s/%s", pSelf->GameClient()->m_Ghost.GetGhostDir(), pInfo->m_pName);
 
 	CGhostInfo Info;
-	if(!pSelf->m_pClient->m_Ghost.GhostLoader()->GetGhostInfo(aFilename, &Info, pMap, pSelf->Client()->GetCurrentMapSha256(), pSelf->Client()->GetCurrentMapCrc()))
+	if(!pSelf->GameClient()->m_Ghost.GhostLoader()->GetGhostInfo(aFilename, &Info, pMap, pSelf->Client()->GetCurrentMapSha256(), pSelf->Client()->GetCurrentMapCrc()))
 		return 0;
 
 	CGhostItem Item;
@@ -1158,10 +1238,10 @@ void CMenus::GhostlistPopulate()
 {
 	m_vGhosts.clear();
 	m_GhostPopulateStartTime = time_get_nanoseconds();
-	Storage()->ListDirectoryInfo(IStorage::TYPE_ALL, m_pClient->m_Ghost.GetGhostDir(), GhostlistFetchCallback, this);
+	Storage()->ListDirectoryInfo(IStorage::TYPE_ALL, GameClient()->m_Ghost.GetGhostDir(), GhostlistFetchCallback, this);
 	SortGhostlist();
 
-	CGhostItem *pOwnGhost = 0;
+	CGhostItem *pOwnGhost = nullptr;
 	for(auto &Ghost : m_vGhosts)
 	{
 		Ghost.m_Failed = false;
@@ -1172,7 +1252,7 @@ void CMenus::GhostlistPopulate()
 	if(pOwnGhost)
 	{
 		pOwnGhost->m_Own = true;
-		pOwnGhost->m_Slot = m_pClient->m_Ghost.Load(pOwnGhost->m_aFilename);
+		pOwnGhost->m_Slot = GameClient()->m_Ghost.Load(pOwnGhost->m_aFilename);
 	}
 }
 
@@ -1212,7 +1292,7 @@ void CMenus::UpdateOwnGhost(CGhostItem Item)
 		Item.m_Slot = -1;
 	}
 
-	Item.m_Date = std::time(0);
+	Item.m_Date = std::time(nullptr);
 	Item.m_Failed = false;
 	m_vGhosts.insert(std::lower_bound(m_vGhosts.begin(), m_vGhosts.end(), Item), Item);
 	SortGhostlist();
@@ -1246,10 +1326,10 @@ void CMenus::RenderGhost(CUIRect MainView)
 	// render background
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
 
-	MainView.HSplitTop(10.0f, 0, &MainView);
-	MainView.HSplitBottom(5.0f, &MainView, 0);
-	MainView.VSplitLeft(5.0f, 0, &MainView);
-	MainView.VSplitRight(5.0f, &MainView, 0);
+	MainView.HSplitTop(10.0f, nullptr, &MainView);
+	MainView.HSplitBottom(5.0f, &MainView, nullptr);
+	MainView.VSplitLeft(5.0f, nullptr, &MainView);
+	MainView.VSplitRight(5.0f, &MainView, nullptr);
 
 	CUIRect Headers, Status;
 	CUIRect View = MainView;
@@ -1259,7 +1339,7 @@ void CMenus::RenderGhost(CUIRect MainView)
 
 	// split of the scrollbar
 	Headers.Draw(ColorRGBA(1, 1, 1, 0.25f), IGraphics::CORNER_T, 5.0f);
-	Headers.VSplitRight(20.0f, &Headers, 0);
+	Headers.VSplitRight(20.0f, &Headers, nullptr);
 
 	class CColumn
 	{
@@ -1404,9 +1484,9 @@ void CMenus::RenderGhost(CUIRect MainView)
 	static CButtonContainer s_DirectoryButton;
 	static CButtonContainer s_ActivateAll;
 
-	if(DoButton_FontIcon(&s_ReloadButton, FONT_ICON_ARROW_ROTATE_RIGHT, 0, &Button) || Input()->KeyPress(KEY_F5) || (Input()->KeyPress(KEY_R) && Input()->ModifierIsPressed()))
+	if(Ui()->DoButton_FontIcon(&s_ReloadButton, FONT_ICON_ARROW_ROTATE_RIGHT, 0, &Button, BUTTONFLAG_LEFT) || Input()->KeyPress(KEY_F5) || (Input()->KeyPress(KEY_R) && Input()->ModifierIsPressed()))
 	{
-		m_pClient->m_Ghost.UnloadAll();
+		GameClient()->m_Ghost.UnloadAll();
 		GhostlistPopulate();
 	}
 
@@ -1424,7 +1504,7 @@ void CMenus::RenderGhost(CUIRect MainView)
 	if(NumGhosts - NumFailed > 0)
 	{
 		Status.VSplitLeft(175.0f, &Button, &Status);
-		bool ActivateAll = ((NumGhosts - NumFailed) != NumActivated) && m_pClient->m_Ghost.FreeSlots();
+		bool ActivateAll = ((NumGhosts - NumFailed) != NumActivated) && GameClient()->m_Ghost.FreeSlots();
 
 		const char *pActionText = ActivateAll ? Localize("Activate all") : Localize("Deactivate all");
 		if(DoButton_Menu(&s_ActivateAll, pActionText, 0, &Button))
@@ -1437,16 +1517,16 @@ void CMenus::RenderGhost(CUIRect MainView)
 
 				if(ActivateAll)
 				{
-					if(!m_pClient->m_Ghost.FreeSlots())
+					if(!GameClient()->m_Ghost.FreeSlots())
 						break;
 
-					pGhost->m_Slot = m_pClient->m_Ghost.Load(pGhost->m_aFilename);
+					pGhost->m_Slot = GameClient()->m_Ghost.Load(pGhost->m_aFilename);
 					if(pGhost->m_Slot == -1)
 						pGhost->m_Failed = true;
 				}
 				else
 				{
-					m_pClient->m_Ghost.UnloadAll();
+					GameClient()->m_Ghost.UnloadAll();
 					pGhost->m_Slot = -1;
 				}
 			}
@@ -1460,7 +1540,7 @@ void CMenus::RenderGhost(CUIRect MainView)
 
 	CGhostItem *pOwnGhost = GetOwnGhost();
 	int ReservedSlots = !pGhost->m_Own && !(pOwnGhost && pOwnGhost->Active());
-	if(!pGhost->m_Failed && pGhost->HasFile() && (pGhost->Active() || m_pClient->m_Ghost.FreeSlots() > ReservedSlots))
+	if(!pGhost->m_Failed && pGhost->HasFile() && (pGhost->Active() || GameClient()->m_Ghost.FreeSlots() > ReservedSlots))
 	{
 		Status.VSplitRight(120.0f, &Status, &Button);
 
@@ -1470,17 +1550,17 @@ void CMenus::RenderGhost(CUIRect MainView)
 		{
 			if(pGhost->Active())
 			{
-				m_pClient->m_Ghost.Unload(pGhost->m_Slot);
+				GameClient()->m_Ghost.Unload(pGhost->m_Slot);
 				pGhost->m_Slot = -1;
 			}
 			else
 			{
-				pGhost->m_Slot = m_pClient->m_Ghost.Load(pGhost->m_aFilename);
+				pGhost->m_Slot = GameClient()->m_Ghost.Load(pGhost->m_aFilename);
 				if(pGhost->m_Slot == -1)
 					pGhost->m_Failed = true;
 			}
 		}
-		Status.VSplitRight(5.0f, &Status, 0);
+		Status.VSplitRight(5.0f, &Status, nullptr);
 	}
 
 	Status.VSplitRight(120.0f, &Status, &Button);
@@ -1489,19 +1569,19 @@ void CMenus::RenderGhost(CUIRect MainView)
 	if(DoButton_Menu(&s_DeleteButton, Localize("Delete"), 0, &Button))
 	{
 		if(pGhost->Active())
-			m_pClient->m_Ghost.Unload(pGhost->m_Slot);
+			GameClient()->m_Ghost.Unload(pGhost->m_Slot);
 		DeleteGhostItem(s_SelectedIndex);
 	}
 
-	Status.VSplitRight(5.0f, &Status, 0);
+	Status.VSplitRight(5.0f, &Status, nullptr);
 
-	bool Recording = m_pClient->m_Ghost.GhostRecorder()->IsRecording();
+	bool Recording = GameClient()->m_Ghost.GhostRecorder()->IsRecording();
 	if(!pGhost->HasFile() && !Recording && pGhost->Active())
 	{
 		static CButtonContainer s_SaveButton;
 		Status.VSplitRight(120.0f, &Status, &Button);
 		if(DoButton_Menu(&s_SaveButton, Localize("Save"), 0, &Button))
-			m_pClient->m_Ghost.SaveGhost(pGhost);
+			GameClient()->m_Ghost.SaveGhost(pGhost);
 	}
 }
 

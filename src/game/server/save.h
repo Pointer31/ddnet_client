@@ -2,9 +2,11 @@
 #define GAME_SERVER_SAVE_H
 
 #include <base/vmath.h>
-
 #include <engine/shared/protocol.h>
 #include <game/generated/protocol.h>
+#include <game/team_state.h>
+
+#include <optional>
 
 class IGameController;
 class CGameContext;
@@ -148,6 +150,22 @@ private:
 	char m_aGameUuid[UUID_MAXSTRSIZE];
 };
 
+class CSaveHotReloadTee
+{
+public:
+	CSaveHotReloadTee() = default;
+	~CSaveHotReloadTee() = default;
+	void Save(CCharacter *pChr, bool AddPenalty = true);
+	bool Load(CCharacter *pChr, int Team, bool IsSwap = false);
+
+private:
+	CSaveTee m_SaveTee;
+	bool m_Super;
+	bool m_Invincible;
+	CSaveTee m_SavedTeleTee;
+	std::optional<CSaveTee> m_LastDeath;
+};
+
 class CSaveTeam
 {
 public:
@@ -180,7 +198,7 @@ private:
 	};
 	SSimpleSwitchers *m_pSwitchers = nullptr;
 
-	int m_TeamState = 0;
+	ETeamState m_TeamState = ETeamState::EMPTY;
 	int m_MembersCount = 0;
 	int m_HighestSwitchNumber = 0;
 	int m_TeamLocked = 0;

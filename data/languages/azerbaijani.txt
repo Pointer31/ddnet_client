@@ -1,16 +1,3 @@
-##### authors #####
-#originally created by:
-#	    Gokturk, seishiroon and Aykhan [EN07Z]
-#modified by:
-#     Gokturk          2024-06-09 12:00:50
-#     Gokturk          2024-07-17 02:24:00
-#     Gokturk          2024-08-29 23:39:00
-#     Gokturk          2024-09-29 19:24:00
-#     Gokturk          2024-11-04 11:35:00
-#     Gokturk & seishiroon          2024-12-03 16:35:00
-##### /authors #####
-
-##### translated strings #####
 %ds left
 == %ds qaldı
 
@@ -395,9 +382,6 @@ The audio device couldn't be initialised.
 The server is running a non-standard tuning on a pure game type.
 == Bu server təmiz oyun janrında qeyri-standart parametrdən istifadə edir.
 
-Time limit
-== Vaxt məhdudiyyəti
-
 Time limit: %d min
 == Vaxt məhdudiyyəti: %d dəqiqə
 
@@ -755,9 +739,6 @@ may cause delay
 Screen
 == Ekran
 
-Use high DPI
-== Yüksək DPI istifadə et 
-
 Enable game sounds
 == Oyun səsini aktivləşdirin
 
@@ -875,9 +856,6 @@ AntiPing: predict grenade paths
 Show other players' hook collision lines
 == Show other players' hook collision lines
 
-Show other players' key presses
-== Show other players' key presses
-
 Show tiles layers from BG map
 == Show tiles layers from BG map
 
@@ -956,10 +934,6 @@ https://wiki.ddnet.org/
 [Graphics error]
 Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
 == Failed during initialization. Try to change gfx_backend to OpenGL or Vulkan in settings_ddnet.cfg in the config directory and try again.
-
-[Graphics error]
-Out of VRAM. Try removing custom assets (skins, entities, etc.), especially those with high resolution.
-== Out of VRAM. Try removing custom assets (skins, entities, etc.), especially those with high resolution.
 
 [Graphics error]
 An error during command recording occurred. Try to update your GPU drivers.
@@ -1472,9 +1446,6 @@ Use old chat style
 Preview
 == Önizləmə
 
-Show local player's key presses
-== Yerli oyunçunun düymə basmalarını göstərin
-
 Hook collision line
 == Qarmaq izi
 
@@ -1541,7 +1512,7 @@ When you cross the start line, show a ghost tee replicating the movements of you
 Opacity
 == Şəffaflıq
 
-Adjust the opacity of entities belonging to other teams, such as tees and nameplates
+Adjust the opacity of entities belonging to other teams, such as tees and name plates
 == Teelər və istifadəçi adları kimi digər qruplara aid varlıqların qeyri-şəffaflığını düzəldin
 
 Quads are used for background decoration
@@ -1633,12 +1604,12 @@ Go back the specified duration
 == Verilən zaman qədər geri qayıt
 
 [Demo player duration]
-%d min.
-== %d dəq.
+%s min.
+== %s dəq.
 
 [Demo player duration]
-%d sec.
-== %d san.
+%s sec.
+== %s san.
 
 Change the skip duration
 == Keçiləcək zamanı dəyişdir
@@ -1802,9 +1773,6 @@ Player info change cooldown
 Always show chat
 == Həmişə söhbəti göstərin
 
-Show friend mark (♥) in name plates
-== İstifadəçi adlarında dostluq simvolunu (♥️) göstər
-
 Show hook strength icon indicator
 == Qarmaq gücü işarəsi göstəricisini göstər
 
@@ -1945,9 +1913,6 @@ Add friends by entering their name below or by clicking their name in the player
 Add clanmates by entering their clan below and leaving the name blank.
 == Klan yoldaşlarınızı klan adını aşağıya yazaraq və ad hissəsini boş buraxaraq əlavə edin.
 
-Offline friends and clanmates will appear here.
-== Oflayn dostlar və klan yoldaşları burada görünəcək.
-
 Edit touch controls
 == Toxunuş idarəetmələrini düzəlt
 
@@ -2039,3 +2004,212 @@ Active: Fire
 
 Active: Hook
 == Aktiv: Qarmaq
+
+"%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
+== "%s" pnglite ilə uyğun gəlmir və köhnə DDnet versiyaları tərəfindən yüklənə bilmir.
+
+[Spectating Camera Mode Icon]
+AUTO
+== AVTOMATİK
+
+Toggle auto camera
+== Avtomatik kameraya keç
+
+https://wiki.ddnet.org/wiki/Touch_controls
+== https://wiki.ddnet.org/wiki/Touch_controls
+
+Show client IDs in name plates
+== Müştəri ID-sini ad bölməsində göstər
+
+Hook Strength
+== Qarmaq gücü
+
+Size of hook strength icon and number indicator
+== Qarmaq gücü simvolu və rəqəm göstəricisinin ölçüşü
+
+Key Presses
+== Klaviş Basışları
+
+Size of key press icons
+== Klaviş basma simvolunun ölçüsü
+
+Server could not be started. Make sure to grant the notification permission in the app settings so the server can run in the background.
+== Server başladıla bilmir. Serverin fonda işləməsi üçün parametrlərdə bildiriş icazəsini aktivləşdirdiyinizə əmin olun.
+
+Auto-sync player camera
+== Avto-sinxron oyunçu kamerası
+
+[Auto camera]
+Disabled
+== Qeyri-aktiv
+
+[Auto camera]
+Enabled
+== Aktiv
+
+[Auto camera]
+Unavailable for this player
+== Bu oyunçu üçün mövcud deyil
+
+[Auto camera]
+Inactive
+== Qeyri-aktiv
+
+[Auto camera]
+Active
+== Aktiv
+
+Loading maps…
+== Xəritələr yüklənir…
+
+Community
+== İcma
+
+[Team status]
+forbidden
+== qadağa olunmuş
+
+[Team status]
+solo
+== tək
+
+[Team status]
+allowed
+== icazəli
+
+[Team status]
+required
+== tələb olunur
+
+Teams
+== Komandalar
+
+[Team size]
+minimum
+== minimum
+
+[Team size]
+maximum
+== maksimum
+
+Saves file
+== Qeydlər faylı
+
+Open the saves file
+== Qeydlər faylını aç
+
+Show FPS
+== FPS-i göstər
+
+Renders your frame rate in the top right
+== Üst sağda FPS-i göstərir
+
+[Translation credits: Add your own name here when you update translations]
+English translation by the DDNet Team
+== Azərbaycan dilinə tərcümə: seishiroon, Aykhan [EN07Z] və Gokturk tərəfindən
+
+Show spectator cursor
+== Tamaşaçı kursorunu göstər
+
+[Graphics error]
+Out of VRAM. Try setting 'cl_skins_loaded_max' to a lower value or remove custom assets (skins, entities, etc.), especially those with high resolution.
+== 
+
+No demo with this filename exists
+== 
+
+[Spectating]
+Following %d: %s
+== 
+
+Loading map
+== 
+
+This name cannot be used for files and folders
+== 
+
+Error checking player name
+== 
+
+Could not check for existing player with your name. Check your internet connection.
+== 
+
+Map size
+== 
+
+This skin name cannot be used.
+== 
+
+Skin could not be loaded due to an error. Check the local console for details.
+== 
+
+Skin could not be found.
+== 
+
+No skins match your filter criteria
+== 
+
+Show number of spectators
+== 
+
+[Show name plates]
+None
+== 
+
+[Show name plates]
+Own
+== 
+
+[Show name plates]
+Others
+== 
+
+[Show name plates]
+All
+== 
+
+Name plates offset
+== 
+
+Show friend icon in name plates
+== 
+
+Show client IDs on a seperate line
+== 
+
+Client IDs size
+== 
+
+Show players' key presses
+== 
+
+[Show players' key presses]
+None
+== 
+
+[Show players' key presses]
+Own
+== 
+
+[Show players' key presses]
+Others
+== 
+
+[Show players' key presses]
+All
+== 
+
+Preview player's name plate
+== 
+
+Preview dummy's name plate
+== 
+
+Dragger Outline Color
+== 
+
+Dragger Inner Color
+== 
+
+AntiPing: prediction margin
+== 

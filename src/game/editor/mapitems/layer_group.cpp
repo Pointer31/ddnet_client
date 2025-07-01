@@ -1,6 +1,7 @@
 #include "layer_group.h"
 
 #include <base/math.h>
+#include <engine/shared/config.h>
 #include <game/editor/editor.h>
 
 CLayerGroup::CLayerGroup()
@@ -35,7 +36,7 @@ void CLayerGroup::Convert(CUIRect *pRect) const
 
 void CLayerGroup::Mapping(float *pPoints) const
 {
-	float NormalParallaxZoom = clamp((double)(maximum(m_ParallaxX, m_ParallaxY)), 0., 100.);
+	float NormalParallaxZoom = std::clamp((double)(maximum(m_ParallaxX, m_ParallaxY)), 0., 100.);
 	float ParallaxZoom = m_pMap->m_pEditor->m_PreviewZoom ? NormalParallaxZoom : 100.0f;
 
 	m_pMap->m_pEditor->RenderTools()->MapScreenToWorld(
@@ -81,7 +82,15 @@ void CLayerGroup::Render()
 			if(pLayer->m_Type == LAYERTYPE_TILES)
 			{
 				std::shared_ptr<CLayerTiles> pTiles = std::static_pointer_cast<CLayerTiles>(pLayer);
-				if(pTiles->m_Game || pTiles->m_Front || pTiles->m_Tele || pTiles->m_Speedup || pTiles->m_Tune || pTiles->m_Switch)
+
+				if(g_Config.m_EdShowIngameEntities && pLayer->IsEntitiesLayer() && (pLayer == m_pMap->m_pGameLayer || pLayer == m_pMap->m_pFrontLayer || pLayer == m_pMap->m_pSwitchLayer))
+				{
+					if(pLayer != m_pMap->m_pSwitchLayer)
+						m_pMap->m_pEditor->RenderGameEntities(pTiles);
+					m_pMap->m_pEditor->RenderSwitchEntities(pTiles);
+				}
+
+				if(pTiles->m_HasGame || pTiles->m_HasFront || pTiles->m_HasTele || pTiles->m_HasSpeedup || pTiles->m_HasTune || pTiles->m_HasSwitch)
 					continue;
 			}
 			if(m_pMap->m_pEditor->m_ShowDetail || !(pLayer->m_Flags & LAYERFLAG_DETAIL))
@@ -94,7 +103,7 @@ void CLayerGroup::Render()
 		if(pLayer->m_Visible && pLayer->m_Type == LAYERTYPE_TILES && !pLayer->IsEntitiesLayer())
 		{
 			std::shared_ptr<CLayerTiles> pTiles = std::static_pointer_cast<CLayerTiles>(pLayer);
-			if(pTiles->m_Game || pTiles->m_Front || pTiles->m_Tele || pTiles->m_Speedup || pTiles->m_Tune || pTiles->m_Switch)
+			if(pTiles->m_HasGame || pTiles->m_HasFront || pTiles->m_HasTele || pTiles->m_HasSpeedup || pTiles->m_HasTune || pTiles->m_HasSwitch)
 			{
 				pLayer->Render();
 			}
@@ -132,14 +141,14 @@ void CLayerGroup::DuplicateLayer(int Index)
 
 void CLayerGroup::GetSize(float *pWidth, float *pHeight) const
 {
-	*pWidth = 0;
-	*pHeight = 0;
+	*pWidth = 0.0f;
+	*pHeight = 0.0f;
 	for(const auto &pLayer : m_vpLayers)
 	{
-		float lw, lh;
-		pLayer->GetSize(&lw, &lh);
-		*pWidth = maximum(*pWidth, lw);
-		*pHeight = maximum(*pHeight, lh);
+		float LayerWidth, LayerHeight;
+		pLayer->GetSize(&LayerWidth, &LayerHeight);
+		*pWidth = maximum(*pWidth, LayerWidth);
+		*pHeight = maximum(*pHeight, LayerHeight);
 	}
 }
 

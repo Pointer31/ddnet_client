@@ -4,9 +4,7 @@
 #define GAME_SERVER_PLAYER_H
 
 #include <base/vmath.h>
-
 #include <engine/shared/protocol.h>
-
 #include <game/alloc.h>
 #include <game/server/save.h>
 
@@ -20,13 +18,6 @@ class CGameContext;
 class IServer;
 struct CNetObj_PlayerInput;
 struct CScorePlayerResult;
-
-enum
-{
-	WEAPON_GAME = -3, // team switching etc
-	WEAPON_SELF = -2, // console kill command
-	WEAPON_WORLD = -1, // death tiles etc
-};
 
 // player object
 class CPlayer
@@ -113,7 +104,6 @@ public:
 	int m_PreviousDieTick;
 	std::optional<int> m_Score;
 	int m_JoinTick;
-	bool m_ForceBalanced;
 	int m_LastActionTick;
 	int m_TeamChangeTick;
 
@@ -247,6 +237,7 @@ public:
 	int m_RescueMode;
 
 	CSaveTee m_LastTeleTee;
+	std::optional<CSaveTee> m_LastDeath;
 };
 
 #endif

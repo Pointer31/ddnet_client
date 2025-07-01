@@ -103,6 +103,7 @@ public:
 	~CMenuBackground() override {}
 	virtual int Sizeof() const override { return sizeof(*this); }
 
+	void OnInterfacesInit(CGameClient *pClient) override;
 	void OnInit() override;
 	void OnMapLoad() override;
 	void OnRender() override;
@@ -113,7 +114,6 @@ public:
 	bool IsLoading() const { return m_Loading; }
 
 	class CCamera *GetCurCamera() override;
-	const char *LoadingTitle() const override;
 
 	void ChangePosition(int PositionNumber);
 

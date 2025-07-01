@@ -1,13 +1,14 @@
-#include "save.h"
+#include <engine/shared/config.h>
+#include <engine/shared/protocol.h>
+#include <game/server/entities/character.h>
+#include <game/server/gamemodes/DDRace.h>
+#include <game/team_state.h>
 
 #include <cstdio> // sscanf
 
-#include "entities/character.h"
-#include "gamemodes/DDRace.h"
 #include "player.h"
+#include "save.h"
 #include "teams.h"
-#include <engine/shared/config.h>
-#include <engine/shared/protocol.h>
 
 CSaveTee::CSaveTee() = default;
 
@@ -59,7 +60,7 @@ void CSaveTee::Save(CCharacter *pChr, bool AddPenalty)
 	m_DeepFrozen = pChr->m_Core.m_DeepFrozen;
 	m_LiveFrozen = pChr->m_Core.m_LiveFrozen;
 	m_EndlessHook = pChr->m_Core.m_EndlessHook;
-	m_DDRaceState = pChr->m_DDRaceState;
+	m_DDRaceState = static_cast<int>(pChr->m_DDRaceState);
 
 	m_HitDisabledFlags = 0;
 	if(pChr->m_Core.m_HammerHitDisabled)
@@ -176,7 +177,7 @@ bool CSaveTee::Load(CCharacter *pChr, int Team, bool IsSwap)
 	pChr->m_Core.m_DeepFrozen = m_DeepFrozen;
 	pChr->m_Core.m_LiveFrozen = m_LiveFrozen;
 	pChr->m_Core.m_EndlessHook = m_EndlessHook;
-	pChr->m_DDRaceState = m_DDRaceState;
+	pChr->m_DDRaceState = static_cast<ERaceState>(m_DDRaceState);
 
 	pChr->m_Core.m_HammerHitDisabled = m_HitDisabledFlags & CSaveTee::HAMMER_HIT_DISABLED;
 	pChr->m_Core.m_ShotgunHitDisabled = m_HitDisabledFlags & CSaveTee::SHOTGUN_HIT_DISABLED;
@@ -482,6 +483,26 @@ bool CSaveTee::IsHooking() const
 	return m_HookState == HOOK_GRABBED || m_HookState == HOOK_FLYING;
 }
 
+void CSaveHotReloadTee::Save(CCharacter *pChr, bool AddPenalty)
+{
+	m_SaveTee.Save(pChr, AddPenalty);
+	m_Super = pChr->m_Core.m_Super;
+	m_Invincible = pChr->m_Core.m_Invincible;
+	m_SavedTeleTee = pChr->GetPlayer()->m_LastTeleTee;
+	m_LastDeath = pChr->GetPlayer()->m_LastDeath;
+}
+
+bool CSaveHotReloadTee::Load(CCharacter *pChr, int Team, bool IsSwap)
+{
+	bool Result = m_SaveTee.Load(pChr, Team, IsSwap);
+	pChr->SetSuper(m_Super);
+	pChr->m_Core.m_Invincible = m_Invincible;
+	pChr->GetPlayer()->m_LastTeleTee = m_SavedTeleTee;
+	pChr->GetPlayer()->m_LastDeath = m_LastDeath;
+
+	return Result;
+}
+
 CSaveTeam::CSaveTeam()
 {
 	m_aString[0] = '\0';
@@ -507,14 +528,14 @@ ESaveResult CSaveTeam::Save(CGameContext *pGameServer, int Team, bool Dry, bool 
 	}
 
 	m_MembersCount = pTeams->Count(Team);
-	if(m_MembersCount <= 0 && !Force)
+	if(m_MembersCount <= 0)
 	{
 		return ESaveResult::TEAM_NOT_FOUND;
 	}
 
 	m_TeamState = pTeams->GetTeamState(Team);
 
-	if(m_TeamState != CGameTeams::TEAMSTATE_STARTED && !Force)
+	if(m_TeamState != ETeamState::STARTED && !Force)
 	{
 		return ESaveResult::NOT_STARTED;
 	}
@@ -529,7 +550,7 @@ ESaveResult CSaveTeam::Save(CGameContext *pGameServer, int Team, bool Dry, bool 
 	CCharacter *p = (CCharacter *)pGameServer->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER);
 	for(; p; p = (CCharacter *)p->TypeNext())
 	{
-		if(pTeams->m_Core.Team(p->GetPlayer()->GetCid()) != Team && !Force)
+		if(pTeams->m_Core.Team(p->GetPlayer()->GetCid()) != Team)
 			continue;
 		if(m_MembersCount == j && !Force)
 			return ESaveResult::CHAR_NOT_FOUND;
@@ -726,7 +747,7 @@ int CSaveTeam::FromString(const char *pString)
 	if(m_pSavedTees)
 	{
 		delete[] m_pSavedTees;
-		m_pSavedTees = 0;
+		m_pSavedTees = nullptr;
 	}
 
 	if(m_MembersCount > 64)
@@ -779,7 +800,7 @@ int CSaveTeam::FromString(const char *pString)
 	if(m_pSwitchers)
 	{
 		delete[] m_pSwitchers;
-		m_pSwitchers = 0;
+		m_pSwitchers = nullptr;
 	}
 
 	if(m_HighestSwitchNumber)

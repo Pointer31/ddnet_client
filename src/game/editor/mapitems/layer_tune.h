@@ -32,6 +32,12 @@ public:
 	void BrushFlipY() override;
 	void BrushRotate(float Amount) override;
 	void FillSelection(bool Empty, std::shared_ptr<CLayer> pBrush, CUIRect Rect) override;
+	int FindNextFreeNumber() const;
+	bool ContainsElementWithId(int Id) const;
+	void GetPos(int Number, int Offset, ivec2 &Pos);
+
+	int m_GotoTuneOffset;
+	ivec2 m_GotoTuneLastPos;
 
 	EditorTileStateChangeHistory<STuneTileStateChange> m_History;
 	inline void ClearHistory() override

@@ -18,6 +18,9 @@
 #include <functional>
 #include <optional>
 
+#define CONNECTLINK_DOUBLE_SLASH "ddnet://"
+#define CONNECTLINK_NO_SLASH "ddnet:"
+
 struct SWarning;
 
 enum
@@ -57,9 +60,9 @@ public:
 	};
 
 	/**
-	* More precise state for @see STATE_LOADING
-	* Sets what is actually happening in the client right now
-	*/
+	 * More precise state for @see STATE_LOADING
+	 * Sets what is actually happening in the client right now
+	 */
 	enum ELoadingStateDetail
 	{
 		LOADING_STATE_DETAIL_INITIAL,
@@ -96,7 +99,7 @@ protected:
 	float m_LocalTime = 0.0f;
 	float m_GlobalTime = 0.0f;
 	float m_RenderFrameTime = 0.0001f;
-	float m_FrameTimeAvg = 0.0001f;
+	float m_FrameTimeAverage = 0.0001f;
 
 	TLoadingCallback m_LoadingCallback = nullptr;
 
@@ -155,7 +158,7 @@ public:
 	inline float RenderFrameTime() const { return m_RenderFrameTime; }
 	inline float LocalTime() const { return m_LocalTime; }
 	inline float GlobalTime() const { return m_GlobalTime; }
-	inline float FrameTimeAvg() const { return m_FrameTimeAvg; }
+	inline float FrameTimeAverage() const { return m_FrameTimeAverage; }
 
 	// actions
 	virtual void Connect(const char *pAddress, const char *pPassword = nullptr) = 0;
@@ -185,9 +188,6 @@ public:
 	virtual void ServerBrowserUpdate() = 0;
 
 	// gfx
-	virtual void SwitchWindowScreen(int Index) = 0;
-	virtual void SetWindowParams(int FullscreenMode, bool IsBorderless) = 0;
-	virtual void ToggleWindowVSync() = 0;
 	virtual void Notify(const char *pTitle, const char *pMessage) = 0;
 	virtual void OnWindowResize() = 0;
 
@@ -214,12 +214,16 @@ public:
 	virtual void Rcon(const char *pLine) = 0;
 	virtual bool ReceivingRconCommands() const = 0;
 	virtual float GotRconCommandsPercentage() const = 0;
+	virtual bool ReceivingMaplist() const = 0;
+	virtual float GotMaplistPercentage() const = 0;
+	virtual const std::vector<std::string> &MaplistEntries() const = 0;
 
 	// server info
 	virtual void GetServerInfo(class CServerInfo *pServerInfo) const = 0;
 	virtual bool ServerCapAnyPlayerFlag() const = 0;
 
 	virtual int GetPredictionTime() = 0;
+	virtual int GetPredictionTick() = 0;
 
 	// snapshot interface
 
@@ -268,7 +272,7 @@ public:
 
 	virtual IGraphics::CTextureHandle GetDebugFont() const = 0; // TODO: remove this function
 
-	//DDRace
+	// DDRace
 
 	virtual const char *GetCurrentMap() const = 0;
 	virtual const char *GetCurrentMapPath() const = 0;
@@ -290,6 +294,13 @@ public:
 	virtual void DemoSliceEnd() = 0;
 	virtual void DemoSlice(const char *pDstPath, CLIENTFUNC_FILTER pfnFilter, void *pUser) = 0;
 
+	enum class EInfoState
+	{
+		LOADING,
+		SUCCESS,
+		ERROR,
+	};
+	virtual EInfoState InfoState() const = 0;
 	virtual void RequestDDNetInfo() = 0;
 	virtual bool EditorHasUnsavedData() const = 0;
 

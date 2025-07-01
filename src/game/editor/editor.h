@@ -38,6 +38,7 @@
 #include "editor_ui.h"
 #include "layer_selector.h"
 #include "map_view.h"
+#include "quadart.h"
 #include "smooth_value.h"
 #include <game/editor/prompt.h>
 #include <game/editor/quick_action.h>
@@ -247,6 +248,7 @@ enum
 	PROPTYPE_SHIFT,
 	PROPTYPE_SOUND,
 	PROPTYPE_AUTOMAPPER,
+	PROPTYPE_AUTOMAPPER_REFERENCE,
 };
 
 class CDataFileWriterFinishJob : public IJob
@@ -312,7 +314,7 @@ class CEditor : public IEditor
 	};
 
 	std::shared_ptr<CLayerGroup> m_apSavedBrushes[10];
-	static const ColorRGBA ms_DefaultPropColor;
+	static inline constexpr ColorRGBA ms_DefaultPropColor = ColorRGBA(1, 1, 1, 0.5f);
 
 public:
 	class IInput *Input() const { return m_pInput; }
@@ -351,6 +353,7 @@ public:
 	void LayerSelectImage();
 	bool IsNonGameTileLayerSelected() const;
 	void MapDetails();
+	void TestMapLocally();
 #define REGISTER_QUICK_ACTION(name, text, callback, disabled, active, button_color, description) CQuickAction m_QuickAction##name;
 #include <game/editor/quick_actions.h>
 #undef REGISTER_QUICK_ACTION
@@ -385,6 +388,7 @@ public:
 
 		m_FileDialogStorageType = 0;
 		m_FileDialogLastPopulatedStorageType = 0;
+		m_FileDialogSaveAction = false;
 		m_pFileDialogTitle = nullptr;
 		m_pFileDialogButtonText = nullptr;
 		m_pFileDialogUser = nullptr;
@@ -444,23 +448,23 @@ public:
 
 		m_CursorType = CURSOR_NORMAL;
 
-		ms_pUiGotContext = nullptr;
-
 		// DDRace
 
 		m_TeleNumber = 1;
 		m_TeleCheckpointNumber = 1;
 		m_ViewTeleNumber = 0;
 
-		m_SwitchNum = 1;
 		m_TuningNum = 1;
+		m_ViewTuning = 0;
+
+		m_SwitchNum = 1;
 		m_SwitchDelay = 0;
 		m_SpeedupForce = 50;
 		m_SpeedupMaxSpeed = 0;
 		m_SpeedupAngle = 0;
 		m_LargeLayerWasWarned = false;
 		m_PreventUnusedTilesWasWarned = false;
-		m_AllowPlaceUnusedTiles = 0;
+		m_AllowPlaceUnusedTiles = EUnusedEntities::NOT_ALLOWED;
 		m_BrushDrawDestructive = true;
 	}
 
@@ -491,7 +495,7 @@ public:
 	void OnActivate() override;
 	void OnWindowResize() override;
 	void OnClose() override;
-	void OnDialogClose() override;
+	void OnDialogClose();
 	bool HasUnsavedData() const override { return m_Map.m_Modified; }
 	void UpdateMentions() override { m_Mentions++; }
 	void ResetMentions() override { m_Mentions = 0; }
@@ -500,6 +504,15 @@ public:
 
 	void HandleCursorMovement();
 	void OnMouseMove(vec2 MousePos);
+	void MouseAxisLock(vec2 &CursorRel);
+	vec2 m_MouseAxisInitialPos = vec2(0.0f, 0.0f);
+	enum class EAxisLock
+	{
+		Start,
+		None,
+		Horizontal,
+		Vertical
+	} m_MouseAxisLockState = EAxisLock::Start;
 	void HandleAutosave();
 	bool PerformAutosave();
 	void HandleWriterFinishJobs();
@@ -533,6 +546,8 @@ public:
 	void FreeDynamicPopupMenus();
 	void UpdateColorPipette();
 	void RenderMousePointer();
+	void RenderGameEntities(const std::shared_ptr<CLayerTiles> &pTiles);
+	void RenderSwitchEntities(const std::shared_ptr<CLayerTiles> &pTiles);
 
 	std::vector<CQuad *> GetSelectedQuads();
 	std::shared_ptr<CLayer> GetSelectedLayerType(int Index, int Type) const;
@@ -605,9 +620,14 @@ public:
 		POPEVENT_IMAGE_MAX,
 		POPEVENT_SOUND_MAX,
 		POPEVENT_PLACE_BORDER_TILES,
-		POPEVENT_PIXELART_BIG_IMAGE,
-		POPEVENT_PIXELART_MANY_COLORS,
-		POPEVENT_PIXELART_TOO_MANY_COLORS
+		POPEVENT_TILEART_BIG_IMAGE,
+		POPEVENT_TILEART_MANY_COLORS,
+		POPEVENT_TILEART_TOO_MANY_COLORS,
+		POPEVENT_QUADART_BIG_IMAGE,
+		POPEVENT_REMOVE_USED_IMAGE,
+		POPEVENT_REMOVE_USED_SOUND,
+		POPEVENT_RESTART_SERVER,
+		POPEVENT_RESTARTING_SERVER,
 	};
 
 	int m_PopupEventType;
@@ -615,7 +635,16 @@ public:
 	int m_PopupEventWasActivated;
 	bool m_LargeLayerWasWarned;
 	bool m_PreventUnusedTilesWasWarned;
-	int m_AllowPlaceUnusedTiles;
+
+	enum class EUnusedEntities
+	{
+		ALLOWED_IMPLICIT = -1,
+		NOT_ALLOWED = 0,
+		ALLOWED_EXPLICIT = 1,
+	};
+	EUnusedEntities m_AllowPlaceUnusedTiles;
+	bool IsAllowPlaceUnusedTiles() const;
+
 	bool m_BrushDrawDestructive;
 
 	int m_Mentions = 0;
@@ -631,6 +660,7 @@ public:
 
 	int m_FileDialogStorageType;
 	int m_FileDialogLastPopulatedStorageType;
+	bool m_FileDialogSaveAction;
 	const char *m_pFileDialogTitle;
 	const char *m_pFileDialogButtonText;
 	bool (*m_pfnFileDialogFunc)(const char *pFileName, int StorageType, void *pUser);
@@ -700,7 +730,7 @@ public:
 			return true;
 		if(str_comp(pRhs->m_aFilename, "..") == 0)
 			return false;
-		if(pLhs->m_IsLink || pRhs->m_IsLink)
+		if(pLhs->m_IsLink != pRhs->m_IsLink)
 			return pLhs->m_IsLink;
 		if(pLhs->m_IsDir != pRhs->m_IsDir)
 			return pLhs->m_IsDir;
@@ -713,7 +743,7 @@ public:
 			return true;
 		if(str_comp(pRhs->m_aFilename, "..") == 0)
 			return false;
-		if(pLhs->m_IsLink || pRhs->m_IsLink)
+		if(pLhs->m_IsLink != pRhs->m_IsLink)
 			return pLhs->m_IsLink;
 		if(pLhs->m_IsDir != pRhs->m_IsDir)
 			return pLhs->m_IsDir;
@@ -739,7 +769,6 @@ public:
 	bool m_ShowMousePointer;
 	bool m_GuiActive;
 
-	char m_aMenuBackgroundTooltip[256];
 	bool m_PreviewZoom;
 	float m_MouseWorldScale = 1.0f; // Mouse (i.e. UI) scale relative to the World (selected Group)
 	vec2 m_MouseWorldPos = vec2(0.0f, 0.0f);
@@ -829,7 +858,7 @@ public:
 	std::shared_ptr<CLayerTiles> m_pTilesetPicker;
 	std::shared_ptr<CLayerQuads> m_pQuadsetPicker;
 
-	static const void *ms_pUiGotContext;
+	const void *m_pUiGotContext = nullptr;
 
 	CEditorMap m_Map;
 	std::deque<std::shared_ptr<CDataFileWriterFinishJob>> m_WriterFinishJobs;
@@ -843,9 +872,13 @@ public:
 	CMapSettingsBackend::CContext m_MapSettingsCommandContext;
 
 	CImageInfo m_TileartImageInfo;
-	char m_aTileartFilename[IO_MAX_PATH_LENGTH];
 	void AddTileart(bool IgnoreHistory = false);
+	char m_aTileartFilename[IO_MAX_PATH_LENGTH];
 	void TileartCheckColors();
+
+	CImageInfo m_QuadArtImageInfo;
+	CQuadArtParameters m_QuadArtParameters;
+	void AddQuadArt(bool IgnoreHistory = false);
 
 	void PlaceBorderTiles();
 
@@ -856,7 +889,7 @@ public:
 
 	int DoButton_Ex(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, int Corners, float FontSize = EditorFontSizes::MENU, int Align = TEXTALIGN_MC);
 	int DoButton_FontIcon(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip, int Corners, float FontSize = 10.0f);
-	int DoButton_MenuItem(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Flags = 0, const char *pToolTip = nullptr);
+	int DoButton_MenuItem(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Flags = BUTTONFLAG_LEFT, const char *pToolTip = nullptr);
 
 	int DoButton_DraggableEx(const void *pId, const char *pText, int Checked, const CUIRect *pRect, bool *pClicked, bool *pAbrupted, int Flags, const char *pToolTip = nullptr, int Corners = IGraphics::CORNER_ALL, float FontSize = 10.0f);
 
@@ -901,6 +934,7 @@ public:
 	static CUi::EPopupMenuFunctionResult PopupSelectSound(void *pContext, CUIRect View, bool Active);
 	static CUi::EPopupMenuFunctionResult PopupSelectGametileOp(void *pContext, CUIRect View, bool Active);
 	static CUi::EPopupMenuFunctionResult PopupSelectConfigAutoMap(void *pContext, CUIRect View, bool Active);
+	static CUi::EPopupMenuFunctionResult PopupSelectAutoMapReference(void *pContext, CUIRect View, bool Active);
 	static CUi::EPopupMenuFunctionResult PopupTele(void *pContext, CUIRect View, bool Active);
 	static CUi::EPopupMenuFunctionResult PopupSpeedup(void *pContext, CUIRect View, bool Active);
 	static CUi::EPopupMenuFunctionResult PopupSwitch(void *pContext, CUIRect View, bool Active);
@@ -911,12 +945,14 @@ public:
 	static CUi::EPopupMenuFunctionResult PopupAnimateSettings(void *pContext, CUIRect View, bool Active);
 	int m_PopupEnvelopeSelectedPoint = -1;
 	static CUi::EPopupMenuFunctionResult PopupEnvelopeCurvetype(void *pContext, CUIRect View, bool Active);
+	static CUi::EPopupMenuFunctionResult PopupQuadArt(void *pContext, CUIRect View, bool Active);
 
 	static bool CallbackOpenMap(const char *pFileName, int StorageType, void *pUser);
 	static bool CallbackAppendMap(const char *pFileName, int StorageType, void *pUser);
 	static bool CallbackSaveMap(const char *pFileName, int StorageType, void *pUser);
 	static bool CallbackSaveCopyMap(const char *pFileName, int StorageType, void *pUser);
 	static bool CallbackAddTileart(const char *pFilepath, int StorageType, void *pUser);
+	static bool CallbackAddQuadArt(const char *pFilepath, int StorageType, void *pUser);
 	static bool CallbackSaveImage(const char *pFileName, int StorageType, void *pUser);
 	static bool CallbackSaveSound(const char *pFileName, int StorageType, void *pUser);
 	static bool CallbackCustomEntities(const char *pFileName, int StorageType, void *pUser);
@@ -932,6 +968,9 @@ public:
 
 	void PopupSelectSoundInvoke(int Current, float x, float y);
 	int PopupSelectSoundResult();
+
+	void PopupSelectAutoMapReferenceInvoke(int Current, float x, float y);
+	int PopupSelectAutoMapReferenceResult();
 
 	void DoQuadEnvelopes(const std::vector<CQuad> &vQuads, IGraphics::CTextureHandle Texture = IGraphics::CTextureHandle());
 	void DoQuadEnvPoint(const CQuad *pQuad, int QIndex, int pIndex);
@@ -1007,6 +1046,7 @@ public:
 	static bool ReplaceSoundCallback(const char *pFileName, int StorageType, void *pUser);
 	static bool AddImage(const char *pFilename, int StorageType, void *pUser);
 	static bool AddSound(const char *pFileName, int StorageType, void *pUser);
+	static bool IsAssetUsed(int FileType, int Index, void *pUser);
 
 	bool IsEnvelopeUsed(int EnvelopeIndex) const;
 	void RemoveUnusedEnvelopes();
@@ -1157,6 +1197,7 @@ public:
 	unsigned char m_ViewTeleNumber;
 
 	unsigned char m_TuningNum;
+	unsigned char m_ViewTuning;
 
 	unsigned char m_SpeedupForce;
 	unsigned char m_SpeedupMaxSpeed;
@@ -1167,8 +1208,6 @@ public:
 	unsigned char m_ViewSwitch;
 
 	void AdjustBrushSpecialTiles(bool UseNextFree, int Adjust = 0);
-	int FindNextFreeSwitchNumber();
-	int FindNextFreeTeleNumber(bool Checkpoint = false);
 
 	// Undo/Redo
 	CEditorHistory m_EditorHistory;

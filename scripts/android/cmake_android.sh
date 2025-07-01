@@ -131,7 +131,7 @@ export TW_VERSION_CODE=$ANDROID_VERSION_CODE
 
 ANDROID_VERSION_NAME="1.0"
 if [ -z ${TW_VERSION_NAME+x} ]; then
-	ANDROID_VERSION_NAME="$(grep '#define GAME_RELEASE_VERSION' src/game/version.h | awk '{print $3}' | tr -d '"')"
+	ANDROID_VERSION_NAME="$(grep '#define GAME_RELEASE_VERSION_INTERNAL' src/game/version.h | awk '{print $3}')"
 	if [ -z ${ANDROID_VERSION_NAME+x} ]; then
 		ANDROID_VERSION_NAME="1.0"
 	fi
@@ -202,9 +202,7 @@ log_info "Copying project files..."
 cd "${BUILD_FOLDER}" || exit 1
 
 mkdir -p src/main
-mkdir -p src/main/res/values
-mkdir -p src/main/res/xml
-mkdir -p src/main/res/mipmap
+mkdir -p gradle/wrapper
 
 function copy_dummy_files() {
 	rm -f ./"$2"
@@ -212,17 +210,22 @@ function copy_dummy_files() {
 }
 
 copy_dummy_files scripts/android/files/build.sh build.sh
-copy_dummy_files scripts/android/files/gradle-wrapper.jar gradle-wrapper.jar
 copy_dummy_files scripts/android/files/build.gradle build.gradle
-copy_dummy_files scripts/android/files/gradle-wrapper.properties gradle-wrapper.properties
+copy_dummy_files scripts/android/files/gradlew gradlew
+copy_dummy_files scripts/android/files/gradlew.bat gradlew.bat
+copy_dummy_files scripts/android/files/gradle/wrapper/gradle-wrapper.jar gradle/wrapper/gradle-wrapper.jar
+copy_dummy_files scripts/android/files/gradle/wrapper/gradle-wrapper.properties gradle/wrapper/gradle-wrapper.properties
 copy_dummy_files scripts/android/files/gradle.properties gradle.properties
 copy_dummy_files scripts/android/files/proguard-rules.pro proguard-rules.pro
 copy_dummy_files scripts/android/files/settings.gradle settings.gradle
 copy_dummy_files scripts/android/files/AndroidManifest.xml src/main/AndroidManifest.xml
-copy_dummy_files scripts/android/files/res/values/strings.xml src/main/res/values/strings.xml
-copy_dummy_files scripts/android/files/res/xml/shortcuts.xml src/main/res/xml/shortcuts.xml
-copy_dummy_files other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher.png
-copy_dummy_files other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher_round.png
+
+rm -R -f src/main/res
+cp -R ../scripts/android/files/res src/main/
+mkdir -p src/main/res/mipmap
+cp ../other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher.png
+cp ../other/icons/DDNet_256x256x32.png src/main/res/mipmap/ic_launcher_round.png
+chmod +x ./gradlew
 
 log_info "Copying libraries..."
 

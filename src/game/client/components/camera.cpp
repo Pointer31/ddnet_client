@@ -281,6 +281,18 @@ void CCamera::UpdateCamera()
 		CurrentCameraOffset = m_DyncamTargetCameraOffset;
 	}
 
+	static float timePassed = 0.0;
+	timePassed += DeltaTime;
+	if (timePassed > 0.05) {
+		timePassed = 0.0;
+		if (g_Config.m_ClScreenShake > 0)
+			g_Config.m_ClScreenShake--;
+	}
+
+	CurrentCameraOffset.x = CurrentCameraOffset.x - (float)g_Config.m_ClScreenShake/2 + (float)rand()/(float)RAND_MAX*(float)g_Config.m_ClScreenShake;
+	CurrentCameraOffset.y = CurrentCameraOffset.y - (float)g_Config.m_ClScreenShake/2 + (float)rand()/(float)RAND_MAX*(float)g_Config.m_ClScreenShake;
+	// pointer31
+
 	m_aDyncamCurrentCameraOffset[g_Config.m_ClDummy] = CurrentCameraOffset;
 	m_IsSpectatingPlayer = IsSpectatingPlayer;
 	m_UsingAutoSpecCamera = UsingAutoSpecCamera;

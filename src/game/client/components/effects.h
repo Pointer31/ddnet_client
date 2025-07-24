@@ -25,7 +25,7 @@ public:
 	void Explosion(vec2 Pos, float Alpha = 1.0f);
 	void HammerHit(vec2 Pos, float Alpha = 1.0f);
 	void AirJump(vec2 Pos, float Alpha = 1.0f);
-	void LaserBounce(vec2 Pos, float Alpha = 1.0f);
+	void LaserBounce(vec2 Pos, float Alpha = 1.0f, unsigned int Color = g_Config.m_ClLaserRifleInnerColor);
 	void DamageIndicator(vec2 Pos, vec2 Dir, float Alpha = 1.0f);
 	void PlayerSpawn(vec2 Pos, float Alpha = 1.0f);
 	void PlayerDeath(vec2 Pos, int ClientId, float Alpha = 1.0f);

@@ -474,6 +474,36 @@ void CEffects::HammerHit(vec2 Pos, float Alpha)
 		m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
 }
 
+void CEffects::Snow(vec2 Pos, float Alpha)
+{
+	if(!m_Add5hz)
+		return;
+
+	float Size = 10;
+
+	CParticle p;
+	p.SetDefault();
+	p.m_Spr = SPRITE_PART_SNOWFLAKE;
+	p.m_Pos = Pos + vec2(random_float(-100.0f, 100.0f), random_float(-100.5f, 0.5f)) * Size;
+	p.m_Vel = vec2(0, 0);
+	p.m_LifeSpan = 3.5f;
+	p.m_StartSize = random_float(0.5f, 1.5f) * 16.0f;
+	p.m_EndSize = p.m_StartSize * 0.5f;
+	p.m_UseAlphaFading = true;
+	p.m_StartAlpha = 1.0f;
+	p.m_EndAlpha = 0.0f;
+	p.m_Rot = random_angle();
+	p.m_Rotspeed = pi;
+	p.m_Gravity = random_float(250.0f);
+	p.m_Friction = 0.9f;
+	p.m_FlowAffected = 0.0f;
+	p.m_Collides = true;
+	p.m_Color.a = Alpha;
+	p.m_StartAlpha = Alpha;
+	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
+}
+
+
 void CEffects::OnRender()
 {
 	static int64_t s_LastUpdate100hz = 0;

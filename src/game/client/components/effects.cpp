@@ -484,7 +484,9 @@ void CEffects::Snow(vec2 Pos, float Alpha)
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SNOWFLAKE;
-	p.m_Pos = Pos + vec2(random_float(-120.0f, 120.0f), random_float(-100.5f, 0.0f)) * Size;
+	p.m_Pos = Pos + vec2(random_float(-120.0f, 120.0f), random_float(-100.5f, 30.0f)) * Size;
+	if (Collision()->CheckPoint(p.m_Pos))
+		return;
 	p.m_Vel = vec2(random_float(-50.0f, -10.0f), 50);
 	p.m_LifeSpan = 8.5f;
 	p.m_StartSize = random_float(0.5f, 1.5f) * 16.0f;

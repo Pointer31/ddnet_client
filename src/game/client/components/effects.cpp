@@ -496,7 +496,7 @@ void CEffects::Snow(vec2 Pos, float Alpha)
 	p.m_EndAlpha = 0.0f;
 	p.m_Rot = random_angle();
 	p.m_Rotspeed = pi;
-	p.m_Gravity = random_float(250.0f);
+	p.m_Gravity = random_float(20.0f, 250.0f);
 	p.m_Friction = 0.9f;
 	p.m_FlowAffected = 0.0f;
 	p.m_Collides = true;

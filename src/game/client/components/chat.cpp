@@ -1266,7 +1266,7 @@ void CChat::OnRender()
 			Graphics()->TextureClear();
 			if(Line.m_QuadContainerIndex != -1)
 			{
-				Graphics()->SetColor(0, 0, 0, 0.12f * Blend);
+				Graphics()->SetColor(0, 0, 0, g_Config.m_ClChatTransparency / 1000.0f * Blend);
 				Graphics()->RenderQuadContainerEx(Line.m_QuadContainerIndex, 0, -1, 0, ((y + RealMsgPaddingY / 2.0f) - Line.m_TextYOffset));
 			}
 		}

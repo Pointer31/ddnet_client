@@ -1606,6 +1606,7 @@ set(EXPECTED_DATA
   shader/vulkan/tile.vert
   shader/vulkan/tile_border.frag
   shader/vulkan/tile_border.vert
+  skins/Computer\ WindowsXP_KZ.png
   skins/PaladiN.png
   skins/antiantey.png
   skins/beast.png
@@ -1845,6 +1846,9 @@ set(EXPECTED_DATA
   themes/jungle.png
   themes/jungle_day.map
   themes/jungle_night.map
+  themes/jungle_duck.png
+  themes/jungle_duck_day.map
+  themes/jungle_duck_night.map
   themes/newyear.map
   themes/newyear.png
   themes/none.png

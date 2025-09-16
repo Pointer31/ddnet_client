@@ -742,6 +742,9 @@ MACRO_CONFIG_INT(ClChatTransparency, cl_chat_transparency, 120, 0, 1000, CFGFLAG
 MACRO_CONFIG_INT(ClChatInputBackground, cl_chat_input_background, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to darken the background of the input when chatting")
 MACRO_CONFIG_INT(ClWeatherSnow, cl_weather_snow, 0, 0, 1, CFGFLAG_CLIENT, "Whether to spawn snow")
 MACRO_CONFIG_INT(ClUIWidth, cl_ui_width, 600, 400, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Size of UI (low values may break some UI, might need restart)")
+//
+// Custom Communities
+MACRO_CONFIG_STR(TcCustomCommunitiesUrl, tc_custom_communities_url, 256, "https://raw.githubusercontent.com/SollyBunny/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https)")
 
 // graphic library
 #if !defined(CONF_ARCH_IA32) && !defined(CONF_PLATFORM_MACOS)

@@ -1,17 +1,20 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
+#include "gamecontext.h"
+#include "player.h"
+#include "score.h"
+
 #include <base/log.h>
+
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
+
 #include <game/mapitems.h>
 #include <game/server/entities/character.h>
 #include <game/server/gamemodes/DDRace.h>
 #include <game/server/teams.h>
 #include <game/team_state.h>
+#include <game/teamscore.h>
 #include <game/version.h>
-
-#include "gamecontext.h"
-#include "player.h"
-#include "score.h"
 
 void CGameContext::ConCredits(IConsole::IResult *pResult, void *pUserData)
 {
@@ -29,11 +32,11 @@ void CGameContext::ConCredits(IConsole::IResult *pResult, void *pUserData)
 		"Bojidar, FallenKN, ardadem, archimede67, sirius1242, Aerll,",
 		"trafilaw, Zwelf, Patiga, Konsti, ElXreno, MikiGamer,",
 		"Fireball, Banana090, axblk, yangfl, Kaffeine, Zodiac,",
-		"c0d3d3v, GiuCcc, Ravie, Robyt3, simpygirl, sjrc6, Cellegen,",
+		"c0d3d3v, GiuCcc, Ravie, Robyt3, simpygirl, Tater, Cellegen,",
 		"srdante, Nouaa, Voxel, luk51, Vy0x2, Avolicious, louis,",
 		"Marmare314, hus3h, ArijanJ, tarunsamanta2k20, Possseidon,",
-		"M0REKZ, Teero, furo, dobrykafe, Moiman, JSaurusRex,",
-		"Steinchen, ewancg, gerdoe-jr, BlaiZephyr, KebsCS, bencie,",
+		"+KZ, Teero, furo, dobrykafe, Moiman, JSaurusRex,",
+		"Steinchen, ewancg, gerdoe-jr, melon, KebsCS, bencie,",
 		"DynamoFox, MilkeeyCat, iMilchshake, SchrodingerZhu,",
 		"catseyenebulous, Rei-Tw, Matodor, Emilcha, art0007i, SollyBunny,",
 		"0xfaulty & others",
@@ -70,11 +73,10 @@ void CGameContext::ConList(IConsole::IResult *pResult, void *pUserData)
 	if(!CheckClientId(ClientId))
 		return;
 
-	char zerochar = 0;
 	if(pResult->NumArguments() > 0)
 		pSelf->List(ClientId, pResult->GetString(0));
 	else
-		pSelf->List(ClientId, &zerochar);
+		pSelf->List(ClientId, "");
 }
 
 void CGameContext::ConHelp(IConsole::IResult *pResult, void *pUserData)
@@ -93,19 +95,19 @@ void CGameContext::ConHelp(IConsole::IResult *pResult, void *pUserData)
 	else
 	{
 		const char *pArg = pResult->GetString(0);
-		const IConsole::CCommandInfo *pCmdInfo =
+		const IConsole::ICommandInfo *pCmdInfo =
 			pSelf->Console()->GetCommandInfo(pArg, CFGFLAG_SERVER | CFGFLAG_CHAT, false);
 		if(pCmdInfo)
 		{
-			if(pCmdInfo->m_pParams)
+			if(pCmdInfo->Params())
 			{
 				char aBuf[256];
-				str_format(aBuf, sizeof(aBuf), "Usage: %s %s", pCmdInfo->m_pName, pCmdInfo->m_pParams);
+				str_format(aBuf, sizeof(aBuf), "Usage: %s %s", pCmdInfo->Name(), pCmdInfo->Params());
 				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", aBuf);
 			}
 
-			if(pCmdInfo->m_pHelp)
-				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", pCmdInfo->m_pHelp);
+			if(pCmdInfo->Help())
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", pCmdInfo->Help());
 		}
 		else
 		{
@@ -125,7 +127,7 @@ void CGameContext::ConSettings(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
 			"to check a server setting say /settings and setting's name, setting names are:");
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
-			"teams, cheats, collision, hooking, endlesshooking, me, ");
+			"teams, cheats, collision, hooking, endlesshooking,");
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
 			"hitting, oldlaser, timeout, votes, pause and scores");
 	}
@@ -135,14 +137,14 @@ void CGameContext::ConSettings(IConsole::IResult *pResult, void *pUserData)
 		char aBuf[256];
 		float ColTemp;
 		float HookTemp;
-		pSelf->m_Tuning.Get("player_collision", &ColTemp);
-		pSelf->m_Tuning.Get("player_hooking", &HookTemp);
+		pSelf->GlobalTuning()->Get("player_collision", &ColTemp);
+		pSelf->GlobalTuning()->Get("player_hooking", &HookTemp);
 		if(str_comp_nocase(pArg, "teams") == 0)
 		{
 			str_format(aBuf, sizeof(aBuf), "%s %s",
 				g_Config.m_SvTeam == SV_TEAM_ALLOWED ?
 					"Teams are available on this server" :
-					(g_Config.m_SvTeam == SV_TEAM_FORBIDDEN || g_Config.m_SvTeam == SV_TEAM_FORCED_SOLO) ?
+				(g_Config.m_SvTeam == SV_TEAM_FORBIDDEN || g_Config.m_SvTeam == SV_TEAM_FORCED_SOLO) ?
 					"Teams are not available on this server" :
 					"You have to be in a team to play on this server", /*g_Config.m_SvTeamStrict ? "and if you die in a team all of you die" : */
 				"and all of your team will die if the team is locked");
@@ -189,13 +191,6 @@ void CGameContext::ConSettings(IConsole::IResult *pResult, void *pUserData)
 				g_Config.m_SvOldLaser ?
 					"Lasers can hit you if you shot them and they pull you towards the bounce origin (Like DDRace Beta)" :
 					"Lasers can't hit you if you shot them, and they pull others towards the shooter");
-		}
-		else if(str_comp_nocase(pArg, "me") == 0)
-		{
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
-				g_Config.m_SvSlashMe ?
-					"Players can use /me commands the famous IRC Command" :
-					"Players can't use the /me command");
 		}
 		else if(str_comp_nocase(pArg, "timeout") == 0)
 		{
@@ -299,7 +294,7 @@ static void ToggleSpecPause(IConsole::IResult *pResult, void *pUserData, int Pau
 	}
 	else if(pResult->NumArguments() > 0)
 	{
-		if(-PauseState == PauseType && pPlayer->m_SpectatorId != pResult->m_ClientId && pServ->ClientIngame(pPlayer->m_SpectatorId) && !str_comp(pServ->ClientName(pPlayer->m_SpectatorId), pResult->GetString(0)))
+		if(-PauseState == PauseType && pPlayer->SpectatorId() != pResult->m_ClientId && pServ->ClientIngame(pPlayer->SpectatorId()) && !str_comp(pServ->ClientName(pPlayer->SpectatorId()), pResult->GetString(0)))
 		{
 			pPlayer->Pause(CPlayer::PAUSE_NONE, false);
 		}
@@ -343,7 +338,7 @@ static void ToggleSpecPauseVoted(IConsole::IResult *pResult, void *pUserData, in
 				  (pSelf->IsKickVote() || pSelf->IsSpecVote()) &&
 				  pResult->m_ClientId != pSelf->m_VoteVictim;
 	if((!IsPlayerBeingVoted && -PauseState == PauseType) ||
-		(IsPlayerBeingVoted && PauseState && pPlayer->m_SpectatorId == pSelf->m_VoteVictim))
+		(IsPlayerBeingVoted && PauseState && pPlayer->SpectatorId() == pSelf->m_VoteVictim))
 	{
 		pPlayer->Pause(CPlayer::PAUSE_NONE, false);
 	}
@@ -351,7 +346,7 @@ static void ToggleSpecPauseVoted(IConsole::IResult *pResult, void *pUserData, in
 	{
 		pPlayer->Pause(PauseType, false);
 		if(IsPlayerBeingVoted)
-			pPlayer->m_SpectatorId = pSelf->m_VoteVictim;
+			pPlayer->SetSpectatorId(pSelf->m_VoteVictim);
 	}
 }
 
@@ -463,36 +458,54 @@ void CGameContext::ConTimes(IConsole::IResult *pResult, void *pUserData)
 	if(!CheckClientId(pResult->m_ClientId))
 		return;
 
-	if(pResult->NumArguments() == 0)
-	{
-		pSelf->Score()->ShowTimes(pResult->m_ClientId, 1);
-	}
-	else if(pResult->NumArguments() == 1)
+	int Offset = 1;
+	const char *pRequestedName = nullptr;
+
+	// input validation
+	if(pResult->NumArguments() == 1)
 	{
 		if(pResult->GetInteger(0) != 0)
 		{
-			pSelf->Score()->ShowTimes(pResult->m_ClientId, pResult->GetInteger(0));
+			Offset = pResult->GetInteger(0);
 		}
 		else
 		{
-			const char *pRequestedName = (str_comp_nocase(pResult->GetString(0), "me") == 0) ?
-							     pSelf->Server()->ClientName(pResult->m_ClientId) :
-							     pResult->GetString(0);
-			pSelf->Score()->ShowTimes(pResult->m_ClientId, pRequestedName, pResult->GetInteger(1));
+			pRequestedName = pResult->GetString(0);
 		}
 	}
-	else if(pResult->NumArguments() == 2 && pResult->GetInteger(1) != 0)
+	else if(pResult->NumArguments() == 2)
 	{
-		const char *pRequestedName = (str_comp_nocase(pResult->GetString(0), "me") == 0) ?
-						     pSelf->Server()->ClientName(pResult->m_ClientId) :
-						     pResult->GetString(0);
-		pSelf->Score()->ShowTimes(pResult->m_ClientId, pRequestedName, pResult->GetInteger(1));
+		pRequestedName = pResult->GetString(0);
+		Offset = pResult->GetInteger(1);
 	}
-	else
+	else if(pResult->NumArguments() > 2)
 	{
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", "/times needs 0, 1 or 2 parameter. 1. = name, 2. = start number");
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", "Example: /times, /times me, /times Hans, /times \"Papa Smurf\" 5");
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", "Bad: /times Papa Smurf 5 # Good: /times \"Papa Smurf\" 5 ");
+		return;
+	}
+
+	// execution
+	if(g_Config.m_SvHideScore)
+	{
+		if(pRequestedName && str_comp_nocase(pRequestedName, "me") != 0 && str_comp_nocase(pRequestedName, pSelf->Server()->ClientName(pResult->m_ClientId)) != 0)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", "Showing the times of others is not allowed on this server.");
+			return;
+		}
+		pRequestedName = pSelf->Server()->ClientName(pResult->m_ClientId);
+		pSelf->Score()->ShowTimes(pResult->m_ClientId, pRequestedName, Offset);
+	}
+	else if(!pRequestedName)
+	{
+		pSelf->Score()->ShowTimes(pResult->m_ClientId, Offset);
+	}
+	else
+	{
+		if(str_comp_nocase(pRequestedName, "me") == 0)
+			pRequestedName = pSelf->Server()->ClientName(pResult->m_ClientId);
+		pSelf->Score()->ShowTimes(pResult->m_ClientId, pRequestedName, Offset);
 	}
 }
 
@@ -702,7 +715,7 @@ void CGameContext::ConPractice(IConsole::IResult *pResult, void *pUserData)
 	{
 		Teams.SetPractice(Team, true);
 		pSelf->SendChatTeam(Team, "Practice mode enabled for your team, happy practicing!");
-		pSelf->SendChatTeam(Team, "See /practicecmdlist for a list of all avaliable practice commands. Most commonly used ones are /telecursor, /lasttp and /rescue");
+		pSelf->SendChatTeam(Team, "See /practicecmdlist for a list of all available practice commands. Most commonly used ones are /telecursor, /lasttp and /rescue");
 	}
 }
 
@@ -776,20 +789,18 @@ void CGameContext::ConPracticeCmdList(IConsole::IResult *pResult, void *pUserDat
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	char aPracticeCommands[256];
-	mem_zero(aPracticeCommands, sizeof(aPracticeCommands));
-	str_append(aPracticeCommands, "Available practice commands: ");
-	for(const IConsole::CCommandInfo *pCmd = pSelf->Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_USER, CMDFLAG_PRACTICE);
-		pCmd; pCmd = pCmd->NextCommandInfo(IConsole::ACCESS_LEVEL_USER, CMDFLAG_PRACTICE))
+	char aPracticeCommands[256] = "Available practice commands: ";
+	for(const IConsole::ICommandInfo *pCmd = pSelf->Console()->FirstCommandInfo(pResult->m_ClientId, CMDFLAG_PRACTICE);
+		pCmd; pCmd = pSelf->Console()->NextCommandInfo(pCmd, pResult->m_ClientId, CMDFLAG_PRACTICE))
 	{
 		char aCommand[64];
 
-		str_format(aCommand, sizeof(aCommand), "/%s%s", pCmd->m_pName, pCmd->NextCommandInfo(IConsole::ACCESS_LEVEL_USER, CMDFLAG_PRACTICE) ? ", " : "");
+		str_format(aCommand, sizeof(aCommand), "/%s%s", pCmd->Name(), pSelf->Console()->NextCommandInfo(pCmd, pResult->m_ClientId, CMDFLAG_PRACTICE) ? ", " : "");
 
 		if(str_length(aCommand) + str_length(aPracticeCommands) > 255)
 		{
 			pSelf->SendChatTarget(pResult->m_ClientId, aPracticeCommands);
-			mem_zero(aPracticeCommands, sizeof(aPracticeCommands));
+			aPracticeCommands[0] = '\0';
 		}
 		str_append(aPracticeCommands, aCommand);
 	}
@@ -1143,12 +1154,12 @@ void CGameContext::AttemptJoinTeam(int ClientId, int Team)
 	if(!pPlayer)
 		return;
 
-	if(m_VoteCloseTime && m_VoteCreator == ClientId && (IsKickVote() || IsSpecVote()))
+	if(IsRunningKickOrSpecVote(ClientId))
 	{
 		Console()->Print(
 			IConsole::OUTPUT_LEVEL_STANDARD,
 			"chatresp",
-			"You are running a vote please try again after the vote is done!");
+			"You are running a vote, please try again after the vote is done!");
 		return;
 	}
 	else if(g_Config.m_SvTeam == SV_TEAM_FORBIDDEN || g_Config.m_SvTeam == SV_TEAM_FORCED_SOLO)
@@ -1162,64 +1173,66 @@ void CGameContext::AttemptJoinTeam(int ClientId, int Team)
 		Console()->Print(
 			IConsole::OUTPUT_LEVEL_STANDARD,
 			"chatresp",
-			"You must join a team and play with somebody or else you can\'t play");
+			"You must join a team and play with somebody or else you can't play");
 		pPlayer->GetCharacter()->m_LastStartWarning = Server()->Tick();
 	}
 
-	if(pPlayer->GetCharacter() == nullptr)
+	if(Team < 0 || Team >= TEAM_SUPER)
+	{
+		auto EmptyTeam = m_pController->Teams().GetFirstEmptyTeam();
+		if(!EmptyTeam.has_value())
+		{
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
+				"No empty team left.");
+			return;
+		}
+		Team = EmptyTeam.value();
+	}
+
+	char aError[512];
+	if(pPlayer->m_LastDDRaceTeamChange + (int64_t)Server()->TickSpeed() * g_Config.m_SvTeamChangeDelay > Server()->Tick())
 	{
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
-			"You can't change teams while you are dead/a spectator.");
+			"You can't change teams that fast!");
+	}
+	else if(Team != TEAM_FLOCK && m_pController->Teams().TeamLocked(Team) && !m_pController->Teams().IsInvited(Team, ClientId))
+	{
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
+			g_Config.m_SvInvite ?
+				"This team is locked using /lock. Only members of the team can unlock it using /lock." :
+				"This team is locked using /lock. Only members of the team can invite you or unlock it using /lock.");
+	}
+	else if(Team != TEAM_FLOCK && m_pController->Teams().Count(Team) >= g_Config.m_SvMaxTeamSize && !m_pController->Teams().TeamFlock(Team) && !m_pController->Teams().IsPractice(Team))
+	{
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "This team already has the maximum allowed size of %d players", g_Config.m_SvMaxTeamSize);
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", aBuf);
+	}
+	else if(!m_pController->Teams().SetCharacterTeam(pPlayer->GetCid(), Team, aError, sizeof(aError)))
+	{
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", aError);
 	}
 	else
 	{
-		if(Team < 0 || Team >= TEAM_SUPER)
-			Team = m_pController->Teams().GetFirstEmptyTeam();
+		if(PracticeByDefault())
+		{
+			// joined an empty team
+			if(m_pController->Teams().Count(Team) == 1)
+				m_pController->Teams().SetPractice(Team, true);
+		}
 
-		if(pPlayer->m_Last_Team + (int64_t)Server()->TickSpeed() * g_Config.m_SvTeamChangeDelay > Server()->Tick())
-		{
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
-				"You can\'t change teams that fast!");
-		}
-		else if(Team > 0 && Team < MAX_CLIENTS && m_pController->Teams().TeamLocked(Team) && !m_pController->Teams().IsInvited(Team, ClientId))
-		{
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
-				g_Config.m_SvInvite ?
-					"This team is locked using /lock. Only members of the team can unlock it using /lock." :
-					"This team is locked using /lock. Only members of the team can invite you or unlock it using /lock.");
-		}
-		else if(Team > 0 && Team < MAX_CLIENTS && m_pController->Teams().Count(Team) >= g_Config.m_SvMaxTeamSize && !m_pController->Teams().TeamFlock(Team) && !m_pController->Teams().IsPractice(Team))
-		{
-			char aBuf[512];
-			str_format(aBuf, sizeof(aBuf), "This team already has the maximum allowed size of %d players", g_Config.m_SvMaxTeamSize);
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", aBuf);
-		}
-		else if(const char *pError = m_pController->Teams().SetCharacterTeam(pPlayer->GetCid(), Team))
-		{
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", pError);
-		}
-		else
-		{
-			if(PracticeByDefault())
-			{
-				// joined an empty team
-				if(m_pController->Teams().Count(Team) == 1)
-					m_pController->Teams().SetPractice(Team, true);
-			}
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "'%s' joined team %d",
+			Server()->ClientName(pPlayer->GetCid()),
+			Team);
+		SendChat(-1, TEAM_ALL, aBuf);
+		pPlayer->m_LastDDRaceTeamChange = Server()->Tick();
 
-			char aBuf[512];
-			str_format(aBuf, sizeof(aBuf), "'%s' joined team %d",
-				Server()->ClientName(pPlayer->GetCid()),
-				Team);
-			SendChat(-1, TEAM_ALL, aBuf);
-			pPlayer->m_Last_Team = Server()->Tick();
+		if(m_pController->Teams().IsPractice(Team))
+			SendChatTarget(pPlayer->GetCid(), "Practice mode enabled for your team, happy practicing!");
 
-			if(m_pController->Teams().IsPractice(Team))
-				SendChatTarget(pPlayer->GetCid(), "Practice mode enabled for your team, happy practicing!");
-
-			if(m_pController->Teams().TeamFlock(Team))
-				SendChatTarget(pPlayer->GetCid(), "Team 0 mode enabled for your team. This will make your team behave like team 0.");
-		}
+		if(m_pController->Teams().TeamFlock(Team))
+			SendChatTarget(pPlayer->GetCid(), "Team 0 mode enabled for your team. This will make your team behave like team 0.");
 	}
 }
 
@@ -1438,26 +1451,6 @@ void CGameContext::ConJoin(IConsole::IResult *pResult, void *pUserData)
 		return;
 
 	pSelf->AttemptJoinTeam(pResult->m_ClientId, Team);
-}
-
-void CGameContext::ConMe(IConsole::IResult *pResult, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	if(!CheckClientId(pResult->m_ClientId))
-		return;
-
-	char aBuf[256 + 24];
-
-	str_format(aBuf, 256 + 24, "'%s' %s",
-		pSelf->Server()->ClientName(pResult->m_ClientId),
-		pResult->GetString(0));
-	if(g_Config.m_SvSlashMe)
-		pSelf->SendChat(-2, TEAM_ALL, aBuf, pResult->m_ClientId);
-	else
-		pSelf->Console()->Print(
-			IConsole::OUTPUT_LEVEL_STANDARD,
-			"chatresp",
-			"/me is disabled on this server");
 }
 
 void CGameContext::ConConverse(IConsole::IResult *pResult, void *pUserData)
@@ -1765,7 +1758,7 @@ void CGameContext::ConSayTimeAll(IConsole::IResult *pResult, void *pUserData)
 	int64_t Time = (int64_t)100 * (float)(pSelf->Server()->Tick() - pChr->m_StartTime) / ((float)pSelf->Server()->TickSpeed());
 	const char *pName = pSelf->Server()->ClientName(pResult->m_ClientId);
 	str_time(Time, TIME_HOURS, aBufTime, sizeof(aBufTime));
-	str_format(aBuf, sizeof(aBuf), "%s\'s current race time is %s", pName, aBufTime);
+	str_format(aBuf, sizeof(aBuf), "%s's current race time is %s", pName, aBufTime);
 	pSelf->SendChat(-1, TEAM_ALL, aBuf, pResult->m_ClientId);
 }
 
@@ -2171,7 +2164,7 @@ void CGameContext::ConLastTele(IConsole::IResult *pResult, void *pUserData)
 		pSelf->SendChatTarget(pPlayer->GetCid(), "You haven't previously teleported. Use /tp before using this command.");
 		return;
 	}
-	pPlayer->m_LastTeleTee.Load(pChr, pChr->Team(), true);
+	pPlayer->m_LastTeleTee.Load(pChr);
 	pPlayer->Pause(CPlayer::PAUSE_NONE, true);
 }
 
@@ -2457,6 +2450,54 @@ void CGameContext::ConPracticeToggleInvincible(IConsole::IResult *pResult, void 
 	CGameContext *pSelf = (CGameContext *)pUserData;
 	if(pSelf->GetPracticeCharacter(pResult))
 		ConToggleInvincible(pResult, pUserData);
+}
+
+void CGameContext::ConPracticeToggleCollision(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	auto *pChr = pSelf->GetPracticeCharacter(pResult);
+	if(!pChr)
+		return;
+
+	pChr->SetCollisionDisabled(!pChr->Core()->m_CollisionDisabled);
+}
+
+void CGameContext::ConPracticeToggleHookCollision(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	auto *pChr = pSelf->GetPracticeCharacter(pResult);
+	if(!pChr)
+		return;
+
+	pChr->SetHookHitDisabled(!pChr->Core()->m_HookHitDisabled);
+}
+
+void CGameContext::ConPracticeToggleHitOthers(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	auto *pChr = pSelf->GetPracticeCharacter(pResult);
+	if(!pChr)
+		return;
+
+	if(pResult->NumArguments() == 0 || str_comp(pResult->GetString(0), "all") == 0)
+	{
+		bool IsEnabled = (pChr->HammerHitDisabled() && pChr->ShotgunHitDisabled() &&
+				  pChr->GrenadeHitDisabled() && pChr->LaserHitDisabled());
+		pChr->SetHammerHitDisabled(!IsEnabled);
+		pChr->SetShotgunHitDisabled(!IsEnabled);
+		pChr->SetGrenadeHitDisabled(!IsEnabled);
+		pChr->SetLaserHitDisabled(!IsEnabled);
+		return;
+	}
+
+	if(str_comp(pResult->GetString(0), "hammer") == 0)
+		pChr->SetHammerHitDisabled(!pChr->HammerHitDisabled());
+	else if(str_comp(pResult->GetString(0), "shotgun") == 0)
+		pChr->SetShotgunHitDisabled(!pChr->ShotgunHitDisabled());
+	else if(str_comp(pResult->GetString(0), "grenade") == 0)
+		pChr->SetGrenadeHitDisabled(!pChr->GrenadeHitDisabled());
+	else if(str_comp(pResult->GetString(0), "laser") == 0)
+		pChr->SetLaserHitDisabled(!pChr->LaserHitDisabled());
 }
 
 void CGameContext::ConPracticeAddWeapon(IConsole::IResult *pResult, void *pUserData)

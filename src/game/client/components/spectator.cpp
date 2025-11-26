@@ -1,22 +1,21 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
-#include <limits>
+#include "spectator.h"
+
+#include "camera.h"
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 #include <game/client/animstate.h>
-#include <game/client/render.h>
+#include <game/client/gameclient.h>
 #include <game/localization.h>
 
-#include "camera.h"
-#include "spectator.h"
-
-#include <game/client/gameclient.h>
+#include <limits>
 
 bool CSpectator::CanChangeSpectatorId()
 {
@@ -517,7 +516,9 @@ void CSpectator::OnRender()
 			TeeAlpha = 1.0f;
 		}
 		CTextCursor NameCursor;
-		TextRender()->SetCursor(&NameCursor, Width / 2.0f + x + 50.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
+		NameCursor.SetPosition(vec2(Width / 2.0f + x + 50.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f));
+		NameCursor.m_FontSize = FontSize;
+		NameCursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
 		NameCursor.m_LineWidth = 180.0f;
 		if(g_Config.m_ClShowIds)
 		{
@@ -572,8 +573,7 @@ void CSpectator::OnRender()
 
 		if(GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
 		{
-			ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
-			TextRender()->TextColor(rgb.WithAlpha(1.f));
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)));
 			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, "♥", 220.0f);
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}

@@ -2,6 +2,7 @@
 #define ENGINE_SHARED_NETBAN_H
 
 #include <base/system.h>
+
 #include <engine/console.h>
 
 inline int NetComp(const NETADDR *pAddr1, const NETADDR *pAddr2)
@@ -46,7 +47,7 @@ protected:
 	{
 		char aAddrStr[NETADDR_MAXSTRSIZE];
 		net_addr_str(pData, aAddrStr, sizeof(aAddrStr), false);
-		str_format(pBuffer, BufferSize, "'%s'", aAddrStr);
+		str_format(pBuffer, BufferSize, "<{'%s'}>", aAddrStr);
 		return pBuffer;
 	}
 
@@ -55,7 +56,7 @@ protected:
 		char aAddrStr1[NETADDR_MAXSTRSIZE], aAddrStr2[NETADDR_MAXSTRSIZE];
 		net_addr_str(&pData->m_LB, aAddrStr1, sizeof(aAddrStr1), false);
 		net_addr_str(&pData->m_UB, aAddrStr2, sizeof(aAddrStr2), false);
-		str_format(pBuffer, BufferSize, "'%s' - '%s'", aAddrStr1, aAddrStr2);
+		str_format(pBuffer, BufferSize, "<{'%s' - '%s'}>", aAddrStr1, aAddrStr2);
 		return pBuffer;
 	}
 
@@ -173,7 +174,7 @@ public:
 	class IConsole *Console() const { return m_pConsole; }
 	class IStorage *Storage() const { return m_pStorage; }
 
-	virtual ~CNetBan() {}
+	virtual ~CNetBan() = default;
 	void Init(class IConsole *pConsole, class IStorage *pStorage);
 	void Update();
 

@@ -1,15 +1,18 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
-#include <base/system.h>
-#include <engine/shared/config.h>
-#include <game/mapitems.h>
-#include <game/server/entities/character.h>
-#include <game/team_state.h>
+#include "teams.h"
 
 #include "gamecontroller.h"
 #include "player.h"
 #include "score.h"
-#include "teams.h"
 #include "teehistorian.h"
+
+#include <base/system.h>
+
+#include <engine/shared/config.h>
+
+#include <game/mapitems.h>
+#include <game/server/entities/character.h>
+#include <game/team_state.h>
 
 CGameTeams::CGameTeams(CGameContext *pGameContext) :
 	m_pGameContext(pGameContext)
@@ -349,13 +352,13 @@ void CGameTeams::CheckTeamFinished(int Team)
 			{
 				ChangeTeamState(Team, ETeamState::FINISHED);
 
-				int min = (int)Time / 60;
-				float sec = Time - (min * 60.0f);
+				const int Minutes = (int)Time / 60;
+				const float Seconds = Time - (Minutes * 60.0f);
 
 				char aBuf[256];
 				str_format(aBuf, sizeof(aBuf),
 					"Your team would've finished in: %d minute(s) %5.2f second(s). Since you had practice mode enabled your rank doesn't count.",
-					min, sec);
+					Minutes, Seconds);
 				GameServer()->SendChatTeam(Team, aBuf);
 
 				for(unsigned int i = 0; i < PlayersCount; ++i)
@@ -377,35 +380,75 @@ void CGameTeams::CheckTeamFinished(int Team)
 	}
 }
 
-const char *CGameTeams::SetCharacterTeam(int ClientId, int Team)
+bool CGameTeams::CanJoinTeam(int ClientId, int Team, char *pError, int ErrorSize) const
 {
+	int CurrentTeam = m_Core.Team(ClientId);
+
 	if(ClientId < 0 || ClientId >= MAX_CLIENTS)
-		return "Invalid client ID";
+	{
+		str_format(pError, ErrorSize, "Invalid client ID: %d", ClientId);
+		return false;
+	}
 	if(Team < 0 || Team > NUM_DDRACE_TEAMS)
-		return "Invalid team number";
+	{
+		str_format(pError, ErrorSize, "Invalid team number: %d", Team);
+		return false;
+	}
 	if(Team != TEAM_SUPER && m_aTeamState[Team] > ETeamState::OPEN && !m_aPractice[Team] && !m_aTeamFlock[Team])
-		return "This team started already";
-	if(m_Core.Team(ClientId) == Team)
-		return "You are in this team already";
+	{
+		str_copy(pError, "This team started already", ErrorSize);
+		return false;
+	}
+	if(CurrentTeam == Team)
+	{
+		str_copy(pError, "You are in this team already", ErrorSize);
+		return false;
+	}
 	if(!Character(ClientId))
-		return "Your character is not valid";
+	{
+		str_copy(pError, "You can't change teams while you are dead/a spectator.", ErrorSize);
+		return false;
+	}
 	if(Team == TEAM_SUPER && !Character(ClientId)->IsSuper())
-		return "You can't join super team if you don't have super rights";
-	if(Team != TEAM_SUPER && Character(ClientId)->m_DDRaceState != ERaceState::NONE)
-		return "You have started racing already";
+	{
+		str_copy(pError, "You can't join super team if you don't have super rights", ErrorSize);
+		return false;
+	}
+	if(Team != TEAM_SUPER && Character(ClientId)->m_DDRaceState != ERaceState::NONE && (m_aTeamState[CurrentTeam] < ETeamState::FINISHED || Team != 0))
+	{
+		str_copy(pError, "You have started racing already", ErrorSize);
+		return false;
+	}
 	// No cheating through noob filter with practice and then leaving team
-	if(m_aPractice[m_Core.Team(ClientId)] && !m_pGameContext->PracticeByDefault())
-		return "You have used practice mode already";
+	if(m_aPractice[CurrentTeam] && !m_pGameContext->PracticeByDefault())
+	{
+		str_copy(pError, "You have used practice mode already", ErrorSize);
+		return false;
+	}
 
 	// you can not join a team which is currently in the process of saving,
 	// because the save-process can fail and then the team is reset into the game
 	if(Team != TEAM_SUPER && GetSaving(Team))
-		return "Your team is currently saving";
-	if(m_Core.Team(ClientId) != TEAM_SUPER && GetSaving(m_Core.Team(ClientId)))
-		return "This team is currently saving";
+	{
+		str_copy(pError, "This team is currently saving", ErrorSize);
+		return false;
+	}
+	if(CurrentTeam != TEAM_SUPER && GetSaving(CurrentTeam))
+	{
+		str_copy(pError, "Your team is currently saving", ErrorSize);
+		return false;
+	}
+
+	return true;
+}
+
+bool CGameTeams::SetCharacterTeam(int ClientId, int Team, char *pError, int ErrorSize)
+{
+	if(!CanJoinTeam(ClientId, Team, pError, ErrorSize))
+		return false;
 
 	SetForceCharacterTeam(ClientId, Team);
-	return nullptr;
+	return true;
 }
 
 void CGameTeams::SetForceCharacterTeam(int ClientId, int Team)
@@ -552,24 +595,24 @@ CClientMask CGameTeams::TeamMask(int Team, int ExceptId, int Asker, int VersionF
 				}
 			} // See everything of yourself
 		}
-		else if(GetPlayer(i)->m_SpectatorId != SPEC_FREEVIEW)
+		else if(GetPlayer(i)->SpectatorId() != SPEC_FREEVIEW)
 		{ // Spectating specific player
-			if(GetPlayer(i)->m_SpectatorId != Asker)
+			if(GetPlayer(i)->SpectatorId() != Asker)
 			{ // Actions of other players
-				if(!Character(GetPlayer(i)->m_SpectatorId))
+				if(!Character(GetPlayer(i)->SpectatorId()))
 					continue; // Player is currently dead
 				if(GetPlayer(i)->m_ShowOthers == SHOW_OTHERS_ONLY_TEAM)
 				{
-					if(m_Core.Team(GetPlayer(i)->m_SpectatorId) != Team && m_Core.Team(GetPlayer(i)->m_SpectatorId) != TEAM_SUPER)
+					if(m_Core.Team(GetPlayer(i)->SpectatorId()) != Team && m_Core.Team(GetPlayer(i)->SpectatorId()) != TEAM_SUPER)
 						continue; // In different teams
 				}
 				else if(GetPlayer(i)->m_ShowOthers == SHOW_OTHERS_OFF)
 				{
 					if(m_Core.GetSolo(Asker))
 						continue; // When in solo part don't show others
-					if(m_Core.GetSolo(GetPlayer(i)->m_SpectatorId))
+					if(m_Core.GetSolo(GetPlayer(i)->SpectatorId()))
 						continue; // When in solo part don't show others
-					if(m_Core.Team(GetPlayer(i)->m_SpectatorId) != Team && m_Core.Team(GetPlayer(i)->m_SpectatorId) != TEAM_SUPER)
+					if(m_Core.Team(GetPlayer(i)->SpectatorId()) != Team && m_Core.Team(GetPlayer(i)->SpectatorId()) != TEAM_SUPER)
 						continue; // In different teams
 				}
 			} // See everything of player you're spectating
@@ -716,7 +759,7 @@ void CGameTeams::OnFinish(CPlayer *Player, int TimeTicks, const char *pTimestamp
 		"%s finished in: %d minute(s) %5.2f second(s)",
 		Server()->ClientName(ClientId), (int)Time / 60,
 		Time - ((int)Time / 60 * 60));
-	if(g_Config.m_SvHideScore || !g_Config.m_SvSaveWorseScores)
+	if(g_Config.m_SvHideScore)
 		GameServer()->SendChatTarget(ClientId, aBuf, CGameContext::FLAG_SIX);
 	else
 		GameServer()->SendChat(-1, TEAM_ALL, aBuf, -1., CGameContext::FLAG_SIX);
@@ -735,7 +778,7 @@ void CGameTeams::OnFinish(CPlayer *Player, int TimeTicks, const char *pTimestamp
 		else
 			str_format(aBuf, sizeof(aBuf), "New record: %5.2f second(s) better.",
 				Diff);
-		if(g_Config.m_SvHideScore || !g_Config.m_SvSaveWorseScores)
+		if(g_Config.m_SvHideScore)
 			GameServer()->SendChatTarget(ClientId, aBuf, CGameContext::FLAG_SIX);
 		else
 			GameServer()->SendChat(-1, TEAM_ALL, aBuf, -1, CGameContext::FLAG_SIX);
@@ -831,12 +874,22 @@ CCharacter *CGameTeams::Character(int ClientId)
 	return GameServer()->GetPlayerChar(ClientId);
 }
 
+const CCharacter *CGameTeams::Character(int ClientId) const
+{
+	return GameServer()->GetPlayerChar(ClientId);
+}
+
 CPlayer *CGameTeams::GetPlayer(int ClientId)
 {
 	return GameServer()->m_apPlayers[ClientId];
 }
 
-class CGameContext *CGameTeams::GameServer()
+CGameContext *CGameTeams::GameServer()
+{
+	return m_pGameContext;
+}
+
+const CGameContext *CGameTeams::GameServer() const
 {
 	return m_pGameContext;
 }
@@ -933,8 +986,8 @@ void CGameTeams::SwapTeamCharacters(CPlayer *pPrimaryPlayer, CPlayer *pTargetPla
 	CSaveTee SecondarySavedTee;
 	SecondarySavedTee.Save(pTargetPlayer->GetCharacter());
 
-	PrimarySavedTee.Load(pTargetPlayer->GetCharacter(), Team, true);
-	SecondarySavedTee.Load(pPrimaryPlayer->GetCharacter(), Team, true);
+	PrimarySavedTee.Load(pTargetPlayer->GetCharacter());
+	SecondarySavedTee.Load(pPrimaryPlayer->GetCharacter());
 
 	if(Team >= 1 && !m_aTeamFlock[Team])
 	{
@@ -1008,12 +1061,50 @@ void CGameTeams::ProcessSaveTeam()
 	{
 		if(m_apSaveTeamResult[Team] == nullptr || !m_apSaveTeamResult[Team]->m_Completed)
 			continue;
-		if(m_apSaveTeamResult[Team]->m_aBroadcast[0] != '\0')
-			GameServer()->SendBroadcast(m_apSaveTeamResult[Team]->m_aBroadcast, -1);
-		if(m_apSaveTeamResult[Team]->m_aMessage[0] != '\0' && m_apSaveTeamResult[Team]->m_Status != CScoreSaveResult::LOAD_FAILED)
-			GameServer()->SendChatTeam(Team, m_apSaveTeamResult[Team]->m_aMessage);
+
+		int TeamSize = m_apSaveTeamResult[Team]->m_SavedTeam.GetMembersCount();
+		int State = -1;
+
 		switch(m_apSaveTeamResult[Team]->m_Status)
 		{
+		case CScoreSaveResult::SAVE_FALLBACKFILE:
+			State = SAVESTATE_FALLBACKFILE;
+			break;
+		case CScoreSaveResult::SAVE_WARNING:
+			State = SAVESTATE_WARNING;
+			break;
+		case CScoreSaveResult::SAVE_SUCCESS:
+			State = SAVESTATE_DONE;
+			break;
+		case CScoreSaveResult::SAVE_FAILED:
+			State = SAVESTATE_ERROR;
+			break;
+		case CScoreSaveResult::LOAD_FAILED:
+		case CScoreSaveResult::LOAD_SUCCESS:
+			State = -1;
+			break;
+		}
+
+		if(State != -1)
+		{
+			GameServer()->SendSaveCode(
+				Team,
+				TeamSize,
+				State,
+				(State == SAVESTATE_DONE) ? "" : m_apSaveTeamResult[Team]->m_aMessage,
+				m_apSaveTeamResult[Team]->m_aRequestingPlayer,
+				m_apSaveTeamResult[Team]->m_aServer,
+				m_apSaveTeamResult[Team]->m_aGeneratedCode,
+				m_apSaveTeamResult[Team]->m_aCode);
+		}
+
+		if(m_apSaveTeamResult[Team]->m_aBroadcast[0] != '\0')
+			GameServer()->SendBroadcast(m_apSaveTeamResult[Team]->m_aBroadcast, -1);
+
+		switch(m_apSaveTeamResult[Team]->m_Status)
+		{
+		case CScoreSaveResult::SAVE_FALLBACKFILE:
+		case CScoreSaveResult::SAVE_WARNING:
 		case CScoreSaveResult::SAVE_SUCCESS:
 		{
 			if(GameServer()->TeeHistorianActive())
@@ -1023,7 +1114,7 @@ void CGameTeams::ProcessSaveTeam()
 					m_apSaveTeamResult[Team]->m_SaveId,
 					m_apSaveTeamResult[Team]->m_SavedTeam.GetString());
 			}
-			for(int i = 0; i < m_apSaveTeamResult[Team]->m_SavedTeam.GetMembersCount(); i++)
+			for(int i = 0; i < TeamSize; i++)
 			{
 				if(m_apSaveTeamResult[Team]->m_SavedTeam.m_pSavedTees->IsHooking())
 				{
@@ -1241,12 +1332,12 @@ void CGameTeams::ResetSavedTeam(int ClientId, int Team)
 	}
 }
 
-int CGameTeams::GetFirstEmptyTeam() const
+std::optional<int> CGameTeams::GetFirstEmptyTeam() const
 {
 	for(int i = 1; i < TEAM_SUPER; i++)
 		if(m_aTeamState[i] == ETeamState::EMPTY)
 			return i;
-	return -1;
+	return std::nullopt;
 }
 
 bool CGameTeams::TeeStarted(int ClientId) const
@@ -1320,7 +1411,11 @@ void CGameTeams::SetPractice(int Team, bool Enabled)
 	if(Team < TEAM_FLOCK || Team >= TEAM_SUPER)
 		return;
 	if(g_Config.m_SvTeam != SV_TEAM_FORCED_SOLO && Team == TEAM_FLOCK)
-		return;
+	{
+		// allow to enable practice in team 0, for practice by default
+		if(!g_Config.m_SvTestingCommands)
+			return;
+	}
 
 	m_aPractice[Team] = Enabled;
 }

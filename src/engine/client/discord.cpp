@@ -1,4 +1,5 @@
 #include <base/system.h>
+
 #include <engine/client.h>
 #include <engine/discord.h>
 
@@ -186,7 +187,7 @@ public:
 	}
 };
 
-IDiscord *CreateDiscordImpl()
+static IDiscord *CreateDiscordImpl()
 {
 	FDiscordCreate pfnDiscordCreate = GetDiscordCreate();
 	if(!pfnDiscordCreate)
@@ -202,7 +203,7 @@ IDiscord *CreateDiscordImpl()
 	return pDiscord;
 }
 #else
-IDiscord *CreateDiscordImpl()
+static IDiscord *CreateDiscordImpl()
 {
 	return nullptr;
 }

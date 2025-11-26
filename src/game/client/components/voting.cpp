@@ -7,11 +7,11 @@
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 
+#include <generated/protocol.h>
+
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
-#include <game/client/render.h>
-#include <game/generated/protocol.h>
 #include <game/localization.h>
 
 void CVoting::ConCallvote(IConsole::IResult *pResult, void *pUserData)
@@ -89,8 +89,7 @@ void CVoting::CallvoteOption(int OptionId, const char *pReason, bool ForceVote)
 		{
 			if(ForceVote)
 			{
-				char aBuf[128];
-				str_copy(aBuf, "force_vote option \"");
+				char aBuf[128] = "force_vote option \"";
 				char *pDst = aBuf + str_length(aBuf);
 				str_escape(&pDst, pOption->m_aDescription, aBuf + sizeof(aBuf));
 				str_append(aBuf, "\" \"");
@@ -116,8 +115,7 @@ void CVoting::RemovevoteOption(int OptionId)
 	{
 		if(OptionId == 0)
 		{
-			char aBuf[128];
-			str_copy(aBuf, "remove_vote \"");
+			char aBuf[128] = "remove_vote \"";
 			char *pDst = aBuf + str_length(aBuf);
 			str_escape(&pDst, pOption->m_aDescription, aBuf + sizeof(aBuf));
 			str_append(aBuf, "\"");
@@ -132,8 +130,7 @@ void CVoting::RemovevoteOption(int OptionId)
 
 void CVoting::AddvoteOption(const char *pDescription, const char *pCommand)
 {
-	char aBuf[128];
-	str_copy(aBuf, "add_vote \"");
+	char aBuf[128] = "add_vote \"";
 	char *pDst = aBuf + str_length(aBuf);
 	str_escape(&pDst, pDescription, aBuf + sizeof(aBuf));
 	str_append(aBuf, "\" \"");
@@ -145,8 +142,6 @@ void CVoting::AddvoteOption(const char *pDescription, const char *pCommand)
 
 void CVoting::Vote(int v)
 {
-	if(m_Voted == 0)
-		m_Voted = v;
 	CNetMsg_Cl_Vote Msg = {v};
 	Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
 }
@@ -238,8 +233,8 @@ void CVoting::ClearOptions()
 void CVoting::OnReset()
 {
 	m_Opentime = m_Closetime = 0;
-	m_aDescription[0] = 0;
-	m_aReason[0] = 0;
+	m_aDescription[0] = '\0';
+	m_aReason[0] = '\0';
 	m_Yes = m_No = m_Pass = m_Total = 0;
 	m_Voted = 0;
 	m_ReceivingOptions = false;
@@ -253,6 +248,9 @@ void CVoting::OnConsoleInit()
 
 void CVoting::OnMessage(int MsgType, void *pRawMsg)
 {
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+		return;
+
 	if(MsgType == NETMSGTYPE_SV_VOTESET)
 	{
 		CNetMsg_Sv_VoteSet *pMsg = (CNetMsg_Sv_VoteSet *)pRawMsg;
@@ -338,7 +336,7 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 
 void CVoting::Render()
 {
-	if((!g_Config.m_ClShowVotesAfterVoting && !GameClient()->m_Scoreboard.IsActive() && TakenChoice()) || !IsVoting() || Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if((!g_Config.m_ClShowVotesAfterVoting && !GameClient()->m_Scoreboard.IsActive() && TakenChoice()) || !IsVoting())
 		return;
 	const int Seconds = SecondsLeft();
 	if(Seconds < 0)

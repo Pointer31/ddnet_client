@@ -4,6 +4,7 @@
 
 #include <engine/server.h>
 #include <engine/shared/config.h>
+
 #include <game/mapitems.h>
 #include <game/server/entities/character.h>
 #include <game/server/gamecontext.h>
@@ -173,7 +174,9 @@ void CGameControllerDDRace::Tick()
 
 void CGameControllerDDRace::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
 {
-	Team = ClampTeam(Team);
+	if(!IsValidTeam(Team))
+		return;
+
 	if(Team == pPlayer->GetTeam())
 		return;
 
@@ -183,6 +186,7 @@ void CGameControllerDDRace::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 	{
 		if(g_Config.m_SvTeam != SV_TEAM_FORCED_SOLO && pCharacter)
 		{
+			Teams().OnCharacterDeath(pPlayer->GetCid(), WEAPON_GAME);
 			// Joining spectators should not kill a locked team, but should still
 			// check if the team finished by you leaving it.
 			int DDRTeam = pCharacter->Team();

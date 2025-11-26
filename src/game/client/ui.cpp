@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "ui.h"
+
 #include "ui_scrollregion.h"
 
 #include <base/math.h>
@@ -47,7 +48,7 @@ void CUIElement::SUIElementRect::Reset()
 	m_Rounding = -1.0f;
 	m_Corners = -1;
 	m_Text.clear();
-	m_Cursor.Reset();
+	m_Cursor = CTextCursor();
 	m_TextColor = ColorRGBA(-1, -1, -1, -1);
 	m_TextOutlineColor = ColorRGBA(-1, -1, -1, -1);
 	m_QuadColor = ColorRGBA(-1, -1, -1, -1);
@@ -78,6 +79,12 @@ void CUIElement::SUIElementRect::Draw(const CUIRect *pRect, ColorRGBA Color, int
 	m_pParent->Ui()->Graphics()->TextureClear();
 	m_pParent->Ui()->Graphics()->RenderQuadContainerEx(m_UIRectQuadContainer,
 		0, -1, m_X, m_Y, 1, 1);
+}
+
+void SLabelProperties::SetColor(const ColorRGBA &Color)
+{
+	m_vColorSplits.clear();
+	m_vColorSplits.emplace_back(0, -1, Color);
 }
 
 /********************************************************
@@ -284,9 +291,7 @@ void CUi::ConvertMouseMove(float *pX, float *pY, IInput::ECursorType CursorType)
 		Factor = g_Config.m_UiControllerSens / 100.0f;
 		break;
 	default:
-		dbg_msg("assert", "CUi::ConvertMouseMove CursorType %d", (int)CursorType);
-		dbg_break();
-		break;
+		dbg_assert_failed("CUi::ConvertMouseMove CursorType %d", (int)CursorType);
 	}
 
 	if(m_MouseSlow)
@@ -718,7 +723,6 @@ struct SCursorAndBoundingBox
 
 static SCursorAndBoundingBox CalcFontSizeCursorHeightAndBoundingBox(ITextRender *pTextRender, const char *pText, int Flags, float &Size, float MaxWidth, const SLabelProperties &LabelProps)
 {
-	const float MinFontSize = 5.0f;
 	const float MaxTextWidth = LabelProps.m_MaxWidth != -1.0f ? LabelProps.m_MaxWidth : MaxWidth;
 	const int FlagsWithoutStop = Flags & ~(TEXTFLAG_STOP_AT_END | TEXTFLAG_ELLIPSIS_AT_END);
 	const float MaxTextWidthWithoutStop = Flags == FlagsWithoutStop ? LabelProps.m_MaxWidth : -1.0f;
@@ -734,13 +738,13 @@ static SCursorAndBoundingBox CalcFontSizeCursorHeightAndBoundingBox(ITextRender 
 	float TextWidth;
 	do
 	{
-		Size = maximum(Size, MinFontSize);
+		Size = maximum(Size, LabelProps.m_MinimumFontSize);
 		// Only consider stop-at-end and ellipsis-at-end when minimum font size reached or font scaling disabled
-		if((Size == MinFontSize || !LabelProps.m_EnableWidthCheck) && Flags != FlagsWithoutStop)
+		if((Size == LabelProps.m_MinimumFontSize || !LabelProps.m_EnableWidthCheck) && Flags != FlagsWithoutStop)
 			TextWidth = pTextRender->TextWidth(Size, pText, -1, LabelProps.m_MaxWidth, Flags, TextSizeProps);
 		else
 			TextWidth = pTextRender->TextWidth(Size, pText, -1, MaxTextWidthWithoutStop, FlagsWithoutStop, TextSizeProps);
-		if(TextWidth <= MaxTextWidth + 0.001f || !LabelProps.m_EnableWidthCheck || Size == MinFontSize)
+		if(TextWidth <= MaxTextWidth + 0.001f || !LabelProps.m_EnableWidthCheck || Size == LabelProps.m_MinimumFontSize)
 			break;
 		Size--;
 	} while(true);
@@ -790,17 +794,20 @@ vec2 CUi::CalcAlignedCursorPos(const CUIRect *pRect, vec2 TextSize, int Align, c
 	return Cursor;
 }
 
-void CUi::DoLabel(const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps) const
+CLabelResult CUi::DoLabel(const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps) const
 {
 	const int Flags = GetFlagsForLabelProperties(LabelProps, nullptr);
 	const SCursorAndBoundingBox TextBounds = CalcFontSizeCursorHeightAndBoundingBox(TextRender(), pText, Flags, Size, pRect->w, LabelProps);
 	const vec2 CursorPos = CalcAlignedCursorPos(pRect, TextBounds.m_TextSize, Align, TextBounds.m_LineCount == 1 ? &TextBounds.m_BiggestCharacterHeight : nullptr);
 
 	CTextCursor Cursor;
-	TextRender()->SetCursor(&Cursor, CursorPos.x, CursorPos.y, Size, TEXTFLAG_RENDER | Flags);
+	Cursor.SetPosition(CursorPos);
+	Cursor.m_FontSize = Size;
+	Cursor.m_Flags |= Flags;
 	Cursor.m_vColorSplits = LabelProps.m_vColorSplits;
 	Cursor.m_LineWidth = (float)LabelProps.m_MaxWidth;
 	TextRender()->TextEx(&Cursor, pText, -1);
+	return CLabelResult{.m_Truncated = Cursor.m_Truncated};
 }
 
 void CUi::DoLabel(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps, int StrLen, const CTextCursor *pReadCursor) const
@@ -815,8 +822,9 @@ void CUi::DoLabel(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, cons
 	}
 	else
 	{
-		const vec2 CursorPos = CalcAlignedCursorPos(pRect, TextBounds.m_TextSize, Align);
-		TextRender()->SetCursor(&Cursor, CursorPos.x, CursorPos.y, Size, TEXTFLAG_RENDER | Flags);
+		Cursor.SetPosition(CalcAlignedCursorPos(pRect, TextBounds.m_TextSize, Align));
+		Cursor.m_FontSize = Size;
+		Cursor.m_Flags |= Flags;
 	}
 	Cursor.m_LineWidth = LabelProps.m_MaxWidth;
 
@@ -886,12 +894,12 @@ void CUi::DoLabelStreamed(CUIElement::SUIElementRect &RectEl, const CUIRect *pRe
 	}
 }
 
-void CUi::DoLabel_AutoLineSize(const char *pText, float FontSize, int Align, CUIRect *pRect, float LineSize, const SLabelProperties &LabelProps) const
+CLabelResult CUi::DoLabel_AutoLineSize(const char *pText, float FontSize, int Align, CUIRect *pRect, float LineSize, const SLabelProperties &LabelProps) const
 {
 	CUIRect LabelRect;
 	pRect->HSplitTop(LineSize, &LabelRect, pRect);
 
-	this->DoLabel(&LabelRect, pText, FontSize, Align);
+	return DoLabel(&LabelRect, pText, FontSize, Align);
 }
 
 bool CUi::DoEditBox(CLineInput *pLineInput, const CUIRect *pRect, float FontSize, int Corners, const std::vector<STextColorSplit> &vColorSplits)
@@ -1434,6 +1442,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 			if(MouseButton(0))
 			{
 				SetActiveItem(pId);
+				m_pLastActiveScrollbar = pId;
 				m_ActiveScrollbarOffset = MouseX() - Handle.x;
 				Grabbed = true;
 			}
@@ -1441,6 +1450,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 		else if(MouseButtonClicked(0))
 		{
 			SetActiveItem(pId);
+			m_pLastActiveScrollbar = pId;
 			m_ActiveScrollbarOffset = Handle.w / 2.0f;
 			Grabbed = true;
 		}
@@ -1491,8 +1501,9 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
 	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
 	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
+	const bool DelayUpdate = Flags & CUi::SCROLLBAR_OPTION_DELAYUPDATE;
 
-	int Value = *pOption;
+	int Value = (DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId)) ? m_ScrollbarValue : *pOption;
 	if(Infinite)
 	{
 		Max += 1;
@@ -1532,6 +1543,12 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 			Value = 0;
 	}
 
+	if(DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId))
+	{
+		m_ScrollbarValue = Value;
+		return false;
+	}
+
 	if(*pOption != Value)
 	{
 		*pOption = Value;
@@ -1561,13 +1578,11 @@ void CUi::RenderProgressSpinner(vec2 Center, float OuterRadius, const SProgressS
 	Graphics()->SetColor(Props.m_Color.WithMultipliedAlpha(0.5f));
 	for(int i = 0; i < Props.m_Segments; ++i)
 	{
-		const float Angle1 = AngleOffset + i * SegmentsAngle;
-		const float Angle2 = AngleOffset + (i + 1) * SegmentsAngle;
+		const vec2 Dir1 = direction(AngleOffset + i * SegmentsAngle);
+		const vec2 Dir2 = direction(AngleOffset + (i + 1) * SegmentsAngle);
 		IGraphics::CFreeformItem Item = IGraphics::CFreeformItem(
-			Center.x + std::cos(Angle1) * InnerRadius, Center.y + std::sin(Angle1) * InnerRadius,
-			Center.x + std::cos(Angle2) * InnerRadius, Center.y + std::sin(Angle2) * InnerRadius,
-			Center.x + std::cos(Angle1) * OuterRadius, Center.y + std::sin(Angle1) * OuterRadius,
-			Center.x + std::cos(Angle2) * OuterRadius, Center.y + std::sin(Angle2) * OuterRadius);
+			Center + Dir1 * InnerRadius, Center + Dir2 * InnerRadius,
+			Center + Dir1 * OuterRadius, Center + Dir2 * OuterRadius);
 		Graphics()->QuadsDrawFreeform(&Item, 1);
 	}
 
@@ -2123,7 +2138,7 @@ CUi::EPopupMenuFunctionResult CUi::PopupColorPicker(void *pContext, CUIRect View
 	}
 	else
 	{
-		dbg_assert(false, "Color picker mode invalid");
+		dbg_assert_failed("Color picker mode invalid: %d", (int)pColorPicker->m_ColorMode);
 	}
 
 	SValueSelectorProperties Props;
@@ -2201,14 +2216,15 @@ CUi::EPopupMenuFunctionResult CUi::PopupColorPicker(void *pContext, CUIRect View
 	if(pColorPicker->m_pHslaColor != nullptr)
 		*pColorPicker->m_pHslaColor = PickerColorHSL.Pack(pColorPicker->m_Alpha);
 
-	static const SColorPickerPopupContext::EColorPickerMode s_aModes[] = {SColorPickerPopupContext::MODE_HSVA, SColorPickerPopupContext::MODE_RGBA, SColorPickerPopupContext::MODE_HSLA};
-	static const char *s_apModeLabels[std::size(s_aModes)] = {"HSVA", "RGBA", "HSLA"};
-	for(SColorPickerPopupContext::EColorPickerMode Mode : s_aModes)
+	static constexpr SColorPickerPopupContext::EColorPickerMode PICKER_MODES[] = {SColorPickerPopupContext::MODE_HSVA, SColorPickerPopupContext::MODE_RGBA, SColorPickerPopupContext::MODE_HSLA};
+	static constexpr const char *PICKER_MODE_LABELS[] = {"HSVA", "RGBA", "HSLA"};
+	static_assert(std::size(PICKER_MODES) == std::size(PICKER_MODE_LABELS));
+	for(SColorPickerPopupContext::EColorPickerMode Mode : PICKER_MODES)
 	{
 		CUIRect ModeButton;
 		ModeButtonArea.VSplitLeft(HsvValueWidth, &ModeButton, &ModeButtonArea);
 		ModeButtonArea.VSplitLeft(ValuePadding, nullptr, &ModeButtonArea);
-		if(pUI->DoButton_PopupMenu(&pColorPicker->m_aModeButtons[(int)Mode], s_apModeLabels[Mode], &ModeButton, 10.0f, TEXTALIGN_MC, 2.0f, false, pColorPicker->m_ColorMode != Mode))
+		if(pUI->DoButton_PopupMenu(&pColorPicker->m_aModeButtons[(int)Mode], PICKER_MODE_LABELS[Mode], &ModeButton, 10.0f, TEXTALIGN_MC, 2.0f, false, pColorPicker->m_ColorMode != Mode))
 		{
 			pColorPicker->m_ColorMode = Mode;
 		}

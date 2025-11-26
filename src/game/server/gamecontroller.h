@@ -4,8 +4,10 @@
 #define GAME_SERVER_GAMECONTROLLER_H
 
 #include <base/vmath.h>
+
 #include <engine/map.h>
 #include <engine/shared/protocol.h>
+
 #include <game/server/teams.h>
 
 struct CScoreLoadBestTimeResult;
@@ -19,7 +21,18 @@ class IGameController
 {
 	friend class CSaveTeam; // need access to GameServer() and Server()
 
-	std::vector<vec2> m_avSpawnPoints[3];
+protected:
+	enum ESpawnType
+	{
+		SPAWNTYPE_DEFAULT = 0,
+		SPAWNTYPE_RED,
+		SPAWNTYPE_BLUE,
+
+		NUM_SPAWNTYPES
+	};
+
+private:
+	std::vector<vec2> m_avSpawnPoints[NUM_SPAWNTYPES];
 
 	class CGameContext *m_pGameServer;
 	class CConfig *m_pConfig;
@@ -49,8 +62,8 @@ protected:
 		float m_Score;
 	};
 
-	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, int DDTeam);
-	void EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam);
+	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, int ClientId);
+	void EvaluateSpawnType(CSpawnEval *pEval, ESpawnType SpawnType, int ClientId);
 
 	void ResetGame();
 
@@ -93,7 +106,7 @@ public:
 	virtual void OnCharacterSpawn(class CCharacter *pChr);
 
 	virtual void HandleCharacterTiles(class CCharacter *pChr, int MapIndex);
-	virtual void SetArmorProgress(CCharacter *pCharacter, int Progress){};
+	virtual void SetArmorProgress(CCharacter *pCharacter, int Progress) {}
 
 	/*
 		Function: OnEntity
@@ -129,7 +142,7 @@ public:
 	virtual void Snap(int SnappingClient);
 
 	//spawn
-	virtual bool CanSpawn(int Team, vec2 *pOutPos, int DDTeam);
+	virtual bool CanSpawn(int Team, vec2 *pOutPos, int ClientId);
 
 	virtual void DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg = true);
 
@@ -138,17 +151,17 @@ public:
 	/*
 
 	*/
+	virtual bool IsValidTeam(int Team);
 	virtual const char *GetTeamName(int Team);
 	virtual int GetAutoTeam(int NotThisId);
 	virtual bool CanJoinTeam(int Team, int NotThisId, char *pErrorReason, int ErrorReasonSize);
-	int ClampTeam(int Team);
 
 	CClientMask GetMaskForPlayerWorldEvent(int Asker, int ExceptID = -1);
 
 	bool IsTeamPlay() const { return m_GameFlags & GAMEFLAG_TEAMS; }
 	// DDRace
 
-	float m_CurrentRecord;
+	std::optional<float> m_CurrentRecord;
 	CGameTeams &Teams() { return m_Teams; }
 	std::shared_ptr<CScoreLoadBestTimeResult> m_pLoadBestTimeResult;
 };

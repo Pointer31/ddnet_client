@@ -1,5 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include "ui_scrollregion.h"
+
 #include <base/system.h>
 #include <base/vmath.h>
 
@@ -7,9 +9,12 @@
 #include <engine/keys.h>
 #include <engine/shared/config.h>
 
-#include "ui_scrollregion.h"
-
 CScrollRegion::CScrollRegion()
+{
+	Reset();
+}
+
+void CScrollRegion::Reset()
 {
 	m_ScrollY = 0.0f;
 	m_ContentH = 0.0f;
@@ -22,6 +27,7 @@ CScrollRegion::CScrollRegion()
 	m_AnimInitScrollY = 0.0f;
 	m_AnimTargetScrollY = 0.0f;
 
+	m_ClipRect = m_RailRect = m_LastAddedRect = CUIRect{0.0f, 0.0f, 0.0f, 0.0f};
 	m_SliderGrabPos = 0.0f;
 	m_ContentScrollOff = vec2(0.0f, 0.0f);
 	m_Params = CScrollRegionParams();
@@ -134,6 +140,10 @@ void CScrollRegion::End()
 	if(m_AnimTime > 0.0f)
 	{
 		m_AnimTime -= Client()->RenderFrameTime();
+		if(m_AnimTime < 0.0f)
+		{
+			m_AnimTime = 0.0f;
+		}
 		float AnimProgress = (1.0f - std::pow(m_AnimTime / m_AnimTimeMax, 3.0f)); // cubic ease out
 		m_ScrollY = m_AnimInitScrollY + (m_AnimTargetScrollY - m_AnimInitScrollY) * AnimProgress;
 	}

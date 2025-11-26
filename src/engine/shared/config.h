@@ -14,6 +14,8 @@
 // include protocol for MAX_CLIENT used in config_variables
 #include <engine/shared/protocol.h>
 
+static constexpr const char *DEFAULT_SAVED_RCON_USER = "local-server";
+
 #define CONFIG_FILE "settings_ddnet.cfg"
 #define AUTOEXEC_FILE "autoexec.cfg"
 #define AUTOEXEC_CLIENT_FILE "autoexec_client.cfg"
@@ -74,7 +76,7 @@ struct SConfigVariable
 	int m_Flags;
 	const char *m_pHelp;
 	// Note that this only applies to the console command and the SetValue function,
-	// but the underlying config variable can still be modified programatically.
+	// but the underlying config variable can still be modified programmatically.
 	bool m_ReadOnly = false;
 
 	SConfigVariable(IConsole *pConsole, const char *pScriptName, EVariableType Type, int Flags, const char *pHelp) :
@@ -229,6 +231,7 @@ public:
 	void Reset(const char *pScriptName) override;
 	void ResetGameSettings() override;
 	void SetReadOnly(const char *pScriptName, bool ReadOnly) override;
+	void SetGameSettingsReadOnly(bool ReadOnly) override;
 	bool Save() override;
 	CConfig *Values() override { return &g_Config; }
 

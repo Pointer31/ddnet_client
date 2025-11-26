@@ -1,14 +1,11 @@
-#include <game/client/gameclient.h>
-
-#include <game/localization.h>
-
 #include "local_server.h"
+
+#include <game/client/gameclient.h>
+#include <game/localization.h>
 
 #if defined(CONF_PLATFORM_ANDROID)
 #include <android/android_main.h>
 #endif
-
-static constexpr const char *DEFAULT_SAVED_RCON_USER = "local-server";
 
 void CLocalServer::RunServer(const std::vector<const char *> &vpArguments)
 {

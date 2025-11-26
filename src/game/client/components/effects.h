@@ -23,18 +23,18 @@ private:
 
 public:
 	CEffects();
-	virtual int Sizeof() const override { return sizeof(*this); }
+	int Sizeof() const override { return sizeof(*this); }
 
-	virtual void OnRender() override;
+	void OnRender() override;
 
 	void BulletTrail(vec2 Pos, float Alpha, float TimePassed);
 	void SmokeTrail(vec2 Pos, vec2 Vel, float Alpha, float TimePassed);
-	void SkidTrail(vec2 Pos, vec2 Vel, int Direction, float Alpha);
+	void SkidTrail(vec2 Pos, vec2 Vel, int Direction, float Alpha, float Volume);
 	void Explosion(vec2 Pos, float Alpha);
-	void HammerHit(vec2 Pos, float Alpha);
-	void AirJump(vec2 Pos, float Alpha);
+	void HammerHit(vec2 Pos, float Alpha, float Volume);
+	void AirJump(vec2 Pos, float Alpha, float Volume);
 	void DamageIndicator(vec2 Pos, vec2 Dir, float Alpha);
-	void PlayerSpawn(vec2 Pos, float Alpha);
+	void PlayerSpawn(vec2 Pos, float Alpha, float Volume);
 	void PlayerDeath(vec2 Pos, int ClientId, float Alpha);
 	void PowerupShine(vec2 Pos, vec2 Size, float Alpha);
 	void FreezingFlakes(vec2 Pos, vec2 Size, float Alpha);

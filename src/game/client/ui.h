@@ -214,7 +214,16 @@ struct SLabelProperties
 	bool m_StopAtEnd = false;
 	bool m_EllipsisAtEnd = false;
 	bool m_EnableWidthCheck = true;
-	std::vector<STextColorSplit> m_vColorSplits = {};
+	float m_MinimumFontSize = 5.0f;
+	std::vector<STextColorSplit> m_vColorSplits;
+
+	void SetColor(const ColorRGBA &Color);
+};
+
+class CLabelResult
+{
+public:
+	bool m_Truncated;
 };
 
 enum EButtonFlags : unsigned
@@ -374,6 +383,8 @@ private:
 	};
 	CDoubleClickState m_DoubleClickState;
 	const void *m_pLastEditingItem = nullptr;
+	const void *m_pLastActiveScrollbar = nullptr;
+	int m_ScrollbarValue = 0;
 	float m_ActiveScrollbarOffset = 0.0f;
 	float m_ProgressSpinnerOffset = 0.0f;
 	class CValueSelectorState
@@ -576,8 +587,8 @@ public:
 	void DoSmoothScrollLogic(float *pScrollOffset, float *pScrollOffsetChange, float ViewPortSize, float TotalSize, bool SmoothClamp = false, float ScrollSpeed = 10.0f) const;
 	static vec2 CalcAlignedCursorPos(const CUIRect *pRect, vec2 TextSize, int Align, const float *pBiggestCharHeight = nullptr);
 
-	void DoLabel(const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}) const;
-	void DoLabel_AutoLineSize(const char *pText, float FontSize, int Align, CUIRect *pRect, float LineSize, const SLabelProperties &LabelProps = {}) const;
+	CLabelResult DoLabel(const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}) const;
+	CLabelResult DoLabel_AutoLineSize(const char *pText, float FontSize, int Align, CUIRect *pRect, float LineSize, const SLabelProperties &LabelProps = {}) const;
 
 	void DoLabel(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}, int StrLen = -1, const CTextCursor *pReadCursor = nullptr) const;
 	void DoLabelStreamed(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}, int StrLen = -1, const CTextCursor *pReadCursor = nullptr) const;
@@ -651,6 +662,7 @@ public:
 		SCROLLBAR_OPTION_INFINITE = 1 << 0,
 		SCROLLBAR_OPTION_NOCLAMPVALUE = 1 << 1,
 		SCROLLBAR_OPTION_MULTILINE = 1 << 2,
+		SCROLLBAR_OPTION_DELAYUPDATE = 1 << 3,
 	};
 	float DoScrollbarV(const void *pId, const CUIRect *pRect, float Current);
 	float DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner = nullptr);

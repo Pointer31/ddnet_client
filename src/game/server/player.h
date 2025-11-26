@@ -3,12 +3,14 @@
 #ifndef GAME_SERVER_PLAYER_H
 #define GAME_SERVER_PLAYER_H
 
+#include "teeinfo.h"
+
 #include <base/vmath.h>
+
 #include <engine/shared/protocol.h>
+
 #include <game/alloc.h>
 #include <game/server/save.h>
-
-#include "teeinfo.h"
 
 #include <memory>
 #include <optional>
@@ -48,9 +50,9 @@ public:
 	void Snap(int SnappingClient);
 	void FakeSnap();
 
-	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
-	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
-	void OnPredictedEarlyInput(CNetObj_PlayerInput *pNewInput);
+	void OnDirectInput(const CNetObj_PlayerInput *pNewInput);
+	void OnPredictedInput(const CNetObj_PlayerInput *pNewInput);
+	void OnPredictedEarlyInput(const CNetObj_PlayerInput *pNewInput);
 	void OnDisconnect();
 
 	void KillCharacter(int Weapon = WEAPON_GAME, bool SendKillMsg = true);
@@ -73,8 +75,8 @@ public:
 
 	int m_SentSnaps = 0;
 
-	// used for spectator mode
-	int m_SpectatorId;
+	int SpectatorId() const { return m_SpectatorId; }
+	void SetSpectatorId(int Id);
 
 	bool m_IsReady;
 
@@ -135,6 +137,9 @@ private:
 	int m_ClientId;
 	int m_Team;
 
+	// used for spectator mode
+	int m_SpectatorId;
+
 	int m_Paused;
 	int64_t m_ForcePauseTime;
 	int64_t m_LastPause;
@@ -156,7 +161,7 @@ public:
 	enum
 	{
 		TIMERTYPE_DEFAULT = -1,
-		TIMERTYPE_GAMETIMER = 0,
+		TIMERTYPE_GAMETIMER,
 		TIMERTYPE_BROADCAST,
 		TIMERTYPE_GAMETIMER_AND_BROADCAST,
 		TIMERTYPE_SIXUP,
@@ -175,10 +180,11 @@ public:
 	bool CanSpec() const;
 
 	bool IsPlaying() const;
-	int64_t m_Last_KickVote;
-	int64_t m_Last_Team;
+	int64_t m_LastKickVote;
+	int64_t m_LastDDRaceTeamChange;
 	int m_ShowOthers;
 	bool m_ShowAll;
+	bool m_EnableSpectatorCount;
 	vec2 m_ShowDistance;
 	bool m_SpecTeam;
 	bool m_NinjaJetpack;

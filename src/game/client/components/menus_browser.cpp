@@ -1,5 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include "menus.h"
+
 #include <base/log.h>
 
 #include <engine/engine.h>
@@ -15,12 +17,9 @@
 #include <game/client/animstate.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/gameclient.h>
-#include <game/client/render.h>
 #include <game/client/ui.h>
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
-
-#include "menus.h"
 
 using namespace FontIcons;
 
@@ -133,7 +132,10 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 		COL_FRIENDS,
 		COL_PLAYERS,
 		COL_PING,
+	};
 
+	enum
+	{
 		UI_ELEM_LOCK_ICON = 0,
 		UI_ELEM_FAVORITE_ICON,
 		UI_ELEM_NAME_1,
@@ -147,6 +149,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 		UI_ELEM_PLAYERS,
 		UI_ELEM_FRIEND_ICON,
 		UI_ELEM_PING,
+		UI_ELEM_KEY_ICON,
 		NUM_UI_ELEMS,
 	};
 
@@ -336,6 +339,10 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				if(pItem->m_Flags & SERVER_FLAG_PASSWORD)
 				{
 					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_LOCK_ICON), &Button, ColorRGBA(0.75f, 0.75f, 0.75f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_LOCK, TEXTALIGN_MC);
+				}
+				else if(pItem->m_RequiresLogin)
+				{
+					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_KEY_ICON), &Button, ColorRGBA(0.75f, 0.75f, 0.75f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_KEY, TEXTALIGN_MC);
 				}
 			}
 			else if(Id == COL_FLAG_FAV)
@@ -737,7 +744,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		const float OldWidth = Flag.w;
 		Flag.w = Flag.h * 2.0f;
 		Flag.x += (OldWidth - Flag.w) / 2.0f;
-		GameClient()->m_CountryFlags.Render(g_Config.m_BrFilterCountryIndex, ColorRGBA(1.0f, 1.0f, 1.0f, Ui()->HotItem() == &g_Config.m_BrFilterCountryIndex ? 1.0f : g_Config.m_BrFilterCountry ? 0.9f : 0.5f), Flag.x, Flag.y, Flag.w, Flag.h);
+		GameClient()->m_CountryFlags.Render(g_Config.m_BrFilterCountryIndex, ColorRGBA(1.0f, 1.0f, 1.0f, Ui()->HotItem() == &g_Config.m_BrFilterCountryIndex ? 1.0f : (g_Config.m_BrFilterCountry ? 0.9f : 0.5f)), Flag.x, Flag.y, Flag.w, Flag.h);
 
 		if(Ui()->DoButtonLogic(&g_Config.m_BrFilterCountryIndex, 0, &Flag, BUTTONFLAG_LEFT))
 		{
@@ -1107,9 +1114,9 @@ CUi::EPopupMenuFunctionResult CMenus::PopupCountrySelection(void *pContext, CUIR
 
 	for(size_t i = 0; i < pMenus->GameClient()->m_CountryFlags.Num(); ++i)
 	{
-		const CCountryFlags::CCountryFlag *pEntry = pMenus->GameClient()->m_CountryFlags.GetByIndex(i);
+		const CCountryFlags::CCountryFlag &Entry = pMenus->GameClient()->m_CountryFlags.GetByIndex(i);
 
-		const CListboxItem Item = s_ListBox.DoNextItem(pEntry, pEntry->m_CountryCode == pPopupContext->m_Selection);
+		const CListboxItem Item = s_ListBox.DoNextItem(&Entry, Entry.m_CountryCode == pPopupContext->m_Selection);
 		if(!Item.m_Visible)
 			continue;
 
@@ -1120,13 +1127,13 @@ CUi::EPopupMenuFunctionResult CMenus::PopupCountrySelection(void *pContext, CUIR
 		const float OldWidth = FlagRect.w;
 		FlagRect.w = FlagRect.h * 2.0f;
 		FlagRect.x += (OldWidth - FlagRect.w) / 2.0f;
-		pMenus->GameClient()->m_CountryFlags.Render(pEntry->m_CountryCode, ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f), FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
+		pMenus->GameClient()->m_CountryFlags.Render(Entry.m_CountryCode, ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f), FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
 
-		pMenus->Ui()->DoLabel(&Label, pEntry->m_aCountryCodeString, 10.0f, TEXTALIGN_MC);
+		pMenus->Ui()->DoLabel(&Label, Entry.m_aCountryCodeString, 10.0f, TEXTALIGN_MC);
 	}
 
 	const int NewSelected = s_ListBox.DoEnd();
-	pPopupContext->m_Selection = NewSelected >= 0 ? pMenus->GameClient()->m_CountryFlags.GetByIndex(NewSelected)->m_CountryCode : -1;
+	pPopupContext->m_Selection = NewSelected >= 0 ? pMenus->GameClient()->m_CountryFlags.GetByIndex(NewSelected).m_CountryCode : -1;
 	if(s_ListBox.WasItemSelected() || s_ListBox.WasItemActivated())
 	{
 		g_Config.m_BrFilterCountry = 1;
@@ -1322,39 +1329,59 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 			Ui()->DoButtonLogic(&CurrentClient.m_aSkin, 0, &Skin, BUTTONFLAG_NONE);
 			GameClient()->m_Tooltips.DoToolTip(&CurrentClient.m_aSkin, &Skin, CurrentClient.m_aSkin);
 		}
+		else if(CurrentClient.m_aaSkin7[protocol7::SKINPART_BODY][0] != '\0')
+		{
+			CTeeRenderInfo TeeInfo;
+			TeeInfo.m_Size = minimum(Skin.w, Skin.h);
+			for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
+			{
+				GameClient()->m_Skins7.FindSkinPart(Part, CurrentClient.m_aaSkin7[Part], true)->ApplyTo(TeeInfo.m_aSixup[g_Config.m_ClDummy]);
+				GameClient()->m_Skins7.ApplyColorTo(TeeInfo.m_aSixup[g_Config.m_ClDummy], CurrentClient.m_aUseCustomSkinColor7[Part], CurrentClient.m_aCustomSkinColor7[Part], Part);
+			}
+			const CAnimState *pIdleState = CAnimState::GetIdle();
+			vec2 OffsetToMid;
+			CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+			const vec2 TeeRenderPos = vec2(Skin.x + TeeInfo.m_Size / 2.0f, Skin.y + Skin.h / 2.0f + OffsetToMid.y);
+			RenderTools()->RenderTee(pIdleState, &TeeInfo, CurrentClient.m_Afk ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
+		}
 
 		// name
-		CTextCursor Cursor;
-		TextRender()->SetCursor(&Cursor, Name.x, Name.y + (Name.h - (FontSize - 1.0f)) / 2.0f, FontSize - 1.0f, TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END);
-		Cursor.m_LineWidth = Name.w;
+		CTextCursor NameCursor;
+		NameCursor.SetPosition(vec2(Name.x, Name.y + (Name.h - (FontSize - 1.0f)) / 2.0f));
+		NameCursor.m_FontSize = FontSize - 1.0f;
+		NameCursor.m_Flags |= TEXTFLAG_STOP_AT_END;
+		NameCursor.m_LineWidth = Name.w;
 		const char *pName = CurrentClient.m_aName;
 		bool Printed = false;
 		if(g_Config.m_BrFilterString[0])
 			Printed = PrintHighlighted(pName, [&](const char *pFilteredStr, const int FilterLen) {
-				TextRender()->TextEx(&Cursor, pName, (int)(pFilteredStr - pName));
+				TextRender()->TextEx(&NameCursor, pName, (int)(pFilteredStr - pName));
 				TextRender()->TextColor(gs_HighlightedTextColor);
-				TextRender()->TextEx(&Cursor, pFilteredStr, FilterLen);
+				TextRender()->TextEx(&NameCursor, pFilteredStr, FilterLen);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
-				TextRender()->TextEx(&Cursor, pFilteredStr + FilterLen, -1);
+				TextRender()->TextEx(&NameCursor, pFilteredStr + FilterLen, -1);
 			});
 		if(!Printed)
-			TextRender()->TextEx(&Cursor, pName, -1);
+			TextRender()->TextEx(&NameCursor, pName, -1);
 
 		// clan
-		TextRender()->SetCursor(&Cursor, Clan.x, Clan.y + (Clan.h - (FontSize - 2.0f)) / 2.0f, FontSize - 2.0f, TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END);
-		Cursor.m_LineWidth = Clan.w;
+		CTextCursor ClanCursor;
+		ClanCursor.SetPosition(vec2(Clan.x, Clan.y + (Clan.h - (FontSize - 2.0f)) / 2.0f));
+		ClanCursor.m_FontSize = FontSize - 2.0f;
+		ClanCursor.m_Flags |= TEXTFLAG_STOP_AT_END;
+		ClanCursor.m_LineWidth = Clan.w;
 		const char *pClan = CurrentClient.m_aClan;
 		Printed = false;
 		if(g_Config.m_BrFilterString[0])
 			Printed = PrintHighlighted(pClan, [&](const char *pFilteredStr, const int FilterLen) {
-				TextRender()->TextEx(&Cursor, pClan, (int)(pFilteredStr - pClan));
+				TextRender()->TextEx(&ClanCursor, pClan, (int)(pFilteredStr - pClan));
 				TextRender()->TextColor(0.4f, 0.4f, 1.0f, 1.0f);
-				TextRender()->TextEx(&Cursor, pFilteredStr, FilterLen);
+				TextRender()->TextEx(&ClanCursor, pFilteredStr, FilterLen);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
-				TextRender()->TextEx(&Cursor, pFilteredStr + FilterLen, -1);
+				TextRender()->TextEx(&ClanCursor, pFilteredStr + FilterLen, -1);
 			});
 		if(!Printed)
-			TextRender()->TextEx(&Cursor, pClan, -1);
+			TextRender()->TextEx(&ClanCursor, pClan, -1);
 
 		// flag
 		GameClient()->m_CountryFlags.Render(CurrentClient.m_Country, ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f), Flag.x, Flag.y, Flag.w, Flag.h);
@@ -1389,6 +1416,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 	m_pRemoveFriend = nullptr;
 	for(auto &vFriends : m_avFriends)
 		vFriends.clear();
+	m_avFriends[FRIEND_OFF].reserve(GameClient()->Friends()->NumFriends());
 	for(int FriendIndex = 0; FriendIndex < GameClient()->Friends()->NumFriends(); ++FriendIndex)
 	{
 		m_avFriends[FRIEND_OFF].emplace_back(GameClient()->Friends()->GetFriend(FriendIndex));
@@ -1461,8 +1489,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 			str_format(aBuf, sizeof(aBuf), Localize("Offline (%d)", "friends (server browser)"), (int)m_avFriends[FriendType].size());
 			break;
 		default:
-			dbg_assert(false, "FriendType invalid");
-			break;
+			dbg_assert_failed("FriendType invalid");
 		}
 		Ui()->DoLabel(&GroupLabel, aBuf, FontSize, TEXTALIGN_ML);
 		if(Ui()->DoButtonLogic(&s_aListExtended[FriendType], 0, &Header, BUTTONFLAG_LEFT))
@@ -1524,6 +1551,21 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 					RenderTools()->RenderTee(pIdleState, &TeeInfo, Friend.IsAfk() ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
 					Ui()->DoButtonLogic(Friend.SkinTooltipId(), 0, &Skin, BUTTONFLAG_NONE);
 					GameClient()->m_Tooltips.DoToolTip(Friend.SkinTooltipId(), &Skin, Friend.Skin());
+				}
+				else if(Friend.Skin7(protocol7::SKINPART_BODY)[0] != '\0')
+				{
+					CTeeRenderInfo TeeInfo;
+					TeeInfo.m_Size = minimum(Skin.w, Skin.h);
+					for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
+					{
+						GameClient()->m_Skins7.FindSkinPart(Part, Friend.Skin7(Part), true)->ApplyTo(TeeInfo.m_aSixup[g_Config.m_ClDummy]);
+						GameClient()->m_Skins7.ApplyColorTo(TeeInfo.m_aSixup[g_Config.m_ClDummy], Friend.UseCustomSkinColor7(Part), Friend.CustomSkinColor7(Part), Part);
+					}
+					const CAnimState *pIdleState = CAnimState::GetIdle();
+					vec2 OffsetToMid;
+					CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+					const vec2 TeeRenderPos = vec2(Skin.x + Skin.w / 2.0f, Skin.y + Skin.h * 0.55f + OffsetToMid.y);
+					RenderTools()->RenderTee(pIdleState, &TeeInfo, Friend.IsAfk() ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
 				}
 				Rect.HSplitTop(11.0f, &NameLabel, &ClanLabel);
 
@@ -1745,8 +1787,7 @@ void CMenus::RenderServerbrowserToolBox(CUIRect ToolBox)
 		RenderServerbrowserFriends(ToolBox);
 		return;
 	default:
-		dbg_assert(false, "ui_toolbox_page invalid");
-		return;
+		dbg_assert_failed("ui_toolbox_page invalid");
 	}
 }
 
@@ -1773,9 +1814,10 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 		GameClient()->m_MenuBackground.ChangePosition(g_Config.m_UiPage - PAGE_FAVORITE_COMMUNITY_1 + CMenuBackground::POS_BROWSER_CUSTOM0);
 		break;
 	default:
-		dbg_assert(false, "ui_page invalid for RenderServerbrowser");
+		dbg_assert_failed("ui_page invalid for RenderServerbrowser");
 	}
 
+	// clang-format off
 	/*
 		+---------------------------+ +---communities---+
 		|                           | |                 |
@@ -1786,6 +1828,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 		+---------------------------+ |                 |
 		        status box            +-----------------+
 	*/
+	// clang-format on
 
 	CUIRect ServerList, StatusBox, ToolBox, TabBar;
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);

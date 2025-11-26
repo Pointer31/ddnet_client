@@ -250,7 +250,7 @@ class CServerBrowser : public IServerBrowser
 {
 public:
 	CServerBrowser();
-	virtual ~CServerBrowser();
+	~CServerBrowser() override;
 
 	// interface functions
 	void Refresh(int Type, bool Force = false) override;
@@ -275,6 +275,7 @@ public:
 	void UpdateServerFriends(CServerInfo *pInfo) const;
 	void UpdateServerCommunity(CServerInfo *pInfo) const;
 	void UpdateServerRank(CServerInfo *pInfo) const;
+	void ValidateServerlistType();
 	const char *GetTutorialServer() override;
 
 	const std::vector<CCommunity> &Communities() const override;

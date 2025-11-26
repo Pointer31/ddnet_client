@@ -2,7 +2,9 @@
 #define ENGINE_SHARED_HTTP_H
 
 #include <base/hash_ctxt.h>
+#include <base/system.h>
 
+#include <engine/http.h>
 #include <engine/shared/jobs.h>
 
 #include <algorithm>
@@ -12,8 +14,6 @@
 #include <mutex>
 #include <optional>
 #include <unordered_map>
-
-#include <engine/http.h>
 
 typedef struct _json_value json_value;
 class IStorage;
@@ -75,8 +75,7 @@ class CHttpRequest : public IHttpRequest
 			return "POST";
 		}
 
-		// Unreachable, maybe assert instead?
-		return "UNKNOWN";
+		dbg_assert_failed("unreachable");
 	}
 
 	char m_aUrl[256] = {0};
@@ -336,9 +335,9 @@ public:
 	bool Init(std::chrono::milliseconds ShutdownDelay);
 
 	// User
-	virtual void Run(std::shared_ptr<IHttpRequest> pRequest) override;
+	void Run(std::shared_ptr<IHttpRequest> pRequest) override;
 	void Shutdown() override;
-	~CHttp();
+	~CHttp() override;
 };
 
 #endif // ENGINE_SHARED_HTTP_H

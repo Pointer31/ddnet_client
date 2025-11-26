@@ -1,16 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <engine/shared/config.h>
-
-#include <engine/shared/protocolglue.h>
-#include <game/generated/protocol.h>
-#include <game/mapitems.h>
-#include <game/server/score.h>
-#include <game/teamscore.h>
-
-#include "gamecontext.h"
 #include "gamecontroller.h"
-#include "player.h"
 
 #include "entities/character.h"
 #include "entities/door.h"
@@ -19,6 +9,17 @@
 #include "entities/light.h"
 #include "entities/pickup.h"
 #include "entities/projectile.h"
+#include "gamecontext.h"
+#include "player.h"
+
+#include <engine/shared/config.h>
+#include <engine/shared/protocolglue.h>
+
+#include <generated/protocol.h>
+
+#include <game/mapitems.h>
+#include <game/server/score.h>
+#include <game/teamscore.h>
 
 IGameController::IGameController(class CGameContext *pGameServer) :
 	m_Teams(pGameServer), m_pLoadBestTimeResult(nullptr)
@@ -37,7 +38,7 @@ IGameController::IGameController(class CGameContext *pGameServer) :
 	m_GameFlags = 0;
 	m_aMapWish[0] = 0;
 
-	m_CurrentRecord = 0;
+	m_CurrentRecord.reset();
 }
 
 IGameController::~IGameController() = default;
@@ -49,7 +50,7 @@ void IGameController::DoActivityCheck()
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
-		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && Server()->GetAuthedState(i) == AUTHED_NO)
+		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsRconAuthed(i))
 		{
 			if(Server()->Tick() > GameServer()->m_apPlayers[i]->m_LastActionTick + g_Config.m_SvInactiveKickTime * Server()->TickSpeed() * 60)
 			{
@@ -85,14 +86,13 @@ void IGameController::DoActivityCheck()
 	}
 }
 
-float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, int DDTeam)
+float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, int ClientId)
 {
 	float Score = 0.0f;
 	CCharacter *pC = static_cast<CCharacter *>(GameServer()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER));
 	for(; pC; pC = (CCharacter *)pC->TypeNext())
 	{
-		// ignore players in other teams
-		if(GameServer()->GetDDRaceTeam(pC->GetPlayer()->GetCid()) != DDTeam)
+		if(!pC->CanCollide(ClientId))
 			continue;
 
 		float d = distance(Pos, pC->m_Pos);
@@ -102,9 +102,14 @@ float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, int DDTeam)
 	return Score;
 }
 
-void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
+void IGameController::EvaluateSpawnType(CSpawnEval *pEval, ESpawnType SpawnType, int ClientId)
 {
-	const bool PlayerCollision = GameServer()->m_World.m_Core.m_aTuning[0].m_PlayerCollision;
+	const bool PlayerCollision = GameServer()->GlobalTuning()->m_PlayerCollision;
+
+	bool PlayerCollisionDisabled = false;
+	CCharacter *pPlayerCharacter = GameServer()->GetPlayerChar(ClientId);
+	if(pPlayerCharacter)
+		PlayerCollisionDisabled = pPlayerCharacter->GetCore().m_CollisionDisabled;
 
 	// make sure players keep spawning at the same tile
 	// on race maps no matter what
@@ -115,7 +120,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
 	for(int j = 0; j < 2; j++)
 	{
 		// get spawn point
-		for(const vec2 &SpawnPoint : m_avSpawnPoints[Type])
+		for(const vec2 &SpawnPoint : m_avSpawnPoints[SpawnType])
 		{
 			vec2 P = SpawnPoint;
 			if(j == 0)
@@ -128,13 +133,15 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
 				for(int Index = 0; Index < 5 && Result == -1; ++Index)
 				{
 					Result = Index;
-					if(!PlayerCollision)
+					if(!PlayerCollision || PlayerCollisionDisabled)
 						break;
 					for(int c = 0; c < Num; ++c)
 					{
 						CCharacter *pChr = static_cast<CCharacter *>(apEnts[c]);
+						const bool CanCollide = pChr->CanCollide(ClientId) && !pChr->GetCore().m_CollisionDisabled;
+
 						if(GameServer()->Collision()->CheckPoint(SpawnPoint + aPositions[Index]) ||
-							distance(pChr->m_Pos, SpawnPoint + aPositions[Index]) <= pChr->GetProximityRadius())
+							(CanCollide && distance(pChr->m_Pos, SpawnPoint + aPositions[Index]) <= pChr->GetProximityRadius()))
 						{
 							Result = -1;
 							break;
@@ -147,7 +154,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
 				P += aPositions[Result];
 			}
 
-			float S = EvaluateSpawnPos(pEval, P, DDTeam);
+			float S = EvaluateSpawnPos(pEval, P, ClientId);
 			if(!pEval->m_Got || (j == 0 && pEval->m_Score > S))
 			{
 				pEval->m_Got = true;
@@ -158,16 +165,16 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
 	}
 }
 
-bool IGameController::CanSpawn(int Team, vec2 *pOutPos, int DDTeam)
+bool IGameController::CanSpawn(int Team, vec2 *pOutPos, int ClientId)
 {
 	// spectators can't spawn
 	if(Team == TEAM_SPECTATORS)
 		return false;
 
 	CSpawnEval Eval;
-	EvaluateSpawnType(&Eval, 0, DDTeam);
-	EvaluateSpawnType(&Eval, 1, DDTeam);
-	EvaluateSpawnType(&Eval, 2, DDTeam);
+	EvaluateSpawnType(&Eval, SPAWNTYPE_DEFAULT, ClientId);
+	EvaluateSpawnType(&Eval, SPAWNTYPE_RED, ClientId);
+	EvaluateSpawnType(&Eval, SPAWNTYPE_BLUE, ClientId);
 
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
@@ -191,8 +198,8 @@ bool IGameController::OnEntity(int Index, int x, int y, int Layer, int Flags, bo
 
 	if(Index >= ENTITY_SPAWN && Index <= ENTITY_SPAWN_BLUE && Initial)
 	{
-		const int Type = Index - ENTITY_SPAWN;
-		m_avSpawnPoints[Type].push_back(Pos);
+		const int SpawnType = Index - ENTITY_SPAWN;
+		m_avSpawnPoints[SpawnType].push_back(Pos);
 	}
 	else if(Index == ENTITY_DOOR)
 	{
@@ -458,11 +465,22 @@ void IGameController::ResetGame()
 	GameServer()->m_World.m_ResetRequested = true;
 }
 
+bool IGameController::IsValidTeam(int Team)
+{
+	return Team == TEAM_SPECTATORS || Team == TEAM_GAME;
+}
+
 const char *IGameController::GetTeamName(int Team)
 {
-	if(Team == 0)
+	switch(Team)
+	{
+	case TEAM_SPECTATORS:
+		return "spectators";
+	case TEAM_GAME:
 		return "game";
-	return "spectators";
+	default:
+		dbg_assert_failed("Invalid Team: %d", Team);
+	}
 }
 
 void IGameController::StartRound()
@@ -588,7 +606,7 @@ void IGameController::Snap(int SnappingClient)
 
 	if(pPlayer && (pPlayer->m_TimerType == CPlayer::TIMERTYPE_GAMETIMER || pPlayer->m_TimerType == CPlayer::TIMERTYPE_GAMETIMER_AND_BROADCAST) && pPlayer->GetClientVersion() >= VERSION_DDNET_GAMETICK)
 	{
-		if((pPlayer->GetTeam() == TEAM_SPECTATORS || pPlayer->IsPaused()) && pPlayer->m_SpectatorId != SPEC_FREEVIEW && (pPlayer2 = GameServer()->m_apPlayers[pPlayer->m_SpectatorId]))
+		if((pPlayer->GetTeam() == TEAM_SPECTATORS || pPlayer->IsPaused()) && pPlayer->SpectatorId() != SPEC_FREEVIEW && (pPlayer2 = GameServer()->m_apPlayers[pPlayer->SpectatorId()]))
 		{
 			if((pChr = pPlayer2->GetCharacter()) && pChr->m_DDRaceState == ERaceState::STARTED)
 			{
@@ -656,7 +674,7 @@ void IGameController::Snap(int SnappingClient)
 		if(!pRaceData)
 			return;
 
-		pRaceData->m_BestTime = round_to_int(m_CurrentRecord * 1000);
+		pRaceData->m_BestTime = m_CurrentRecord.has_value() ? round_to_int(m_CurrentRecord.value() * 1000) : -1;
 		pRaceData->m_Precision = 2;
 		pRaceData->m_RaceFlags = protocol7::RACEFLAG_KEEP_WANTED_WEAPON;
 	}
@@ -666,17 +684,7 @@ void IGameController::Snap(int SnappingClient)
 
 int IGameController::GetAutoTeam(int NotThisId)
 {
-	int aNumplayers[2] = {0, 0};
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(GameServer()->m_apPlayers[i] && i != NotThisId)
-		{
-			if(GameServer()->m_apPlayers[i]->GetTeam() >= TEAM_RED && GameServer()->m_apPlayers[i]->GetTeam() <= TEAM_BLUE)
-				aNumplayers[GameServer()->m_apPlayers[i]->GetTeam()]++;
-		}
-	}
-
-	int Team = 0;
+	int Team = TEAM_GAME;
 
 	if(CanJoinTeam(Team, NotThisId, nullptr, 0))
 		return Team;
@@ -713,13 +721,6 @@ bool IGameController::CanJoinTeam(int Team, int NotThisId, char *pErrorReason, i
 	return false;
 }
 
-int IGameController::ClampTeam(int Team)
-{
-	if(Team < 0)
-		return TEAM_SPECTATORS;
-	return 0;
-}
-
 CClientMask IGameController::GetMaskForPlayerWorldEvent(int Asker, int ExceptId)
 {
 	if(Asker == -1)
@@ -730,7 +731,9 @@ CClientMask IGameController::GetMaskForPlayerWorldEvent(int Asker, int ExceptId)
 
 void IGameController::DoTeamChange(CPlayer *pPlayer, int Team, bool DoChatMsg)
 {
-	Team = ClampTeam(Team);
+	if(!IsValidTeam(Team))
+		return;
+
 	if(Team == pPlayer->GetTeam())
 		return;
 

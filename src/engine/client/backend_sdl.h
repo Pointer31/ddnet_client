@@ -1,15 +1,13 @@
 #ifndef ENGINE_CLIENT_BACKEND_SDL_H
 #define ENGINE_CLIENT_BACKEND_SDL_H
 
-#include <SDL_video.h>
-
 #include <base/detect.h>
 
+#include <engine/client/backend/backend_base.h>
+#include <engine/client/graphics_threaded.h>
 #include <engine/graphics.h>
 
-#include <engine/client/graphics_threaded.h>
-
-#include <engine/client/backend/backend_base.h>
+#include <SDL_video.h>
 
 #include <atomic>
 #include <condition_variable>
@@ -32,13 +30,13 @@ public:
 		Class NSAutoreleasePoolClass = (Class)objc_getClass("NSAutoreleasePool");
 		m_Pool = class_createInstance(NSAutoreleasePoolClass, 0);
 		SEL selector = sel_registerName("init");
-		((id(*)(id, SEL))objc_msgSend)(m_Pool, selector);
+		((id (*)(id, SEL))objc_msgSend)(m_Pool, selector);
 	}
 
 	~CAutoreleasePool()
 	{
 		SEL selector = sel_registerName("drain");
-		((id(*)(id, SEL))objc_msgSend)(m_Pool, selector);
+		((id (*)(id, SEL))objc_msgSend)(m_Pool, selector);
 	}
 };
 #endif
@@ -77,7 +75,7 @@ protected:
 	void StartProcessor(ICommandProcessor *pProcessor);
 	void StopProcessor();
 
-	bool HasWarning()
+	bool HasWarning() const
 	{
 		return m_Warning.m_WarningType != GFX_WARNING_TYPE_NONE;
 	}
@@ -102,14 +100,13 @@ public:
 // takes care of implementation independent operations
 class CCommandProcessorFragment_General
 {
-	void Cmd_Nop();
 	void Cmd_Signal(const CCommandBuffer::SCommand_Signal *pCommand);
 
 public:
 	bool RunCommand(const CCommandBuffer::SCommand *pBaseCommand);
 };
 
-struct SBackendCapabilites
+struct SBackendCapabilities
 {
 	bool m_TileBuffering;
 	bool m_QuadBuffering;
@@ -187,7 +184,7 @@ class CCommandProcessor_SDL_GL : public CGraphicsBackend_Threaded::ICommandProce
 
 public:
 	CCommandProcessor_SDL_GL(EBackendType BackendType, int GLMajor, int GLMinor, int GLPatch);
-	virtual ~CCommandProcessor_SDL_GL();
+	~CCommandProcessor_SDL_GL() override;
 	void RunBuffer(CCommandBuffer *pBuffer) override;
 
 	const SGfxErrorContainer &GetError() const override;
@@ -218,7 +215,7 @@ class CGraphicsBackend_SDL_GL : public CGraphicsBackend_Threaded
 
 	int m_NumScreens;
 
-	SBackendCapabilites m_Capabilites;
+	SBackendCapabilities m_Capabilities;
 
 	char m_aVendorString[gs_GpuInfoStringSize] = {};
 	char m_aVersionString[gs_GpuInfoStringSize] = {};
@@ -250,9 +247,8 @@ public:
 	void GetCurrentVideoMode(CVideoMode &CurMode, float HiDPIScale, int MaxWindowWidth, int MaxWindowHeight, int ScreenId) override;
 
 	void Minimize() override;
-	void Maximize() override;
 	void SetWindowParams(int FullscreenMode, bool IsBorderless) override;
-	bool SetWindowScreen(int Index) override;
+	bool SetWindowScreen(int Index, bool MoveToCenter) override;
 	bool UpdateDisplayMode(int Index) override;
 	int GetWindowScreen() override;
 	int WindowActive() override;
@@ -268,13 +264,13 @@ public:
 
 	bool GetDriverVersion(EGraphicsDriverAgeType DriverAgeType, int &Major, int &Minor, int &Patch, const char *&pName, EBackendType BackendType) override;
 	bool IsConfigModernAPI() override { return IsModernAPI(m_BackendType); }
-	bool UseTrianglesAsQuad() override { return m_Capabilites.m_TrianglesAsQuads; }
-	bool HasTileBuffering() override { return m_Capabilites.m_TileBuffering; }
-	bool HasQuadBuffering() override { return m_Capabilites.m_QuadBuffering; }
-	bool HasTextBuffering() override { return m_Capabilites.m_TextBuffering; }
-	bool HasQuadContainerBuffering() override { return m_Capabilites.m_QuadContainerBuffering; }
-	bool Uses2DTextureArrays() override { return m_Capabilites.m_2DArrayTextures; }
-	bool HasTextureArraysSupport() override { return m_Capabilites.m_2DArrayTextures || m_Capabilites.m_3DTextures; }
+	bool UseTrianglesAsQuad() override { return m_Capabilities.m_TrianglesAsQuads; }
+	bool HasTileBuffering() override { return m_Capabilities.m_TileBuffering; }
+	bool HasQuadBuffering() override { return m_Capabilities.m_QuadBuffering; }
+	bool HasTextBuffering() override { return m_Capabilities.m_TextBuffering; }
+	bool HasQuadContainerBuffering() override { return m_Capabilities.m_QuadContainerBuffering; }
+	bool Uses2DTextureArrays() override { return m_Capabilities.m_2DArrayTextures; }
+	bool HasTextureArraysSupport() override { return m_Capabilities.m_2DArrayTextures || m_Capabilities.m_3DTextures; }
 
 	const char *GetErrorString() override
 	{
@@ -301,7 +297,7 @@ public:
 
 	TGLBackendReadPresentedImageData &GetReadPresentedImageDataFuncUnsafe() override;
 
-	bool ShowMessageBox(unsigned Type, const char *pTitle, const char *pMsg) override;
+	std::optional<int> ShowMessageBox(const IGraphics::CMessageBox &MessageBox) override;
 
 	static bool IsModernAPI(EBackendType BackendType);
 };

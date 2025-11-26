@@ -623,15 +623,20 @@ void CGameContext::SendChatTeam(int Team, const char *pText) const
 
 void CGameContext::SendChat(int ChatterClientId, int Team, const char *pText, int SpamProtectionClientId, int VersionFlags)
 {
-	dbg_assert(ChatterClientId >= -1 && ChatterClientId < MAX_CLIENTS, "ChatterClientId invalid: %d", ChatterClientId);
-
 	if(SpamProtectionClientId >= 0 && SpamProtectionClientId < MAX_CLIENTS)
 		if(ProcessSpamProtection(SpamProtectionClientId))
 			return;
 
 	char aText[256];
 	str_copy(aText, pText, sizeof(aText));
+// <<<<<<< HEAD
 	const char *pTeamString = Team == TEAM_ALL ? "chat" : "teamchat";
+	if(ChatterClientId == -2)
+	{
+		str_format(aText, sizeof(aText), "### %s", pText);
+		// str_copy(aText, aBuf, sizeof(aText));
+		ChatterClientId = -1;
+	}
 	if(ChatterClientId == -1)
 	{
 		log_info(pTeamString, "*** %s", aText);
@@ -640,6 +645,19 @@ void CGameContext::SendChat(int ChatterClientId, int Team, const char *pText, in
 	{
 		log_info(pTeamString, "%d:%d:%s: %s", ChatterClientId, Team, Server()->ClientName(ChatterClientId), aText);
 	}
+// =======
+// 	if(ChatterClientId >= 0 && ChatterClientId < MAX_CLIENTS)
+// 		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientId, Team, Server()->ClientName(ChatterClientId), aText);
+// 	else if(ChatterClientId == -2)
+// 	{
+// 		str_format(aBuf, sizeof(aBuf), "### %s", aText);
+// 		str_copy(aText, aBuf, sizeof(aText));
+// 		ChatterClientId = -1;
+// 	}
+// 	else
+// 		str_format(aBuf, sizeof(aBuf), "*** %s", aText);
+// 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Team != TEAM_ALL ? "teamchat" : "chat", aBuf);
+// >>>>>>> parent of c83e372f2 (Remove `sv_slash_me` option)
 
 	if(Team == TEAM_ALL)
 	{
@@ -4026,6 +4044,7 @@ void CGameContext::RegisterChatCommands()
 	Console()->Register("help", "?r[command]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConHelp, this, "Shows help to command r, general help if left blank");
 	Console()->Register("info", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConInfo, this, "Shows info about this server");
 	Console()->Register("list", "?s[filter]", CFGFLAG_CHAT, ConList, this, "List connected players with optional case-insensitive substring matching filter");
+	Console()->Register("me", "r[message]", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConMe, this, "Like the famous irc command '/me says hi' will display '<yourname> says hi'");
 	Console()->Register("w", "s[player name] r[message]", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConWhisper, this, "Whisper something to someone (private message)");
 	Console()->Register("whisper", "s[player name] r[message]", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConWhisper, this, "Whisper something to someone (private message)");
 	Console()->Register("c", "r[message]", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConConverse, this, "Converse with the last person you whispered to (private message)");

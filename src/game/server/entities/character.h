@@ -213,6 +213,7 @@ public:
 	int m_TeamBeforeSuper;
 	int m_FreezeTime;
 	bool m_FrozenLastTick;
+	bool m_FreezeHammer;
 	int m_TuneZone;
 	int m_TuneZoneOld;
 	int m_PainSoundTimer;

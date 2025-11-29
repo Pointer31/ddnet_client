@@ -357,14 +357,6 @@ void CConfigManager::SetReadOnly(const char *pScriptName, bool ReadOnly)
 	dbg_assert_failed("Invalid command for SetReadOnly: '%s'", pScriptName);
 }
 
-void CConfigManager::SetGameSettingsReadOnly(bool ReadOnly)
-{
-	for(SConfigVariable *pVariable : m_vpGameVariables)
-	{
-		pVariable->m_ReadOnly = ReadOnly;
-	}
-}
-
 bool CConfigManager::Save()
 {
 	if(!m_pStorage || !g_Config.m_ClSaveSettings)

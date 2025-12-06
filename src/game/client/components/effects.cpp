@@ -483,8 +483,8 @@ void CEffects::HammerHit(vec2 Pos, float Alpha, float Volume)
 
 void CEffects::Snow(vec2 Pos, float Alpha)
 {
-	if(!m_Add5hz)
-		return;
+	// if(!m_Add5hz)
+	// 	return;
 
 	float Size = 10;
 

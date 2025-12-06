@@ -589,6 +589,43 @@ void CGameContext::ConUnFreezeHammer(IConsole::IResult *pResult, void *pUserData
 
 	pChr->m_FreezeHammer = false;
 }
+
+void CGameContext::ConFreezeRifle(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int Victim = pResult->GetVictim();
+
+	CCharacter *pChr = pSelf->GetPlayerChar(Victim);
+
+	if(!pChr)
+		return;
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "'%s' got freeze rifle!",
+		pSelf->Server()->ClientName(Victim));
+	pSelf->SendChat(-1, TEAM_ALL, aBuf);
+
+	pChr->m_FreezeRifle = true;
+}
+
+void CGameContext::ConUnFreezeRifle(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	int Victim = pResult->GetVictim();
+
+	CCharacter *pChr = pSelf->GetPlayerChar(Victim);
+
+	if(!pChr)
+		return;
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "'%s' lost freeze rifle!",
+		pSelf->Server()->ClientName(Victim));
+	pSelf->SendChat(-1, TEAM_ALL, aBuf);
+
+	pChr->m_FreezeRifle = false;
+}
+
 void CGameContext::ConVoteNo(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;

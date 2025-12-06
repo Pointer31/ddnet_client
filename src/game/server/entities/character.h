@@ -214,6 +214,7 @@ public:
 	int m_FreezeTime;
 	bool m_FrozenLastTick;
 	bool m_FreezeHammer;
+	bool m_FreezeRifle;
 	int m_TuneZone;
 	int m_TuneZoneOld;
 	int m_PainSoundTimer;

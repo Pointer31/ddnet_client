@@ -617,7 +617,8 @@ void CCharacter::FireWeapon()
 	{
 		float LaserReach = GetTuning(m_TuneZone)->m_LaserReach;
 
-		new CLaser(GameWorld(), m_Pos, Direction, LaserReach, m_pPlayer->GetCid(), WEAPON_LASER);
+		int Weapon = m_FreezeRifle ? WEAPON_LASER+125 : WEAPON_LASER;
+		new CLaser(GameWorld(), m_Pos, Direction, LaserReach, m_pPlayer->GetCid(), Weapon);
 		GameServer()->CreateSound(m_Pos, SOUND_LASER_FIRE, TeamMask()); // NOLINT(clang-analyzer-unix.Malloc)
 	}
 	break;
@@ -2519,6 +2520,7 @@ void CCharacter::DDRaceInit()
 	}
 	m_Core.m_Jumps = 2;
 	m_FreezeHammer = false;
+	m_FreezeRifle = false;
 
 	int Team = Teams()->m_Core.Team(m_Core.m_Id);
 

@@ -44,7 +44,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	CCharacter *pHit;
 	bool pDontHitSelf = g_Config.m_SvOldLaser || (m_Bounces == 0 && !m_WasTele);
 
-	if(pOwnerChar ? (!pOwnerChar->LaserHitDisabled() && m_Type == WEAPON_LASER) || (!pOwnerChar->ShotgunHitDisabled() && m_Type == WEAPON_SHOTGUN) : g_Config.m_SvHit)
+	if(pOwnerChar ? (!pOwnerChar->LaserHitDisabled() && (m_Type == WEAPON_LASER || m_Type == WEAPON_LASER+125)) || (!pOwnerChar->ShotgunHitDisabled() && m_Type == WEAPON_SHOTGUN) : g_Config.m_SvHit)
 		pHit = GameWorld()->IntersectCharacter(m_Pos, To, 0.f, At, pDontHitSelf ? pOwnerChar : nullptr, m_Owner);
 	else
 		pHit = GameWorld()->IntersectCharacter(m_Pos, To, 0.f, At, pDontHitSelf ? pOwnerChar : nullptr, m_Owner, pOwnerChar);
@@ -89,6 +89,10 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	else if(m_Type == WEAPON_LASER)
 	{
 		pHit->UnFreeze();
+	}
+	else if(m_Type == WEAPON_LASER+125)
+	{
+		pHit->Freeze(g_Config.m_SvFreezeDelay);
 	}
 	pHit->TakeDamage(vec2(0, 0), 0, m_Owner, m_Type);
 	return true;

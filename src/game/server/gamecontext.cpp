@@ -4000,6 +4000,8 @@ void CGameContext::RegisterDDRaceCommands()
 	Console()->Register("down", "?i[tiles]", CFGFLAG_SERVER | CMDFLAG_TEST, ConGoDown, this, "Makes you move 1 tile down");
 	Console()->Register("freezehammer", "v[id]", CFGFLAG_SERVER | CMDFLAG_TEST, ConFreezeHammer, this, "Gives a player Freeze Hammer");
 	Console()->Register("unfreezehammer", "v[id]", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnFreezeHammer, this, "Removes Freeze Hammer from a player");
+	Console()->Register("freezerifle", "v[id]", CFGFLAG_SERVER | CMDFLAG_TEST, ConFreezeRifle, this, "Gives a player Freeze Rifle");
+	Console()->Register("unfreezerifle", "v[id]", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnFreezeRifle, this, "Removes Freeze Rifle from a player");
 
 	Console()->Register("move", "i[x] i[y]", CFGFLAG_SERVER | CMDFLAG_TEST, ConMove, this, "Moves to the tile with x/y-number ii");
 	Console()->Register("move_raw", "i[x] i[y]", CFGFLAG_SERVER | CMDFLAG_TEST, ConMoveRaw, this, "Moves to the point with x/y-coordinates ii");

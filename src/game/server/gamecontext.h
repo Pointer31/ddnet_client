@@ -565,6 +565,8 @@ private:
 	static void ConUninvite(IConsole::IResult *pResult, void *pUserData);
 	static void ConFreezeHammer(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnFreezeHammer(IConsole::IResult *pResult, void *pUserData);
+	static void ConFreezeRifle(IConsole::IResult *pResult, void *pUserData);
+	static void ConUnFreezeRifle(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConReloadCensorlist(IConsole::IResult *pResult, void *pUserData);
 

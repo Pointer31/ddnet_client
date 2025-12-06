@@ -3310,9 +3310,11 @@ int CServer::Run()
 			{
 				DoSnapshot();
 
-				const int CommandSendingClientId = Tick() % MAX_CLIENTS;
+				// const int CommandSendingClientId = Tick() % MAX_CLIENTS;
+				for (int CommandSendingClientId = Tick() % 8; CommandSendingClientId < MAX_CLIENTS; CommandSendingClientId += 8) {
 				UpdateClientRconCommands(CommandSendingClientId);
 				UpdateClientMaplistEntries(CommandSendingClientId);
+				}
 
 				m_Fifo.Update();
 

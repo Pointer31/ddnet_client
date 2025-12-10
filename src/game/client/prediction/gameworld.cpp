@@ -18,7 +18,7 @@
 #include <game/client/laser_data.h>
 #include <game/client/pickup_data.h>
 #include <game/client/projectile_data.h>
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 #include <game/mapbugs.h>
 #include <game/mapitems.h>
 

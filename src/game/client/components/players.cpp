@@ -644,7 +644,7 @@ void CPlayers::RenderPlayer(
 				if(PlayerClass == PLAYERCLASS_TANK)
 				{
 					Scale = 1.45f;
-					WeaponPosition += Dir * 8;
+					WeaponPosition += Direction * 8;
 				}
 				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y, Scale, Scale);
 			}

@@ -23,6 +23,7 @@ public:
 		int Number = 0);
 
 	vec2 GetPos(float Time);
+	vec2 GetPosNow();
 	void FillInfo(CNetObj_Projectile *pProj);
 
 	void Reset() override;

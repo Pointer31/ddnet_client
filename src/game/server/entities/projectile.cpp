@@ -83,6 +83,34 @@ vec2 CProjectile::GetPos(float Time)
 	return CalcPos(m_Pos, m_Direction, Curvature, Speed, Time);
 }
 
+vec2 CProjectile::GetPosNow()
+{
+	float Ct = (Server()->Tick() - m_StartTick) / (float)Server()->TickSpeed();
+	float Curvature = 0;
+	float Speed = 0;
+	CTuningParams *pTuning = GetTuning(m_TuneZone);
+
+	switch(m_Type)
+	{
+	case WEAPON_GRENADE:
+		Curvature = pTuning->m_GrenadeCurvature;
+		Speed = pTuning->m_GrenadeSpeed;
+		break;
+
+	case WEAPON_SHOTGUN:
+		Curvature = pTuning->m_ShotgunCurvature;
+		Speed = pTuning->m_ShotgunSpeed;
+		break;
+
+	case WEAPON_GUN:
+		Curvature = pTuning->m_GunCurvature;
+		Speed = pTuning->m_GunSpeed;
+		break;
+	}
+
+	return CalcPos(m_Pos, m_Direction, Curvature, Speed, Ct);
+}
+
 void CProjectile::Tick()
 {
 	float Pt = (Server()->Tick() - m_StartTick - 1) / (float)Server()->TickSpeed();

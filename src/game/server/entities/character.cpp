@@ -594,20 +594,57 @@ void CCharacter::FireWeapon()
 
 	case WEAPON_GRENADE:
 	{
+		// GameWorld()->Fi
+		bool addProjectile = true;
+
+		if (g_Config.m_SvKogTelenade == 1 || (g_Config.m_SvKogTelenade == 2 && HasTelegunGrenade())) {
+			CEntity *apEnts[MAX_CLIENTS];
+			int Num = GameWorld()->FindEntities(m_Pos, 10000.0f, apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_PROJECTILE);
+			for(int i = 0; i < Num; i++)
+			{
+				auto *pProjectile = static_cast<CProjectile *>(apEnts[i]);
+				if (pProjectile->GetOwnerId() == m_pPlayer->GetCid())
+				{
+					bool Found;
+					vec2 PossiblePos = pProjectile->GetPosNow();
+
+					// if(true)
+					Found = GetNearestAirPosPlayer(pProjectile->GetPosNow(), &PossiblePos);
+					// else
+					// 	Found = GetNearestAirPos(NewPos, CurPos, &PossiblePos);
+
+					if(Found)
+					{
+						m_TeleGunPos = PossiblePos;
+						m_TeleGunTeleport = true;
+						m_IsBlueTeleGunTeleport = false;
+						GameWorld()->RemoveEntity(pProjectile);
+						addProjectile = false;
+					}
+					// GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid(), TeamMask());
+					// m_Core.m_Pos = pProjectile->GetPosNow();
+					// m_Pos = pProjectile->GetPosNow();
+					// GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid(), TeamMask());
+					// m_Core.m_Vel = {0,0};
+				}
+			}
+		}
+
 		int Lifetime = (int)(Server()->TickSpeed() * GetTuning(m_TuneZone)->m_GrenadeLifetime);
 
-		new CProjectile(
-			GameWorld(),
-			WEAPON_GRENADE, //Type
-			m_pPlayer->GetCid(), //Owner
-			ProjStartPos, //Pos
-			Direction, //Dir
-			Lifetime, //Span
-			false, //Freeze
-			true, //Explosive
-			SOUND_GRENADE_EXPLODE, //SoundImpact
-			MouseTarget // MouseTarget
-		);
+		if (addProjectile)
+			new CProjectile(
+				GameWorld(),
+				WEAPON_GRENADE, //Type
+				m_pPlayer->GetCid(), //Owner
+				ProjStartPos, //Pos
+				Direction, //Dir
+				Lifetime, //Span
+				false, //Freeze
+				true, //Explosive
+				SOUND_GRENADE_EXPLODE, //SoundImpact
+				MouseTarget // MouseTarget
+			);
 
 		GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE, TeamMask()); // NOLINT(clang-analyzer-unix.Malloc)
 	}

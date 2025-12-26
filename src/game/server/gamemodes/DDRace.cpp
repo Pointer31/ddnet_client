@@ -133,8 +133,17 @@ void CGameControllerDDRace::OnPlayerConnect(CPlayer *pPlayer)
 	if(!Server()->ClientPrevIngame(ClientId))
 	{
 		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientId), GetTeamName(pPlayer->GetTeam()));
+		if (Server()->IsSixup(ClientId))
+			str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s (0.7)", Server()->ClientName(ClientId), GetTeamName(pPlayer->GetTeam()));
+		else
+			str_format(aBuf, sizeof(aBuf), "'%s' entered and joined the %s", Server()->ClientName(ClientId), GetTeamName(pPlayer->GetTeam()));
 		GameServer()->SendChat(-1, TEAM_ALL, aBuf, -1, CGameContext::FLAG_SIX);
+
+		if (Server()->IsSixup(ClientId)) 
+		{
+			str_copy(aBuf, "(client version 0.7)", sizeof(aBuf));
+			GameServer()->SendChat(-1, TEAM_ALL, aBuf, -1, CGameContext::FLAG_SIXUP);
+		}
 
 		GameServer()->SendChatTarget(ClientId, "DDraceNetwork Mod. Version: " GAME_VERSION);
 		GameServer()->SendChatTarget(ClientId, "please visit DDNet.org or say /info and make sure to read our /rules");

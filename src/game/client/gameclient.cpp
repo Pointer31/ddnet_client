@@ -1279,6 +1279,7 @@ void CGameClient::OnShutdown()
 
 void CGameClient::OnEnterGame()
 {
+	m_TimeLimitInSeconds = 0;
 }
 
 void CGameClient::OnGameOver()

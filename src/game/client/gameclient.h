@@ -561,6 +561,11 @@ public:
 
 		// 0.7 Skin
 		CSixup m_aSixup[NUM_DUMMIES];
+
+		int m_CustomClient = '\0';
+		bool m_SentCustomClient = false;
+
+		void KZReset();
 	};
 
 	CClientData m_aClients[MAX_CLIENTS];
@@ -952,6 +957,7 @@ public:
 
 	void ResetMultiView();
 	int FindFirstMultiViewId();
+	void OnKZUpdate();
 	void CleanMultiViewId(int ClientId);
 	int m_MapBestTimeSeconds;
 	int m_MapBestTimeMillis;
@@ -1023,6 +1029,14 @@ private:
 
 	void OnSaveCodeNetMessage(const CNetMsg_Sv_SaveCode *pMsg);
 	void StoreSave(const char *pTeamMembers, const char *pGeneratedCode) const;
+public:
+	void OnKZReset();
+
+	int ReplaceCountryFlagWithCustomClientId(int Country);
+	bool IsCustomClientId(int Country);
+	int m_SendingCustomClientTicks = -1;
+	int HandleClientCountry(int Country, int ClientId);
+	int GetPredictedDummyId() { return m_PredictedDummyId; }
 };
 
 ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL);

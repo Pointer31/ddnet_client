@@ -753,6 +753,10 @@ MACRO_CONFIG_INT(ClChatInputBackground, cl_chat_input_background, 1, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClReplaceEscapeKey, cl_replace_escape_key, 0, 0, 512, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Which key (as integer) to map to KEY_ESC. 0 to disable")
 MACRO_CONFIG_INT(ClParticleLimit, cl_particle_limit, 8192, 0, 8192, CFGFLAG_SAVE | CFGFLAG_CLIENT, "What the limit on the amount of particles should be")
 
+// Client identify (from Kaizo Network)
+MACRO_CONFIG_INT(ClSendClientType, cl_send_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let know other clients that we are DuckClient")
+MACRO_CONFIG_INT(ClShowClientType, cl_show_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Try to identify and show other players clients as icons")
+
 MACRO_CONFIG_INT(ClWeatherSnow, cl_weather_snow, 0, 0, 15, CFGFLAG_CLIENT, "Whether to spawn snow")
 MACRO_CONFIG_INT(ClUIWidth, cl_ui_width, 600, 400, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Size of UI (low values may break some UI, might need restart)")
 MACRO_CONFIG_COL(UiColorButtons, ui_color_buttons, 0xFFFFFFFF, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Interface buttons color") // 160 70 175 228 hasalpha

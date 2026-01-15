@@ -179,9 +179,12 @@ void CScoreboard::RenderTitleScore(CUIRect ScoreLabel, int Team, float TitleFont
 {
 	// map best
 	char aScore[128] = "";
-	if(GameClient()->m_MapBestTimeSeconds != FinishTime::UNSET)
+	const CNetObj_GameInfo *pGameInfoObj = GameClient()->m_Snap.m_pGameInfoObj;
+	const bool TimeScore = GameClient()->m_GameInfo.m_TimeScore;
+	const bool Race7 = Client()->IsSixup() && pGameInfoObj && pGameInfoObj->m_GameFlags & protocol7::GAMEFLAG_RACE;
+	if(GameClient()->m_ReceivedDDNetPlayerFinishTimes || TimeScore || Race7)
 	{
-		if(GameClient()->m_MapBestTimeSeconds != FinishTime::UNSET)
+		if(GameClient()->m_MapBestTimeSeconds != FinishTime::NOT_FINISHED_MILLIS && GameClient()->m_MapBestTimeSeconds != FinishTime::UNSET)
 		{
 			Ui()->RenderTime(ScoreLabel,
 				TitleFontSize,

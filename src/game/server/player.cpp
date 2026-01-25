@@ -28,6 +28,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, uint32_t UniqueClientId, int ClientI
 	dbg_assert(GameServer()->m_pController->IsValidTeam(Team), "Invalid Team: %d", Team);
 	m_Team = Team;
 	m_NumInputs = 0;
+	m_ScorePoints = 0;
 	Reset();
 	GameServer()->Antibot()->OnPlayerInit(m_ClientId);
 }
@@ -340,7 +341,11 @@ void CPlayer::Snap(int SnappingClient)
 	// Due to clients expecting this as a negative value, we have to make sure it's negative.
 	// Special numbers:
 	// -9999: means no time and isn't displayed in the scoreboard.
-	if(m_Score.has_value())
+	if(g_Config.m_SvShowScoreInsteadOfTime)
+	{
+		Score = m_ScorePoints;
+	}
+	else if(m_Score.has_value())
 	{
 		// shift the time by a second if the player actually took 9999
 		// seconds to finish the map.
@@ -388,7 +393,10 @@ void CPlayer::Snap(int SnappingClient)
 			pPlayerInfo->m_PlayerFlags |= protocol7::PLAYERFLAG_ADMIN;
 
 		// Times are in milliseconds for 0.7
-		pPlayerInfo->m_Score = m_Score.has_value() ? GameServer()->Score()->PlayerData(m_ClientId)->m_BestTime * 1000 : -1;
+		if(g_Config.m_SvShowScoreInsteadOfTime)
+			pPlayerInfo->m_Score = m_ScorePoints;
+		else
+			pPlayerInfo->m_Score = m_Score.has_value() ? GameServer()->Score()->PlayerData(m_ClientId)->m_BestTime * 1000 : -1;
 		pPlayerInfo->m_Latency = Latency;
 	}
 

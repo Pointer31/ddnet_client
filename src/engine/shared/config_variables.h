@@ -793,3 +793,4 @@ MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG
 
  MACRO_CONFIG_INT(SvDisableSpectatorCount, sv_disable_spectator_count, 0, 0, 1, CFGFLAG_SERVER, "Whether to disable showing spectator counts")
  MACRO_CONFIG_INT(SvKogTelenade, sv_kog_grenade_tele, 0, 0, 2, CFGFLAG_SERVER | CFGFLAG_GAME, "Whether to enable KoG's version of the telegrenade (1=always, 2=needs telegun)")
+MACRO_CONFIG_INT(SvShowScoreInsteadOfTime, sv_show_score_instead_of_time, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Whether to show score instead of time")

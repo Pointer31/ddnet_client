@@ -109,6 +109,9 @@ public:
 	int m_LastActionTick;
 	int m_TeamChangeTick;
 
+	// pointer31
+	int m_ScorePoints;
+
 	// network latency calculations
 	struct
 	{

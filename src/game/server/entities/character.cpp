@@ -2019,6 +2019,8 @@ void CCharacter::HandleTiles(int Index)
 			}
 		}
 
+		GetPlayer()->m_ScorePoints -= Seconds;
+
 		m_LastPenalty = true;
 	}
 	else if(Collision()->GetSwitchType(MapIndex) == TILE_SUBTRACT_TIME && !m_LastBonus)
@@ -2044,6 +2046,8 @@ void CCharacter::HandleTiles(int Index)
 				}
 			}
 		}
+
+		GetPlayer()->m_ScorePoints += Seconds;
 
 		m_LastBonus = true;
 	}

@@ -416,6 +416,8 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 		{
 			protocol7::CNetMsg_Sv_GameInfo Msg;
 			Msg.m_GameFlags = m_GameFlags;
+			if (Config()->m_SvShowScoreInsteadOfTime)
+				Msg.m_GameFlags = Msg.m_GameFlags & (~protocol7::GAMEFLAG_RACE);
 			Msg.m_MatchCurrent = 1;
 			Msg.m_MatchNum = 0;
 			Msg.m_ScoreLimit = 0;
@@ -626,7 +628,6 @@ void IGameController::Snap(int SnappingClient)
 		return;
 
 	pGameInfoEx->m_Flags =
-		GAMEINFOFLAG_TIMESCORE |
 		GAMEINFOFLAG_GAMETYPE_RACE |
 		GAMEINFOFLAG_GAMETYPE_DDRACE |
 		GAMEINFOFLAG_GAMETYPE_DDNET |
@@ -643,6 +644,8 @@ void IGameController::Snap(int SnappingClient)
 		GAMEINFOFLAG_ENTITIES_DDRACE |
 		GAMEINFOFLAG_ENTITIES_RACE |
 		GAMEINFOFLAG_RACE;
+	if (!Config()->m_SvShowScoreInsteadOfTime)
+		pGameInfoEx->m_Flags |= GAMEINFOFLAG_TIMESCORE;
 	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_HUD_DDRACE | GAMEINFOFLAG2_DDRACE_TEAM;
 	bool hpnotfull = false;
 	if ((pPlayer && pPlayer->GetCharacter() && pPlayer->GetCharacter()->GetHealth() < 10) || (pPlayer2 && pPlayer2->GetCharacter() && pPlayer2->GetCharacter()->GetHealth() < 10))

@@ -4143,7 +4143,8 @@ void CGameContext::RegisterChatCommands()
 	Console()->Register("hitothers", "?s['all'|'hammer'|'shotgun'|'grenade'|'laser']", CFGFLAG_CHAT | CMDFLAG_PRACTICE, ConPracticeToggleHitOthers, this, "Toggles hit others");
 
 	Console()->Register("kill", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConProtectedKill, this, "Kill yourself when kill-protected during a long game (use f1, kill for regular kill)");
-}
+	Console()->Register("set_weaponless", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSetWeaponless, this, "Pretend you do not have a weapon selected");
+	}
 
 void CGameContext::OnInit(const void *pPersistentData)
 {

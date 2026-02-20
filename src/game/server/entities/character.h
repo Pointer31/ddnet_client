@@ -190,6 +190,7 @@ private:
 
 	// Pointer31's addition
 	int m_LastDamageTick;
+	bool m_VisuallyWeaponless;
 
 public:
 	CGameTeams *Teams() { return m_pTeams; }
@@ -284,6 +285,9 @@ public:
 
 	CSaveTee &GetLastRescueTeeRef(int Mode = RESCUEMODE_AUTO) { return m_RescueTee[Mode]; }
 	CTuningParams *GetTuning(int Zone) { return &TuningList()[Zone]; }
+
+	// Pointer31
+	void SetVisuallyWeaponless(bool weaponless) { m_VisuallyWeaponless = weaponless; }
 };
 
 #endif

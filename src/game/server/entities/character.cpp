@@ -50,6 +50,7 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	}
 
 	m_LastDamageTick = Server()->Tick();
+	m_VisuallyWeaponless = false;
 }
 
 void CCharacter::Reset()
@@ -392,6 +393,9 @@ void CCharacter::DoWeaponSwitch()
 
 	// switch Weapon
 	SetWeapon(m_QueuedWeapon);
+
+	// Pointer31; set it to false
+	m_VisuallyWeaponless = false;
 }
 
 void CCharacter::HandleWeaponSwitch()
@@ -1196,7 +1200,7 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 
 		pCharacter->m_AttackTick = m_AttackTick;
 		pCharacter->m_Direction = m_Input.m_Direction;
-		pCharacter->m_Weapon = Weapon;
+		pCharacter->m_Weapon = m_VisuallyWeaponless && SnappingClientVersion > 18082 ? -1 : Weapon;
 		pCharacter->m_AmmoCount = AmmoCount;
 		pCharacter->m_Health = Health;
 		pCharacter->m_Armor = Armor;

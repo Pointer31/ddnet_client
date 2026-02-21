@@ -609,6 +609,7 @@ void CPlayers::RenderPlayer(
 		if(!(RenderInfo.m_TeeRenderFlags & TEE_NO_WEAPON))
 		{
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+			int UpsideDown = g_Config.m_ClUpsidedownTees ? -1 : 1;
 
 			// normal weapons
 			int CurrentWeapon = std::clamp(Player.m_Weapon, 0, NUM_WEAPONS - 1);
@@ -622,8 +623,8 @@ void CPlayers::RenderPlayer(
 			if(Player.m_Weapon == WEAPON_HAMMER)
 			{
 				// static position for hammer
-				WeaponPosition = Position + vec2(State.GetAttach()->m_X, State.GetAttach()->m_Y);
-				WeaponPosition.y += g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsety;
+				WeaponPosition = Position + vec2(UpsideDown*State.GetAttach()->m_X, UpsideDown*State.GetAttach()->m_Y);
+				WeaponPosition.y += UpsideDown*g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsety;
 				if(Direction.x < 0.0f)
 					WeaponPosition.x -= g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsetx;
 				if(IsSit)
@@ -635,7 +636,7 @@ void CPlayers::RenderPlayer(
 				QuadsRotation += State.GetAttach()->m_Angle * (Direction.x < 0 ? -1 : 1) * pi * 2;
 				if(g_Config.m_ClHammerRotatesWithCursor)
 				{
-					QuadsRotation += Angle;
+					QuadsRotation += UpsideDown*Angle;
 					if (Direction.x < 0)
 						QuadsRotation += pi;
 					Graphics()->QuadsSetRotation(QuadsRotation);
@@ -656,7 +657,7 @@ void CPlayers::RenderPlayer(
 					Scale = 1.45f;
 					WeaponPosition += Direction * 8;
 				}
-				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y, Scale, Scale);
+				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y, Scale, UpsideDown*Scale);
 			}
 			else if(Player.m_Weapon == WEAPON_NINJA)
 			{
@@ -738,8 +739,8 @@ void CPlayers::RenderPlayer(
 					WeaponPosition.y += 3.0f;
 				if(Player.m_Weapon == WEAPON_GUN && g_Config.m_ClOldGunPosition)
 					WeaponPosition.y -= 8.0f;
-				Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle * pi * 2.0f + Angle);
-				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y);
+				Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle * pi * 2.0f + Angle * UpsideDown);
+				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y, 1.0f, UpsideDown);
 			}
 
 			if(Player.m_Weapon == WEAPON_GUN || Player.m_Weapon == WEAPON_SHOTGUN)

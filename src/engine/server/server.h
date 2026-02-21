@@ -197,6 +197,9 @@ public:
 		CUuid m_ConnectionId;
 		int64_t m_RedirectDropTime;
 
+		// Pointer31
+		int m_Version7;
+
 		// DNSBL
 		EDnsblState m_DnsblState;
 		std::shared_ptr<CHostLookup> m_pDnsblLookup;

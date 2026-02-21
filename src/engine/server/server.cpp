@@ -1747,6 +1747,9 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					return;
 				}
 
+				if (m_aClients[ClientId].m_Sixup)
+					m_aClients[ClientId].m_Version7 = Unpacker.GetInt();
+
 				int NumConnectedClients = 0;
 				for(int i = 0; i < MaxClients(); ++i)
 				{
@@ -3533,13 +3536,13 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 				str_format(aAuthStr, sizeof(aAuthStr), " key=%s %s", pThis->m_AuthManager.KeyIdent(pThis->m_aClients[i].m_AuthKey), pAuthStr);
 			}
 
-			const char *pClientPrefix = "";
+			char ClientPrefix [32] = "";
 			if(pThis->m_aClients[i].m_Sixup)
 			{
-				pClientPrefix = "0.7:";
+				str_format(ClientPrefix, sizeof(ClientPrefix), "%x:", pThis->m_aClients[i].m_Version7);
 			}
 			str_format(aBuf, sizeof(aBuf), "id=%d addr=<{%s}> name='%s' client=%s%d secure=%s flags=%d%s%s",
-				i, pThis->ClientAddrString(i, true), pThis->m_aClients[i].m_aName, pClientPrefix, pThis->m_aClients[i].m_DDNetVersion,
+				i, pThis->ClientAddrString(i, true), pThis->m_aClients[i].m_aName, ClientPrefix, pThis->m_aClients[i].m_DDNetVersion,
 				pThis->m_NetServer.HasSecurityToken(i) ? "yes" : "no", pThis->m_aClients[i].m_Flags, aDnsblStr, aAuthStr);
 		}
 		else

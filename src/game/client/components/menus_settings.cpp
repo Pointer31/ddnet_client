@@ -335,6 +335,11 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
+		if(DoButton_CheckBox(&g_Config.m_ClUpsidedownTees, Localize("Upside down tees"), g_Config.m_ClUpsidedownTees, &Button))
+			g_Config.m_ClUpsidedownTees ^= 1;
+
+		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+		Left.HSplitTop(20.0f, &Button, &Left);
 		Ui()->DoScrollbarOption(&g_Config.m_ClWeatherSnow, &g_Config.m_ClWeatherSnow, &Button, Localize("Snow Weather (won't be saved)"), 0, 15, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "");
 
 	}

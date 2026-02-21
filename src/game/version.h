@@ -20,7 +20,7 @@ extern const char *GIT_SHORTREV_HASH;
 
 // duck client
 
-#define DUCKCLIENT_VERSIONNUM 4010
-#define DUCKCLIENT_VERSIONSTR "v4.1"
+#define DUCKCLIENT_VERSIONNUM 4020
+#define DUCKCLIENT_VERSIONSTR "v4.2"
 
 #endif

@@ -1456,7 +1456,7 @@ void CGameContext::OnClientDirectInput(int ClientId, const void *pInput)
 {
 	const CNetObj_PlayerInput *pPlayerInput = static_cast<const CNetObj_PlayerInput *>(pInput);
 
-	if(!m_World.m_Paused)
+	if(!m_pController->IsGamePaused())
 		m_apPlayers[ClientId]->OnDirectInput(pPlayerInput);
 
 	int Flags = pPlayerInput->m_PlayerFlags;
@@ -1481,7 +1481,7 @@ void CGameContext::OnClientPredictedInput(int ClientId, const void *pInput)
 		pApplyInput = &m_aLastPlayerInput[ClientId];
 	}
 
-	if(!m_World.m_Paused)
+	if(!m_pController->IsGamePaused())
 		m_apPlayers[ClientId]->OnPredictedInput(pApplyInput);
 }
 
@@ -1509,7 +1509,7 @@ void CGameContext::OnClientPredictedEarlyInput(int ClientId, const void *pInput)
 		m_aPlayerHasInput[ClientId] = true;
 	}
 
-	if(!m_World.m_Paused)
+	if(!m_pController->IsGamePaused())
 		m_apPlayers[ClientId]->OnPredictedEarlyInput(pApplyInput);
 
 	if(m_TeeHistorianActive)
@@ -2667,7 +2667,7 @@ void CGameContext::OnVoteNetMessage(const CNetMsg_Cl_Vote *pMsg, int ClientId)
 
 void CGameContext::OnSetTeamNetMessage(const CNetMsg_Cl_SetTeam *pMsg, int ClientId)
 {
-	if(m_World.m_Paused)
+	if(m_pController->IsGamePaused())
 		return;
 
 	CPlayer *pPlayer = m_apPlayers[ClientId];
@@ -2762,7 +2762,7 @@ void CGameContext::OnCameraInfoNetMessage(const CNetMsg_Cl_CameraInfo *pMsg, int
 
 void CGameContext::OnSetSpectatorModeNetMessage(const CNetMsg_Cl_SetSpectatorMode *pMsg, int ClientId)
 {
-	if(m_World.m_Paused)
+	if(m_pController->IsGamePaused())
 		return;
 
 	int SpectatorId = std::clamp(pMsg->m_SpectatorId, (int)SPEC_FOLLOW, MAX_CLIENTS - 1);
@@ -2881,7 +2881,7 @@ void CGameContext::OnChangeInfoNetMessage(const CNetMsg_Cl_ChangeInfo *pMsg, int
 
 void CGameContext::OnEmoticonNetMessage(const CNetMsg_Cl_Emoticon *pMsg, int ClientId)
 {
-	if(m_World.m_Paused)
+	if(m_pController->IsGamePaused())
 		return;
 
 	CPlayer *pPlayer = m_apPlayers[ClientId];
@@ -2960,7 +2960,7 @@ void CGameContext::OnEmoticonNetMessage(const CNetMsg_Cl_Emoticon *pMsg, int Cli
 
 void CGameContext::OnKillNetMessage(const CNetMsg_Cl_Kill *pMsg, int ClientId)
 {
-	if(m_World.m_Paused)
+	if(m_pController->IsGamePaused())
 		return;
 
 	if(IsRunningKickOrSpecVote(ClientId) && GetDDRaceTeam(ClientId))
@@ -3282,7 +3282,7 @@ void CGameContext::ConPause(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	pSelf->m_World.m_Paused ^= 1;
+	pSelf->m_pController->SetGamePaused(!pSelf->m_pController->IsGamePaused());
 }
 
 void CGameContext::ConChangeMap(IConsole::IResult *pResult, void *pUserData)

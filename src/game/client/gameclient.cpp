@@ -1276,6 +1276,12 @@ void CGameClient::OnShutdown()
 void CGameClient::OnEnterGame()
 {
 	m_TimeLimitInSeconds = 0;
+	if (Client()->State() != IClient::STATE_DEMOPLAYBACK && Config()->m_ClMapChangeMessage && !Config()->m_ClDummy)
+	{
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "Map changed to %s", Client()->GetCurrentMap());
+		m_Chat.AddLine(Config()->m_ClMapChangeMessage == 1 ? -2 : -1, 0, aBuf);
+	}
 }
 
 void CGameClient::OnGameOver()

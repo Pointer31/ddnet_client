@@ -756,6 +756,7 @@ MACRO_CONFIG_INT(ClScoreboardStyle, cl_scoreboard_style, 0, 0, 10, CFGFLAG_CLIEN
 MACRO_CONFIG_INT(ClScoreboardShorten, cl_scoreboard_shorten, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shorten the scoreboard if there are not so many players")
 MACRO_CONFIG_INT(ClStatboardWeaponsStyle, cl_statboard_weapons_style, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change the statboard weapons style to a bar")
 MACRO_CONFIG_INT(ClUpsidedownTees, cl_upsidedown_tees, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show tees upside down")
+MACRO_CONFIG_INT(ClMapChangeMessage, cl_map_change_message, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show map change echo message")
 
 // Client identify (from Kaizo Network)
 MACRO_CONFIG_INT(ClSendClientType, cl_send_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let know other clients that we are DuckClient")

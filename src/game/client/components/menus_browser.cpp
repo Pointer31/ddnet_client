@@ -807,7 +807,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	}
 
 	// countries and types filters
-	if(ServerBrowser()->CommunityCache().CountriesTypesFilterAvailable())
+	if(!g_Config.m_ClHideCountryTypeFilters && ServerBrowser()->CommunityCache().CountriesTypesFilterAvailable())
 	{
 		const ColorRGBA ColorActive = ColorRGBA(0.0f, 0.0f, 0.0f, 0.3f);
 		const ColorRGBA ColorInactive = ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f);
@@ -848,8 +848,9 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		}
 	}
 
-	if(g_Config.m_ClPosistionCommunityFilter && g_Config.m_ClEnableCommunities && (g_Config.m_UiPage == PAGE_INTERNET || g_Config.m_UiPage == PAGE_FAVORITES) && !ServerBrowser()->Communities().empty())
+	if(g_Config.m_ClPosistionCommunityFilter == 1 && g_Config.m_ClEnableCommunities && (g_Config.m_UiPage == PAGE_INTERNET || g_Config.m_UiPage == PAGE_FAVORITES) && !ServerBrowser()->Communities().empty())
 	{
+		View.HSplitTop(6.0f, nullptr, &View);
 		CUIRect CommunityFilter;
 		View.HSplitTop(19.0f + 4.0f * 17.0f + CScrollRegion::HEIGHT_MAGIC_FIX, &CommunityFilter, &View);
 		View.HSplitTop(8.0f, nullptr, &View);

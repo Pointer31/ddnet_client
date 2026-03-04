@@ -853,8 +853,72 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		View.HSplitTop(6.0f, nullptr, &View);
 		CUIRect CommunityFilter;
 		View.HSplitTop(19.0f + 4.0f * 17.0f + CScrollRegion::HEIGHT_MAGIC_FIX, &CommunityFilter, &View);
-		View.HSplitTop(8.0f, nullptr, &View);
 		RenderServerbrowserCommunitiesFilter(CommunityFilter);
+	}
+
+	// Pointer31, gametype filter selector
+	if (str_length(Config()->m_ClGametypeFilterList) && View.h > RowHeight) {
+		View.HSplitTop(6.0f, nullptr, &View);
+		CUIRect GametypeFilters; CUIRect GametypeFiltersHeader;
+		View.HSplitBottom(8.0f, &GametypeFilters, &View);
+		GametypeFilters.HSplitTop(20.0f, &GametypeFiltersHeader, &GametypeFilters);
+
+		GametypeFiltersHeader.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.3f), IGraphics::CORNER_T, 4.0f);
+		Ui()->DoLabel(&GametypeFiltersHeader, Localize("Gametype Filters"), 12.0f, TEXTALIGN_MC);
+
+		GametypeFilters.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_B, 4.0f);
+		
+		static CButtonContainer s_Buttons[11]; // if it's 10 it'll cause issues if the country/type filter is enabled... for some reason. thus +1
+
+		if (!(GametypeFilters.h < RowHeight)) {
+			bool isSelected = str_comp(Config()->m_BrFilterGametype, "") == 0;
+			GametypeFilters.HSplitTop(RowHeight, &Button, &GametypeFilters);
+			if(DoButton_CheckBox(&s_Buttons[10], "No filter", isSelected, &Button))
+			{
+				str_copy(Config()->m_BrFilterGametype, "");
+				Client()->ServerBrowserUpdate();
+			}
+		}
+
+		const char *pGametypeList = Config()->m_ClGametypeFilterList;
+		const char *pGametypeNext = pGametypeList;
+		const char *pHead = pGametypeNext;
+		pHead = str_skip_whitespaces_const(pHead);
+		pGametypeNext = pHead;
+
+		for (int i = 0; i < 9; i++)
+		{
+			int Len = 0;
+			while(*pHead && !str_isspace(*pHead))
+			{
+				pHead++; Len++;
+			}
+
+			char aBuf[128]; char bBuf[128];
+			str_copy(aBuf, pGametypeNext, Len+1);
+			str_format(bBuf, sizeof(bBuf), "'%s'", aBuf);
+
+			if (GametypeFilters.h < RowHeight)
+				break;
+
+			bool isSelected = str_comp(Config()->m_BrFilterGametype, aBuf) == 0;
+			GametypeFilters.HSplitTop(RowHeight, &Button, &GametypeFilters);
+			if(DoButton_CheckBox(&s_Buttons[i], bBuf, isSelected, &Button))
+			{
+				str_copy(Config()->m_BrFilterGametype, aBuf);
+				Client()->ServerBrowserUpdate();
+			}
+
+			if (!*pHead)
+				break;
+
+			pHead = str_skip_whitespaces_const(pHead);
+
+			if (!*pHead)
+				break;
+
+			pGametypeNext = pHead;
+		}
 	}
 
 	static CButtonContainer s_ResetButton;

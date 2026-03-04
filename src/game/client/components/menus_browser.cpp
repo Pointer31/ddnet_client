@@ -886,12 +886,12 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 
 		GametypeFilters.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_B, 4.0f);
 		
-		static CButtonContainer s_Buttons[11]; // if it's 10 it'll cause issues if the country/type filter is enabled... for some reason. thus +1
+		static CButtonContainer s_Buttons[16];
 
 		if (!(GametypeFilters.h < RowHeight)) {
 			bool isSelected = str_comp(Config()->m_BrFilterGametype, "") == 0;
 			GametypeFilters.HSplitTop(RowHeight, &Button, &GametypeFilters);
-			if(DoButton_CheckBox(&s_Buttons[10], "No filter", isSelected, &Button))
+			if(DoButton_CheckBox(&s_Buttons[15], "No filter", isSelected, &Button))
 			{
 				str_copy(Config()->m_BrFilterGametype, "");
 				Client()->ServerBrowserUpdate();
@@ -904,7 +904,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		pHead = str_skip_whitespaces_const(pHead);
 		pGametypeNext = pHead;
 
-		for (int i = 0; i < 9; i++)
+		for (int i = 0; i < 15; i++)
 		{
 			int Len = 0;
 			while(*pHead && !str_isspace(*pHead))

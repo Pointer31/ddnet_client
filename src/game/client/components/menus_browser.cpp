@@ -856,68 +856,63 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		RenderServerbrowserCommunitiesFilter(CommunityFilter);
 	}
 
-	// Pointer31, gametype filter selector
-	if (str_length(Config()->m_ClGametypeFilterList) && View.h > RowHeight) {
+	// gametype filter selector
+	static const int MAX_GAMETYPE_FILTERS = 15;
+	if(str_length(g_Config.m_ClGametypeFilterList) && View.h > RowHeight)
+	{
 		View.HSplitTop(6.0f, nullptr, &View);
-		CUIRect GametypeFilters; CUIRect GametypeFiltersHeader;
-		View.HSplitBottom(8.0f, &GametypeFilters, &View);
+		CUIRect GametypeFilters;
+		CUIRect GametypeFiltersHeader;
+		View.HSplitTop(View.h, &GametypeFilters, &View);
 		GametypeFilters.HSplitTop(20.0f, &GametypeFiltersHeader, &GametypeFilters);
 
 		GametypeFiltersHeader.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.3f), IGraphics::CORNER_T, 4.0f);
 		Ui()->DoLabel(&GametypeFiltersHeader, Localize("Gametype Filters"), 12.0f, TEXTALIGN_MC);
 
 		GametypeFilters.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.15f), IGraphics::CORNER_B, 4.0f);
-		
-		static CButtonContainer s_Buttons[16];
 
-		if (!(GametypeFilters.h < RowHeight)) {
-			bool isSelected = str_comp(Config()->m_BrFilterGametype, "") == 0;
+		// MAX_GAMETYPE_FILTERS slots for gametype entries, +1 for the "No filter" button
+		static CButtonContainer s_Buttons[MAX_GAMETYPE_FILTERS + 1];
+
+		if(GametypeFilters.h >= RowHeight)
+		{
+			bool IsSelected = str_comp(g_Config.m_BrFilterGametype, "") == 0;
 			GametypeFilters.HSplitTop(RowHeight, &Button, &GametypeFilters);
-			if(DoButton_CheckBox(&s_Buttons[15], "No filter", isSelected, &Button))
+			if(DoButton_CheckBox(&s_Buttons[MAX_GAMETYPE_FILTERS], "No filter", IsSelected, &Button))
 			{
-				str_copy(Config()->m_BrFilterGametype, "");
+				str_copy(g_Config.m_BrFilterGametype, "");
 				Client()->ServerBrowserUpdate();
 			}
 		}
 
-		const char *pGametypeList = Config()->m_ClGametypeFilterList;
-		const char *pGametypeNext = pGametypeList;
-		const char *pHead = pGametypeNext;
-		pHead = str_skip_whitespaces_const(pHead);
-		pGametypeNext = pHead;
-
-		for (int i = 0; i < 15; i++)
+		const char *pHead = str_skip_whitespaces_const(g_Config.m_ClGametypeFilterList);
+		for(int i = 0; i < MAX_GAMETYPE_FILTERS && *pHead; i++)
 		{
+			const char *pToken = pHead;
 			int Len = 0;
 			while(*pHead && !str_isspace(*pHead))
 			{
-				pHead++; Len++;
+				pHead++;
+				Len++;
 			}
 
-			char aBuf[128]; char bBuf[128];
-			str_copy(aBuf, pGametypeNext, Len+1);
+			char aBuf[128];
+			char bBuf[128];
+			str_copy(aBuf, pToken, minimum(Len + 1, (int)sizeof(aBuf)));
 			str_format(bBuf, sizeof(bBuf), "'%s'", aBuf);
 
-			if (GametypeFilters.h < RowHeight)
+			if(GametypeFilters.h < RowHeight)
 				break;
 
-			bool isSelected = str_comp(Config()->m_BrFilterGametype, aBuf) == 0;
+			bool IsSelected = str_comp(g_Config.m_BrFilterGametype, aBuf) == 0;
 			GametypeFilters.HSplitTop(RowHeight, &Button, &GametypeFilters);
-			if(DoButton_CheckBox(&s_Buttons[i], bBuf, isSelected, &Button))
+			if(DoButton_CheckBox(&s_Buttons[i], bBuf, IsSelected, &Button))
 			{
-				str_copy(Config()->m_BrFilterGametype, aBuf);
+				str_copy(g_Config.m_BrFilterGametype, aBuf);
 				Client()->ServerBrowserUpdate();
 			}
 
-			if (!*pHead)
-				break;
-
 			pHead = str_skip_whitespaces_const(pHead);
-
-			if (!*pHead)
-				break;
-
-			pGametypeNext = pHead;
 		}
 	}
 

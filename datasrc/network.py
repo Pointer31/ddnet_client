@@ -592,6 +592,10 @@ Messages = [
 	NetMessageEx("Sv_MyOwnMessage", "my-own-message@heinrich5991.de", [
 		NetIntAny("m_Test"),
 	]),
+
+	NetMessageEx("Cl_Language", "language@ddnet-community.github.io", [
+		NetStringStrict("m_pLanguage"),
+	]),
     
 	NetMessageEx("Inf_KillMsg", "kill-ex1@infclass", [
 		NetIntRange("m_Victim", 0, 'MAX_CLIENTS-1'),

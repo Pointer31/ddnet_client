@@ -240,6 +240,14 @@ void CClient::SendInfo(int Conn)
 	MsgVerInfclass.AddInt(INFCLASS_CLIENT_VERSION);
 	SendMsg(Conn, &MsgVerInfclass, MSGFLAG_VITAL);
 
+	if (str_comp(Config()->m_ClSendLanguage, "") != 0) {
+		CNetMsg_Cl_Language MsgLang;
+		MsgLang.m_pLanguage = Config()->m_ClSendLanguage;
+		CMsgPacker Packer(&MsgLang);
+		MsgLang.Pack(&Packer);
+		SendMsgActive(&Packer, MSGFLAG_VITAL);
+	}
+
 	CMsgPacker Msg(NETMSG_INFO, true);
 	Msg.AddString(GameClient()->NetVersion());
 	Msg.AddString(m_aPassword);

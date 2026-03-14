@@ -108,6 +108,52 @@ void CMenusSettingsControls::OnInterfacesInit(CGameClient *pClient)
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Lock team"), "say /lock"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Show entities"), "toggle cl_overlay_entities 0 100"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Show HUD"), "toggle cl_showhud 0 1"},
+
+		// Localize - these strings are localized within CLocConstString
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Bottom/left"), "say_team_location bottomleft"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Bottom"), "say_team_location bottom"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Bottom/right"), "say_team_location bottomright"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Left"), "say_team_location left"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Middle"), "say_team_location middle"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Right"), "say_team_location right"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Top/Left"), "say_team_location topleft"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Top"), "say_team_location top"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Top/Right"), "say_team_location topright"},
+
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Bunker"), "say_team_location bunker"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Bonus zone"), "say_team_location bonuszone"},
+		{EBindOptionGroup::INFC_REPORTLOCATION, Localizable("Spawn"), "say_team_location infspawn"},
+
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Bottom/left is clear"), "say_team_location bottomleft clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Bottom is clear"), "say_team_location bottom clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Bottom/right is clear"), "say_team_location bottomright clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Left is clear"), "say_team_location left clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Middle is clear"), "say_team_location middle clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Right is clear"), "say_team_location right clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Top/Left is clear"), "say_team_location topleft clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Top is clear"), "say_team_location top clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Top/Right is clear"), "say_team_location topright clear"},
+
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Bunker is clear"), "say_team_location bunker clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Bonus zone is clear"), "say_team_location bonuszone clear"},
+		{EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, Localizable("Spawn is clear"), "say_team_location infspawn clear"},
+
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"RUN!\""), "say_message run"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Ghost!\""), "say_message ghost"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Help!\""), "say_message help"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Boom (hammer) fly\""), "say_message bfhf"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Where?\""), "say_message where"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Clear!\""), "say_message clear"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Call witch!\""), "say_message witch"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Taxi!\""), "say_message taxi"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Need a Taxi!\""), "say_message asktaxi"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Anyone needs a Taxi?\""), "say_message suggesttaxi"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Please find a flag!\""), "say_message askflag"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Anyone needs a flag?\""), "say_message suggestflag"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Medic!\""), "say_message askhealing"},
+		{EBindOptionGroup::INFC_TEAMCHAT, Localizable("\"Who needs a healing?\""), "say_message suggesthealing"},
+
+		{EBindOptionGroup::INFC_EXTRA, Localizable("Call witch"), "witch"},
 	};
 	m_NumPredefinedBindOptions = m_vBindOptions.size();
 
@@ -203,6 +249,92 @@ void CMenusSettingsControls::Render(CUIRect MainView)
 	m_SettingsScrollRegion.End();
 }
 
+void CMenusSettingsControls::RenderInfclass(CUIRect MainView)
+{
+	UpdateBindOptions();
+
+	CUIRect QuickSearch, SearchMatches, RectUnbind, RectLoadPreset;
+	MainView.HSplitBottom(BUTTON_HEIGHT, &MainView, &QuickSearch);
+	QuickSearch.VSplitRight(200.0f, &QuickSearch, &RectLoadPreset);
+	QuickSearch.VSplitRight(MARGIN, &QuickSearch, nullptr);
+	// QuickSearch.VSplitRight(200.0f, &QuickSearch, &RectUnbind);
+	// QuickSearch.VSplitRight(MARGIN, &QuickSearch, nullptr);
+	QuickSearch.VSplitRight(150.0f, &QuickSearch, &SearchMatches);
+	QuickSearch.VSplitRight(MARGIN, &QuickSearch, nullptr);
+	MainView.HSplitBottom(MARGIN, &MainView, nullptr);
+
+	// Quick search
+	if(Ui()->DoEditBox_Search(&m_FilterInput, &QuickSearch, FONT_SIZE, !Ui()->IsPopupOpen() && !GameClient()->m_GameConsole.IsActive() && !GameClient()->m_KeyBinder.IsActive()))
+	{
+		m_CurrentSearchMatch = 0;
+		UpdateSearchMatches();
+		m_SearchMatchReveal = true;
+	}
+	else if(!m_vSearchMatches.empty() && (Ui()->ConsumeHotkey(CUi::EHotkey::HOTKEY_ENTER) || Ui()->ConsumeHotkey(CUi::EHotkey::HOTKEY_TAB)))
+	{
+		UpdateSearchMatches();
+		m_CurrentSearchMatch += Input()->ShiftIsPressed() ? -1 : 1;
+		if(m_CurrentSearchMatch >= (int)m_vSearchMatches.size())
+		{
+			m_CurrentSearchMatch = 0;
+		}
+		if(m_CurrentSearchMatch < 0)
+		{
+			m_CurrentSearchMatch = m_vSearchMatches.size() - 1;
+		}
+		m_SearchMatchReveal = true;
+	}
+
+	if(!m_FilterInput.IsEmpty())
+	{
+		if(!m_vSearchMatches.empty())
+		{
+			char aSearchMatchLabel[64];
+			str_format(aSearchMatchLabel, sizeof(aSearchMatchLabel), Localize("Match %d of %d"), m_CurrentSearchMatch + 1, (int)m_vSearchMatches.size());
+			Ui()->DoLabel(&SearchMatches, aSearchMatchLabel, FONT_SIZE, TEXTALIGN_MC);
+		}
+		else
+		{
+			Ui()->DoLabel(&SearchMatches, Localize("No results"), FONT_SIZE, TEXTALIGN_MC);
+		}
+	}
+
+	// static CButtonContainer ContainerUnbind;
+	// if(GameClient()->m_Menus.DoButton_Menu(&ContainerUnbind, Localize("Unbind all"), 0, &RectUnbind))
+	// {
+	// 	GameClient()->m_Menus.PopupConfirm(Localize("Unbind controls"), Localize("Are you sure that you want to unbind all infclass controls?"),
+	// 		Localize("Unbind"), Localize("Cancel"), &CMenus::ResetSettingsInfclassControls);
+	// }
+	static CButtonContainer PresetUnbind;
+	if(GameClient()->m_Menus.DoButton_Menu(&PresetUnbind, Localize("Load the preset"), 0, &RectLoadPreset))
+	{
+		GameClient()->m_Menus.PopupConfirm(Localize("Load preset"), Localize("Are you sure that you want to load the preset for infclass controls?"),
+			Localize("Load Preset"), Localize("Cancel"), &CMenus::LoadPresetInfclassControls);
+	}
+
+	vec2 ScrollOffset(0.0f, 0.0f);
+	CScrollRegionParams ScrollParams;
+	ScrollParams.m_ScrollUnit = 6.0f * BUTTON_HEIGHT;
+	ScrollParams.m_Flags = CScrollRegionParams::FLAG_CONTENT_STATIC_WIDTH;
+	m_SettingsScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
+	MainView.y += ScrollOffset.y;
+
+	CUIRect LeftColumn, RightColumn;
+	MainView.VSplitMid(&LeftColumn, &RightColumn, MARGIN);
+
+	RenderSettingsBindsBlock(EBindOptionGroup::INFC_REPORTLOCATION, &LeftColumn, Localize("Report location"));
+	RenderSettingsBindsBlock(EBindOptionGroup::INFC_TEAMCHAT, &LeftColumn, Localize("Report location is clear"));
+
+	RenderSettingsBindsBlock(EBindOptionGroup::INFC_REPORTLOCATIONCLEAR, &RightColumn, Localize("Team chat"));
+	RenderSettingsBindsBlock(EBindOptionGroup::INFC_EXTRA, &RightColumn, Localize("Extra commands"));
+	if(std::any_of(m_vBindOptions.begin(), m_vBindOptions.end(), [](const CBindOption &Option) { return Option.m_Group == EBindOptionGroup::CUSTOM; }))
+	{
+		RenderSettingsBindsBlock(EBindOptionGroup::CUSTOM, &RightColumn, Localize("Custom"));
+	}
+
+	m_SettingsScrollRegion.End();
+}
+
 void CMenusSettingsControls::UpdateBindOptions()
 {
 	for(CBindOption &Option : m_vBindOptions)
@@ -221,7 +353,7 @@ void CMenusSettingsControls::UpdateBindOptions()
 		for(int KeyId = KEY_FIRST; KeyId < KEY_LAST; KeyId++)
 		{
 			const CBindSlot BindSlot = CBindSlot(KeyId, Mod);
-			const char *pBind = GameClient()->m_Binds.Get(BindSlot);
+			const char *pBind = m_ControlsTab == 0 ? GameClient()->m_Binds.Get(BindSlot) : GameClient()->m_InfCBinds.Get(BindSlot);
 			if(!pBind[0])
 			{
 				continue;
@@ -542,13 +674,14 @@ void CMenusSettingsControls::RenderSettingsBinds(EBindOptionGroup Group, CUIRect
 			else if(KeyReaderResult.m_Bind != CurrentBind.m_Bind)
 			{
 				BindOption.m_AddNewBind = false;
+				CBinds &Binds = m_ControlsTab == 0 ? GameClient()->m_Binds : GameClient()->m_InfCBinds;
 				if(CurrentBind.m_Bind.m_Key != KEY_UNKNOWN || KeyReaderResult.m_Bind.m_Key == KEY_UNKNOWN)
 				{
-					GameClient()->m_Binds.Bind(CurrentBind.m_Bind.m_Key, "", false, CurrentBind.m_Bind.m_ModifierMask);
+					Binds.Bind(CurrentBind.m_Bind.m_Key, "", false, CurrentBind.m_Bind.m_ModifierMask);
 				}
 				if(KeyReaderResult.m_Bind.m_Key != KEY_UNKNOWN)
 				{
-					GameClient()->m_Binds.Bind(KeyReaderResult.m_Bind.m_Key, BindOption.m_Command.c_str(), false, KeyReaderResult.m_Bind.m_ModifierMask);
+					Binds.Bind(KeyReaderResult.m_Bind.m_Key, BindOption.m_Command.c_str(), false, KeyReaderResult.m_Bind.m_ModifierMask);
 				}
 			}
 		}
@@ -792,4 +925,14 @@ void CMenus::ResetSettingsControls()
 	g_Config.m_InpControllerY = 1;
 	g_Config.m_InpControllerTolerance = 5;
 	g_Config.m_UiControllerSens = 100;
+}
+
+void CMenus::ResetSettingsInfclassControls()
+{
+	
+}
+
+void CMenus::LoadPresetInfclassControls()
+{
+	GameClient()->m_InfCBinds.LoadPreset();
 }

@@ -20,6 +20,10 @@ enum class EBindOptionGroup
 	DUMMY,
 	MISCELLANEOUS,
 	CUSTOM,
+	INFC_REPORTLOCATION,
+	INFC_REPORTLOCATIONCLEAR,
+	INFC_TEAMCHAT,
+	INFC_EXTRA,
 	NUM,
 };
 
@@ -56,6 +60,8 @@ class CMenusSettingsControls : public CComponentInterfaces
 public:
 	void OnInterfacesInit(CGameClient *pClient) override;
 	void Render(CUIRect MainView);
+	void RenderInfclass(CUIRect MainView);
+	int m_ControlsTab;
 
 private:
 	bool m_aBindGroupExpanded[(int)EBindOptionGroup::NUM];

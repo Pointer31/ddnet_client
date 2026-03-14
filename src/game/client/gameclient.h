@@ -1036,7 +1036,7 @@ public:
 	bool IsCustomClientId(int Country);
 	int m_SendingCustomClientTicks = -1;
 	int HandleClientCountry(int Country, int ClientId);
-	int GetPredictedDummyId() { return m_PredictedDummyId; }
+	// int GetPredictedDummyId() { return m_PredictedDummyId; }
 };
 
 ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL);

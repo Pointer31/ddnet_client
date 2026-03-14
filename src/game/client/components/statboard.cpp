@@ -452,7 +452,8 @@ void CStatboard::RenderGlobalStats()
 				{
 					Rect.w = ExploitableLength * pStats->m_aFragsWith[i] / (float)TotalKills;
 					Rect.w += RoundSize;
-					Rect.Draw(s_aWeaponColors[i], IGraphics::CORNER_ALL, RoundSize);
+					ColorRGBA Color = ColorRGBA(s_aWeaponColors[i].x, s_aWeaponColors[i].y, s_aWeaponColors[i].z, s_aWeaponColors[i].a);
+					Rect.Draw(Color, IGraphics::CORNER_ALL, RoundSize);
 					Rect.w -= RoundSize;
 					Rect.x += Rect.w;
 				}

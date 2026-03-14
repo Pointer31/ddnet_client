@@ -1704,7 +1704,27 @@ void CMenus::RenderSettings(CUIRect MainView)
 	else if(g_Config.m_UiSettingsPage == SETTINGS_CONTROLS)
 	{
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_CONTROLS);
-		m_MenusSettingsControls.Render(MainView);
+
+		static int s_CurControlsTab = 0;
+
+		CUIRect TabLabel1, TabLabel2;
+
+		MainView.HSplitTop(20, &TabLabel1, &MainView);
+		TabLabel1.VSplitMid(&TabLabel1, &TabLabel2);
+
+		static CButtonContainer s_PageTabs[2];
+		if(DoButton_MenuTab(&s_PageTabs[0], Localize("General"), s_CurControlsTab == 0, &TabLabel1, IGraphics::CORNER_L, NULL, NULL, NULL, NULL, 4))
+			s_CurControlsTab = 0;
+		if(DoButton_MenuTab(&s_PageTabs[1], Localize("InfClass"), s_CurControlsTab == 1, &TabLabel2, IGraphics::CORNER_R, NULL, NULL, NULL, NULL, 4))
+			s_CurControlsTab = 1;
+
+		MainView.HSplitTop(10.0f, 0x0, &MainView);
+
+		m_MenusSettingsControls.m_ControlsTab = s_CurControlsTab;
+		if(s_CurControlsTab == 0)
+			m_MenusSettingsControls.Render(MainView);
+		else
+			m_MenusSettingsControls.RenderInfclass(MainView);
 	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_GRAPHICS)
 	{

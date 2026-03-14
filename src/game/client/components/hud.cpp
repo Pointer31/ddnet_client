@@ -875,7 +875,6 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 			{
 				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SYMBOL_INFINITE].m_Id);
 				Graphics()->QuadsBegin();
-				Graphics()->SetColor(vec4(1.0f, 1.0f, 1.0f, 1.0));
 				IGraphics::CQuadItem QuadItemBackground(18.0f, AmmoOffsetY+3, 16, 16);
 				Graphics()->QuadsDrawTL(&QuadItemBackground, 1);
 				Graphics()->QuadsEnd();

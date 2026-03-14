@@ -246,11 +246,11 @@ void CMenus::RenderSettingsGeneral(CUIRect MainView)
 void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 {
 	char aBuf[128 + IO_MAX_PATH_LENGTH];
-	CUIRect Label, Button, Left, Right, Game, ClientSettings, Menu;
+	CUIRect Label, Button, Left, Right, Game, ClientSettings, Menu, Button2;
 	MainView.HSplitTop(150.0f, &Game, &ClientSettings);
 	Game.VSplitMid(&Game, &Menu, 20.0f);
 
-	constexpr float VerticalSpacing(5.0f);
+	constexpr float VerticalSpacing(2.0f);
 	// Miscellaneous
 	{
 		// headline
@@ -260,7 +260,12 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
-		Ui()->DoScrollbarOption(&g_Config.m_ClOldClientConsole, &g_Config.m_ClOldClientConsole, &Button, Localize("Old client console"), 0, 2, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "");
+		static std::vector<CButtonContainer> m_vButtonContainers = {{}, {}, {}};
+		DoLine_RadioMenu(Button, Localize("Old client console"),
+			m_vButtonContainers,
+			{Localize("Off"), Localize("Bar only"), Localize("Fully")},
+			{0, 1, 2},
+			g_Config.m_ClOldClientConsole);
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
@@ -279,23 +284,61 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
-		Ui()->DoScrollbarOption(&g_Config.m_UiColorMainMenu, &g_Config.m_UiColorMainMenu, &Button, Localize("UI color on main menu"), 0, 2, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "");
+		static std::vector<CButtonContainer> m_vButtonContainersColorMainMenu = {{}, {}, {}};
+		DoLine_RadioMenu(Button, Localize("UI color on main menu"),
+			m_vButtonContainersColorMainMenu,
+			{Localize("Off"), Localize("On"), Localize("Incl. Alpha")},
+			{0, 1, 2},
+			g_Config.m_UiColorMainMenu);
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
-		Ui()->DoScrollbarOption(&g_Config.m_ClScoreboardStyle, &g_Config.m_ClScoreboardStyle, &Button, Localize("Scoreboard Style"), 0, 3, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "");
+		static std::vector<CButtonContainer> m_vButtonContainersScoreboardStyle = {{}, {}, {}, {}};
+		DoLine_RadioMenu(Button, Localize("Scoreboard Style"),
+			m_vButtonContainersScoreboardStyle,
+			{Localize("Default"), Localize("1"), Localize("2"), Localize("3")},
+			{0, 1, 2, 3},
+			g_Config.m_ClScoreboardStyle);
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
-		Ui()->DoScrollbarOption(&g_Config.m_ClScoreboardShorten, &g_Config.m_ClScoreboardShorten, &Button, Localize("Shorten Scoreboard"), 0, 2, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "");
+		static std::vector<CButtonContainer> m_vButtonContainersScoreboardShorten = {{}, {}, {}};
+		DoLine_RadioMenu(Button, Localize("Shorten Scoreboard"),
+			m_vButtonContainersScoreboardShorten,
+			{Localize("Default"), Localize("Some"), Localize("Full")},
+			{0, 1, 2},
+			g_Config.m_ClScoreboardShorten);
 
+		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+		Left.HSplitTop(20.0f, &Button, &Left);
+		if(DoButton_CheckBox(&g_Config.m_ClHideCountryTypeFilters, Localize("Hide Country/Type Filter"), g_Config.m_ClHideCountryTypeFilters, &Button))
+			g_Config.m_ClHideCountryTypeFilters ^= 1;
+
+		Left.HSplitTop(4.0f, nullptr, &Left);
+		Left.HSplitTop(20.0f, &Button2, &Left);
+		Left.HSplitTop(2.0f, nullptr, &Left);
+		if (g_Config.m_ClHideCountryTypeFilters || g_Config.m_ClPosistionCommunityFilter == 2)
+		{
+			Button2.VSplitMid(&Label, &Button);
+			Ui()->DoLabel(&Label, Localize("Gametype Filters"), 14.0f, TEXTALIGN_ML);
+			static CLineInput s_GameTypeFilters(g_Config.m_ClGametypeFilterList, sizeof(g_Config.m_ClGametypeFilterList));
+			s_GameTypeFilters.SetEmptyText(Localize("dm ctf ..."));
+			Ui()->DoEditBox(&s_GameTypeFilters, &Button, 14.0f);
+		}
+
+		Left.HSplitTop(4.0f, nullptr, &Left);
+		Left.HSplitTop(20.0f, &Button2, &Left);
+		Left.HSplitTop(2.0f, nullptr, &Left);
+		Button2.VSplitMid(&Label, &Button);
+		Ui()->DoLabel(&Label, Localize("Language code to send"), 14.0f, TEXTALIGN_ML);
+		static CLineInput s_LanguageSend(g_Config.m_ClSendLanguage, sizeof(g_Config.m_ClSendLanguage));
+		s_LanguageSend.SetEmptyText(Localize("Language code"));
+		Ui()->DoEditBox(&s_LanguageSend, &Button, 14.0f);
 
 		// miscellaneous
-		Left.HSplitTop(40.0f, &Label, &Left);
+		Left.HSplitTop(25.0f, &Label, &Left);
 		Left.HSplitTop(30.0f, &Label, &Left);
 		Ui()->DoLabel(&Label, Localize("Miscellaneous"), 20.0f, TEXTALIGN_ML);
-
-
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
@@ -337,6 +380,11 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 		Left.HSplitTop(20.0f, &Button, &Left);
 		if(DoButton_CheckBox(&g_Config.m_ClUpsidedownTees, Localize("Upside down tees"), g_Config.m_ClUpsidedownTees, &Button))
 			g_Config.m_ClUpsidedownTees ^= 1;
+
+		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+		Left.HSplitTop(20.0f, &Button, &Left);
+		if(DoButton_CheckBox(&g_Config.m_ClMapChangeMessage, Localize("Map Change Message"), g_Config.m_ClMapChangeMessage, &Button))
+			g_Config.m_ClMapChangeMessage ^= 1;
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);

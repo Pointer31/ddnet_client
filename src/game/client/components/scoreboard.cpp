@@ -211,7 +211,7 @@ void CScoreboard::RenderGoals(CUIRect Goals)
 		Goals.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.6f), g_Config.m_ClScoreboardStyle == 2 ? IGraphics::CORNER_T : IGraphics::CORNER_ALL, 7.5f);
 	else
 		Goals.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f), IGraphics::CORNER_ALL, 7.5f);
-	Goals.VMargin(10.0f, &Goals);
+	Goals.VMargin(5.0f, &Goals);
 
 	const float FontSize = 10.0f;
 	const CNetObj_GameInfo *pGameInfoObj = GameClient()->m_Snap.m_pGameInfoObj;
@@ -262,7 +262,7 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 	static int LinesUsed = 1;
 	int MaxHeight = Spectators.h;
 	if (g_Config.m_ClScoreboardShorten >= 1)
-		Spectators.HSplitTop(LinesUsed*22.0f, &Spectators, nullptr);
+		Spectators.HSplitTop(LinesUsed*11.0f, &Spectators, nullptr);
 	const CNetObj_GameInfo *pGameInfoObj = GameClient()->m_Snap.m_pGameInfoObj;
 	if(g_Config.m_ClScoreboardStyle == 2 && pGameInfoObj && (pGameInfoObj->m_ScoreLimit || pGameInfoObj->m_TimeLimit || (pGameInfoObj->m_RoundNum && pGameInfoObj->m_RoundCurrent)))
 		Spectators.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f), IGraphics::CORNER_B, 7.5f);

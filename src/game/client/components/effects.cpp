@@ -311,7 +311,7 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientId, float Alpha)
 			p.m_Rotspeed = random_float(-0.5f, 0.5f) * pi;
 			p.m_Gravity = 1200.0f;
 			p.m_Friction = 0.99f;
-			ColorRGBA c = vec4(0.9f, 0.1f, 0.1f, 1.0f);
+			ColorRGBA c(0.9f, 0.1f, 0.1f, 1.0f);
 			p.m_Color = ColorRGBA(c.r, c.g, c.b, 0.75f * Alpha);
 			p.m_StartAlpha = Alpha;
 			p.m_EndAlpha = 0.0f;
@@ -413,7 +413,8 @@ void CEffects::Explosion(vec2 Pos, float Alpha)
 			p.m_EndSize = random_float(28.0f, 35.0f);
 			p.m_Gravity = 0;
 			p.m_Friction = 1.0f;
-			p.m_Color = mix(vec4(0.35f, 0.35f, 0.35f, 1.0f), vec4(0.2f, 0.2f, 0.2f, 1.0f), random_float());
+			vec4 Color = mix(vec4(0.35f, 0.35f, 0.35f, 1.0f), vec4(0.2f, 0.2f, 0.2f, 1.0f), random_float());
+			p.m_Color = ColorRGBA(Color.x, Color.y, Color.z, Color.a);
 			p.m_Color.a *= 0.9f;
 			p.m_StartAlpha = p.m_Color.a;
 			p.m_EndAlpha = 0.0f;

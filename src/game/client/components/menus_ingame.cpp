@@ -861,7 +861,7 @@ bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll)
 	int i = 0;
 	for(const CVoteOptionClient *pOption = GameClient()->m_Voting.FirstOption(); pOption; pOption = pOption->m_pNext, i++)
 	{
-		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
+		if(!m_FilterInput.IsEmpty() && !pOption->m_IsSubheader && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
 			continue;
 		if(i == m_CallvoteSelectedOption)
 			Selected = TotalShown;

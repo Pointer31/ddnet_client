@@ -7,6 +7,8 @@
 #include "gameworld.h"
 #include "teehistorian.h"
 
+#include <base/types.h>
+
 #include <engine/console.h>
 #include <engine/server.h>
 
@@ -19,6 +21,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 /*
@@ -52,10 +55,12 @@ class CScore;
 class CUnpacker;
 class IAntibot;
 class IGameController;
+class IMap;
 class IEngine;
 class IStorage;
 struct CAntibotRoundData;
 struct CScoreRandomMapResult;
+struct CScorePlayerResult;
 
 struct CSnapContext
 {
@@ -81,6 +86,8 @@ public:
 	bool m_Initialized = false;
 	bool m_InitialDelay;
 	char m_aReason[128];
+	char m_aClientName[MAX_NAME_LENGTH];
+	bool m_NameKnown;
 
 	int SecondsLeft() const;
 };
@@ -90,7 +97,7 @@ class CMutes
 public:
 	CMutes(const char *pSystemName);
 
-	bool Mute(const NETADDR *pAddr, int Seconds, const char *pReason, bool InitialDelay);
+	bool Mute(const NETADDR *pAddr, int Seconds, const char *pReason, const char *pClientName, bool InitialDelay);
 	void UnmuteIndex(int Index);
 	void UnmuteAddr(const NETADDR *pAddr);
 	void UnmuteExpired();
@@ -111,11 +118,12 @@ class CGameContext : public IGameServer
 	IEngine *m_pEngine;
 	IStorage *m_pStorage;
 	IAntibot *m_pAntibot;
+	std::unique_ptr<IMap> m_pMap;
 	CLayers m_Layers;
 	CCollision m_Collision;
 	protocol7::CNetObjHandler m_NetObjHandler7;
 	CNetObjHandler m_NetObjHandler;
-	CTuningParams m_aTuningList[NUM_TUNEZONES];
+	CTuningParams m_aTuningList[TuneZone::NUM];
 	std::vector<std::string> m_vCensorlist;
 
 	bool m_TeeHistorianActive;
@@ -191,6 +199,8 @@ public:
 	IConsole *Console() { return m_pConsole; }
 	IEngine *Engine() { return m_pEngine; }
 	IStorage *Storage() { return m_pStorage; }
+	IMap *Map() override { return m_pMap.get(); }
+	const IMap *Map() const override { return m_pMap.get(); }
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *GlobalTuning() { return &m_aTuningList[0]; }
 	CTuningParams *TuningList() { return m_aTuningList; }
@@ -224,6 +234,10 @@ public:
 	// helper functions
 	CCharacter *GetPlayerChar(int ClientId);
 	const CCharacter *GetPlayerChar(int ClientId) const;
+	const CPlayer *FindPlayerByName(const char *pName) const;
+	// Returns `nullptr` if no player is found.
+	CPlayer *FindPlayerByName(const char *pName);
+	std::optional<int> FindClientIdByName(const char *pName) const;
 	bool EmulateBug(int Bug) const;
 	std::vector<SSwitchers> &Switchers() { return m_World.m_Core.m_vSwitchers; }
 
@@ -245,8 +259,8 @@ public:
 	char m_aVoteReason[VOTE_REASON_LENGTH];
 	int m_NumVoteOptions;
 	int m_VoteEnforce;
-	char m_aaZoneEnterMsg[NUM_TUNEZONES][256]; // 0 is used for switching from or to area without tunings
-	char m_aaZoneLeaveMsg[NUM_TUNEZONES][256];
+	char m_aaZoneEnterMsg[TuneZone::NUM][256]; // 0 is used for switching from or to area without tunings
+	char m_aaZoneLeaveMsg[TuneZone::NUM][256];
 
 	void CreateAllEntities(bool Initial);
 	CPlayer *CreatePlayer(int ClientId, int StartTeam, bool Afk, int LastWhisperTo);
@@ -302,6 +316,7 @@ public:
 	void SendServerAlert(const char *pMessage);
 	void SendModeratorAlert(const char *pMessage, int ToClientId);
 	void SendBroadcast(const char *pText, int ClientId, bool IsImportant = true);
+	void SendSkinChange7(int ClientId);
 
 	void List(int ClientId, const char *pFilter);
 
@@ -324,7 +339,7 @@ public:
 	void OnShutdown(void *pPersistentData) override;
 
 	void OnTick() override;
-	void OnSnap(int ClientId, bool GlobalSnap) override;
+	void OnSnap(int ClientId, bool GlobalSnap, bool RecordingDemo) override;
 	void OnPostGlobalSnap() override;
 
 	void UpdatePlayerMaps();
@@ -394,7 +409,7 @@ public:
 	bool PlayerExists(int ClientId) const override { return m_apPlayers[ClientId]; }
 	// Returns true if someone is actively moderating.
 	bool PlayerModerating() const;
-	void ForceVote(int EnforcerId, bool Success);
+	void ForceVote(bool Success);
 
 	// Checks if player can vote and notify them about the reason
 	bool RateLimitPlayerVote(int ClientId);
@@ -406,6 +421,10 @@ public:
 	bool PracticeByDefault() const;
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
+
+	// cached map info from database
+	std::shared_ptr<CScorePlayerResult> m_pLoadMapInfoResult;
+	char m_aMapInfoMessage[512];
 
 private:
 	// starting 1 to make 0 the special value "no client id"
@@ -426,7 +445,7 @@ private:
 	static void ConSolo(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnSolo(IConsole::IResult *pResult, void *pUserData);
 	static void ConFreeze(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnFreeze(IConsole::IResult *pResult, void *pUserData);
+	static void ConUnfreeze(IConsole::IResult *pResult, void *pUserData);
 	static void ConDeep(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnDeep(IConsole::IResult *pResult, void *pUserData);
 	static void ConLiveFreeze(IConsole::IResult *pResult, void *pUserData);
@@ -446,6 +465,7 @@ private:
 	static void ConUnLaser(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnJetpack(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnEndlessJump(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetSwitch(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnWeapons(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddWeapon(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveWeapon(IConsole::IResult *pResult, void *pUserData);
@@ -548,6 +568,7 @@ private:
 	static void ConPracticeUnNinja(IConsole::IResult *pResult, void *pUserData);
 	static void ConPracticeEndlessHook(IConsole::IResult *pResult, void *pUserData);
 	static void ConPracticeUnEndlessHook(IConsole::IResult *pResult, void *pUserData);
+	static void ConPracticeSetSwitch(IConsole::IResult *pResult, void *pUserData);
 	static void ConPracticeToggleInvincible(IConsole::IResult *pResult, void *pUserData);
 	static void ConPracticeToggleCollision(IConsole::IResult *pResult, void *pUserData);
 	static void ConPracticeToggleHookCollision(IConsole::IResult *pResult, void *pUserData);
@@ -641,7 +662,7 @@ public:
 	bool IsRunningKickOrSpecVote(int ClientId) const;
 
 	void SendRecord(int ClientId);
-	void SendFinish(int ClientId, float Time, float PreviousBestTime);
+	void SendFinish(int ClientId, float Time, std::optional<float> PreviousBestTime);
 	void SendSaveCode(int Team, int TeamSize, int State, const char *pError, const char *pSaveRequester, const char *pServerName, const char *pGeneratedCode, const char *pCode);
 	void OnSetAuthed(int ClientId, int Level) override;
 

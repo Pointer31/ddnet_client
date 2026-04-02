@@ -1,7 +1,8 @@
 #ifndef ENGINE_CLIENT_GRAPHICS_THREADED_H
 #define ENGINE_CLIENT_GRAPHICS_THREADED_H
 
-#include <base/system.h>
+#include <base/dbg.h>
+#include <base/sphore.h>
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
@@ -729,6 +730,7 @@ public:
 	// be aware that this function should only be called from the graphics thread, and even then you should really know what you are doing
 	virtual TGLBackendReadPresentedImageData &GetReadPresentedImageDataFuncUnsafe() = 0;
 
+	virtual const char *GetFatalError() const = 0;
 	virtual bool GetWarning(std::vector<std::string> &WarningStrings) = 0;
 
 	/**
@@ -763,7 +765,6 @@ class CGraphics_Threaded : public IEngineGraphics
 
 	//
 	class IStorage *m_pStorage;
-	class IConsole *m_pConsole;
 	class IEngine *m_pEngine;
 
 	int m_CurIndex;
@@ -1269,6 +1270,7 @@ public:
 	const char *GetVendorString() override;
 	const char *GetVersionString() override;
 	const char *GetRendererString() override;
+	const char *GetFatalError() const override;
 
 	TGLBackendReadPresentedImageData &GetReadPresentedImageDataFuncUnsafe() override;
 };

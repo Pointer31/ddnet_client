@@ -1,5 +1,7 @@
 #include "tooltips.h"
 
+#include <base/time.h>
+
 #include <game/client/ui.h>
 
 CTooltips::CTooltips()
@@ -56,13 +58,12 @@ void CTooltips::OnRender()
 	{
 		CTooltip &Tooltip = m_ActiveTooltip.value();
 
-		if(Ui()->HotItem() != Tooltip.m_pId)
+		if(Ui()->HotItem() != Tooltip.m_pId || !Tooltip.m_Rect.Inside(Ui()->MousePos()))
 		{
 			Tooltip.m_OnScreen = false;
 			ClearActiveTooltip();
 			return;
 		}
-
 		if(!Tooltip.m_OnScreen)
 			return;
 

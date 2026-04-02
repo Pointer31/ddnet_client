@@ -6,9 +6,11 @@
 #include "kernel.h"
 #include "message.h"
 
+#include <base/dbg.h>
 #include <base/hash.h>
 #include <base/math.h>
-#include <base/system.h>
+#include <base/mem.h>
+#include <base/str.h>
 
 #include <engine/shared/jsonwriter.h>
 #include <engine/shared/protocol.h>
@@ -22,6 +24,7 @@
 #include <type_traits>
 
 struct CAntibotRoundData;
+class IMap;
 
 // When recording a demo on the server, the ClientId -1 is used
 enum
@@ -80,7 +83,8 @@ public:
 	virtual int GetClientVersion(int ClientId) const = 0;
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientId) = 0;
 
-	template<class T, typename std::enable_if<!protocol7::is_sixup<T>::value, int>::type = 0>
+	template<class T>
+		requires(!protocol7::is_sixup<T>::value)
 	int SendPackMsg(const T *pMsg, int Flags, int ClientId)
 	{
 		int Result = 0;
@@ -97,7 +101,8 @@ public:
 		return Result;
 	}
 
-	template<class T, typename std::enable_if<protocol7::is_sixup<T>::value, int>::type = 1>
+	template<class T>
+		requires(protocol7::is_sixup<T>::value)
 	int SendPackMsg(const T *pMsg, int Flags, int ClientId)
 	{
 		int Result = 0;
@@ -223,8 +228,6 @@ public:
 		return true;
 	}
 
-	virtual void GetMapInfo(char *pMapName, int MapNameSize, int *pMapSize, SHA256_DIGEST *pSha256, int *pMapCrc) = 0;
-
 	virtual bool WouldClientNameChange(int ClientId, const char *pNameRequest) = 0;
 	virtual bool WouldClientClanChange(int ClientId, const char *pClanRequest) = 0;
 	virtual void SetClientName(int ClientId, const char *pName) = 0;
@@ -245,6 +248,7 @@ public:
 	}
 
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
+	virtual void SnapSetStaticsize7(int ItemType, int Size) = 0;
 
 	enum
 	{
@@ -292,8 +296,6 @@ public:
 
 	virtual void SendMsgRaw(int ClientId, const void *pData, int Size, int Flags) = 0;
 
-	virtual const char *GetMapName() const = 0;
-
 	virtual bool IsSixup(int ClientId) const = 0;
 };
 
@@ -318,7 +320,8 @@ public:
 	//
 	// GlobalSnap is true when sending snapshots to all clients,
 	// otherwise only forced high bandwidth clients would receive snap.
-	virtual void OnSnap(int ClientId, bool GlobalSnap) = 0;
+	// RecordingDemo is true when this snapshot will be recorded to a demo.
+	virtual void OnSnap(int ClientId, bool GlobalSnap, bool RecordingDemo) = 0;
 
 	// Called after sending snapshots to all clients.
 	//
@@ -365,6 +368,8 @@ public:
 	virtual const char *Version() const = 0;
 	virtual const char *NetVersion() const = 0;
 
+	virtual IMap *Map() = 0;
+	virtual const IMap *Map() const = 0;
 	virtual CNetObjHandler *GetNetObjHandler() = 0;
 	virtual protocol7::CNetObjHandler *GetNetObjHandler7() = 0;
 

@@ -3,6 +3,7 @@
 #include "controls.h"
 
 #include <base/math.h>
+#include <base/time.h>
 #include <base/vmath.h>
 
 #include <engine/client.h>
@@ -294,10 +295,10 @@ int CControls::SnapInput(int *pData)
 				pDummyInput->m_Fire++;
 
 			pDummyInput->m_Hook = g_Config.m_ClDummyHook;
+			m_aInputData[!g_Config.m_ClDummy] = *pDummyInput;
 		}
 
 		// stress testing
-#ifdef CONF_DEBUG
 		if(g_Config.m_DbgStress)
 		{
 			float t = Client()->LocalTime();
@@ -311,7 +312,7 @@ int CControls::SnapInput(int *pData)
 			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)(std::sin(t * 3) * 100.0f);
 			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)(std::cos(t * 3) * 100.0f);
 		}
-#endif
+
 		// check if we need to send input
 		Send = Send || m_aInputData[g_Config.m_ClDummy].m_Direction != m_aLastData[g_Config.m_ClDummy].m_Direction;
 		Send = Send || m_aInputData[g_Config.m_ClDummy].m_Jump != m_aLastData[g_Config.m_ClDummy].m_Jump;

@@ -5,6 +5,7 @@
 #include <base/math.h>
 #include <base/system.h>
 
+#include <engine/font_icons.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/shared/localization.h>
@@ -21,8 +22,6 @@
 #include <functional>
 #include <string>
 #include <vector>
-
-using namespace FontIcons;
 
 inline constexpr float HEADER_FONT_SIZE = 16.0f;
 inline constexpr float FONT_SIZE = 13.0f;
@@ -103,6 +102,7 @@ void CMenusSettingsControls::OnInterfacesInit(CGameClient *pClient)
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Remote console"), "toggle_remote_console"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Screenshot"), "screenshot"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Scoreboard"), "+scoreboard"},
+		{EBindOptionGroup::MISCELLANEOUS, Localizable("Scoreboard cursor"), "toggle_scoreboard_cursor"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Statboard"), "+statboard"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Lock team"), "say /lock"},
 		{EBindOptionGroup::MISCELLANEOUS, Localizable("Show entities"), "toggle cl_overlay_entities 0 100"},
@@ -171,12 +171,10 @@ void CMenusSettingsControls::Render(CUIRect MainView)
 			Localize("Reset"), Localize("Cancel"), &CMenus::ResetSettingsControls);
 	}
 
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = 6.0f * BUTTON_HEIGHT;
 	ScrollParams.m_Flags = CScrollRegionParams::FLAG_CONTENT_STATIC_WIDTH;
-	m_SettingsScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
-	MainView.y += ScrollOffset.y;
+	m_SettingsScrollRegion.Begin(&MainView, &ScrollParams);
 
 	CUIRect LeftColumn, RightColumn;
 	MainView.VSplitMid(&LeftColumn, &RightColumn, MARGIN);
@@ -415,7 +413,7 @@ void CMenusSettingsControls::RenderSettingsBlock(float Height, CUIRect *pParentR
 					Props.m_EnableWidthCheck = false;
 					TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 					TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
-					Ui()->DoLabel(&ExpandButton, *pExpanded ? FONT_ICON_CHEVRON_UP : FONT_ICON_CHEVRON_DOWN, HEADER_FONT_SIZE, TEXTALIGN_MR, Props);
+					Ui()->DoLabel(&ExpandButton, *pExpanded ? FontIcon::CHEVRON_UP : FontIcon::CHEVRON_DOWN, HEADER_FONT_SIZE, TEXTALIGN_MR, Props);
 					TextRender()->SetRenderFlags(0);
 					TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 				}
@@ -552,7 +550,7 @@ void CMenusSettingsControls::RenderSettingsBinds(EBindOptionGroup Group, CUIRect
 			}
 		}
 
-		if(Ui()->DoButton_FontIcon(&BindOption.m_AddBindButtonContainer, FONT_ICON_PLUS, BindOption.m_AddNewBind ? 1 : 0, &AddButton, BUTTONFLAG_LEFT))
+		if(Ui()->DoButton_FontIcon(&BindOption.m_AddBindButtonContainer, FontIcon::PLUS, BindOption.m_AddNewBind ? 1 : 0, &AddButton, BUTTONFLAG_LEFT))
 		{
 			BindOption.m_AddNewBind = true;
 			BindOption.m_AddNewBindActivate = true;

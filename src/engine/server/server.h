@@ -36,7 +36,6 @@ class CLogMessage;
 class CMsgPacker;
 class CPacker;
 class IEngine;
-class IEngineMap;
 class ILogger;
 
 class CServerBan : public CNetBan
@@ -83,10 +82,8 @@ class CServer : public IServer
 
 	class CDbConnectionPool *m_pConnectionPool;
 
-#ifdef CONF_DEBUG
 	int m_PreviousDebugDummies = 0;
 	void UpdateDebugDummies(bool ForceDisconnect);
-#endif
 
 public:
 	class IGameServer *GameServer() { return m_pGameServer; }
@@ -218,6 +215,7 @@ public:
 	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS];
 
 	CSnapshotDelta m_SnapshotDelta;
+	CSnapshotDelta m_SnapshotDeltaSixup;
 	CSnapshotBuilder m_SnapshotBuilder;
 	CSnapIdPool m_IdPool;
 	CNetServer m_NetServer;
@@ -225,8 +223,6 @@ public:
 	CFifo m_Fifo;
 	CServerBan m_ServerBan;
 	CHttp m_Http;
-
-	IEngineMap *m_pMap;
 
 	int64_t m_GameStartTime;
 
@@ -262,8 +258,6 @@ public:
 		NUM_RECORDERS = MAX_CLIENTS + 2,
 	};
 
-	char m_aCurrentMap[IO_MAX_PATH_LENGTH];
-	const char *m_pCurrentMapName;
 	SHA256_DIGEST m_aCurrentMapSha256[NUM_MAP_TYPES];
 	unsigned m_aCurrentMapCrc[NUM_MAP_TYPES];
 	unsigned char *m_apCurrentMapData[NUM_MAP_TYPES];
@@ -320,7 +314,6 @@ public:
 	bool IsRconAuthedAdmin(int ClientId) const override;
 	const char *GetAuthName(int ClientId) const override;
 	bool HasAuthHidden(int ClientId) const override;
-	void GetMapInfo(char *pMapName, int MapNameSize, int *pMapSize, SHA256_DIGEST *pMapSha256, int *pMapCrc) override;
 	bool GetClientInfo(int ClientId, CClientInfo *pInfo) const override;
 	void SetClientDDNetVersion(int ClientId, int DDNetVersion) override;
 	const NETADDR *ClientAddr(int ClientId) const override;
@@ -379,6 +372,12 @@ public:
 
 	bool CheckReservedSlotAuth(int ClientId, const char *pPassword);
 	void ProcessClientPacket(CNetChunk *pPacket);
+	void OnNetMsgClientVer(int ClientId, CUuid *pConnectionId, int DDNetVersion, const char *pDDNetVersionStr);
+	void OnNetMsgInfo(int ClientId, const char *pVersion, const char *pPasswordOrNullptr);
+	void OnNetMsgReady(int ClientId);
+	void OnNetMsgEnterGame(int ClientId);
+	void OnNetMsgRconCmd(int ClientId, const char *pCmd);
+	void OnNetMsgRconAuth(int ClientId, const char *pName, const char *pPw, bool SendRconCmds);
 
 	class CCache
 	{
@@ -403,11 +402,13 @@ public:
 	};
 	CCache m_aServerInfoCache[3 * 2];
 	CCache m_aSixupServerInfoCache[2];
-	bool m_ServerInfoNeedsUpdate;
+	bool m_ServerInfoNeedsUpdate = false;
+	bool m_ServerInfoNeedsResend = false;
 
 	void FillAntibot(CAntibotRoundData *pData) override;
 
 	void ExpireServerInfo() override;
+	void ExpireServerInfoAndQueueResend();
 	void CacheServerInfo(CCache *pCache, int Type, bool SendClients);
 	void CacheServerInfoSixup(CCache *pCache, bool SendClients, int MaxConsideredClients);
 	void SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool SendClients);
@@ -415,12 +416,11 @@ public:
 	bool RateLimitServerInfoConnless();
 	void SendServerInfoConnless(const NETADDR *pAddr, int Token, int Type);
 	void UpdateRegisterServerInfo();
-	void UpdateServerInfo(bool Resend = false);
+	void UpdateServerInfo(bool Resend);
 
 	void PumpNetwork(bool PacketWaiting);
 
 	void ChangeMap(const char *pMap) override;
-	const char *GetMapName() const override;
 	void ReloadMap() override;
 	int LoadMap(const char *pMapName);
 
@@ -486,6 +486,7 @@ public:
 	void SnapFreeId(int Id) override;
 	void *SnapNewItem(int Type, int Id, int Size) override;
 	void SnapSetStaticsize(int ItemType, int Size) override;
+	void SnapSetStaticsize7(int ItemType, int Size) override;
 
 	// DDRace
 

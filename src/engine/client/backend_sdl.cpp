@@ -6,7 +6,9 @@
 
 #include <base/log.h>
 #include <base/math.h>
-#include <base/tl/threading.h>
+#include <base/sphore.h>
+#include <base/str.h>
+#include <base/thread.h>
 
 #include <engine/shared/config.h>
 #include <engine/shared/localization.h>
@@ -179,16 +181,25 @@ void CGraphicsBackend_Threaded::WaitForIdle()
 
 void CGraphicsBackend_Threaded::ProcessError(const SGfxErrorContainer &Error)
 {
-	std::string VerboseStr = "Graphics Assertion:";
+	m_FatalError = "";
 	for(const auto &ErrStr : Error.m_vErrors)
 	{
-		VerboseStr.append("\n");
+		if(!m_FatalError.empty())
+		{
+			m_FatalError.append("\n");
+		}
 		if(ErrStr.m_RequiresTranslation)
-			VerboseStr.append(m_TranslateFunc(ErrStr.m_Err.c_str(), ""));
+			m_FatalError.append(m_TranslateFunc(ErrStr.m_Err.c_str(), ""));
 		else
-			VerboseStr.append(ErrStr.m_Err);
+			m_FatalError.append(ErrStr.m_Err);
 	}
-	dbg_assert_failed("%s", VerboseStr.c_str());
+	std::string LogMessage = "Graphics Error:\n" + m_FatalError;
+	dbg_assert_failed("%s", LogMessage.c_str());
+}
+
+const char *CGraphicsBackend_Threaded::GetFatalError() const
+{
+	return m_FatalError.c_str();
 }
 
 bool CGraphicsBackend_Threaded::GetWarning(std::vector<std::string> &WarningStrings)
@@ -820,8 +831,8 @@ void CGraphicsBackend_SDL_GL::ClampDriverVersion(EBackendType BackendType)
 	else if(BackendType == BACKEND_TYPE_VULKAN)
 	{
 #if defined(CONF_BACKEND_VULKAN)
-		g_Config.m_GfxGLMajor = gs_BackendVulkanMajor;
-		g_Config.m_GfxGLMinor = gs_BackendVulkanMinor;
+		g_Config.m_GfxGLMajor = BACKEND_VULKAN_VERSION_MAJOR;
+		g_Config.m_GfxGLMinor = BACKEND_VULKAN_VERSION_MINOR;
 		g_Config.m_GfxGLPatch = 0;
 #endif
 	}
@@ -978,8 +989,8 @@ bool CGraphicsBackend_SDL_GL::GetDriverVersion(EGraphicsDriverAgeType DriverAgeT
 #ifdef CONF_BACKEND_VULKAN
 		if(DriverAgeType == GRAPHICS_DRIVER_AGE_TYPE_DEFAULT)
 		{
-			Major = gs_BackendVulkanMajor;
-			Minor = gs_BackendVulkanMinor;
+			Major = BACKEND_VULKAN_VERSION_MAJOR;
+			Minor = BACKEND_VULKAN_VERSION_MINOR;
 			Patch = 0;
 			return true;
 		}
@@ -1123,6 +1134,11 @@ int CGraphicsBackend_SDL_GL::Init(const char *pName, int *pScreen, int *pWidth, 
 	int GlewMajor = 0;
 	int GlewMinor = 0;
 	int GlewPatch = 0;
+	*pScreen = 0;
+	*pWidth = *pDesktopWidth = *pCurrentWidth = 800;
+	*pHeight = *pDesktopHeight = *pCurrentHeight = 600;
+	*pRefreshRate = 60;
+	*pFsaaSamples = 0;
 	log_info("gfx", "Created headless context");
 #else
 	// print sdl version
@@ -1624,7 +1640,7 @@ void CGraphicsBackend_SDL_GL::SetWindowParams(int FullscreenMode, bool IsBorderl
 		else // Windowed fullscreen
 		{
 			SDL_SetWindowFullscreen(m_pWindow, 0);
-			SDL_SetWindowBordered(m_pWindow, SDL_FALSE);
+			SDL_SetWindowBordered(m_pWindow, SDL_TRUE);
 			SDL_SetWindowResizable(m_pWindow, SDL_FALSE);
 			SDL_DisplayMode DpMode;
 			if(SDL_GetDesktopDisplayMode(g_Config.m_GfxScreen, &DpMode) < 0)
@@ -1709,6 +1725,10 @@ int CGraphicsBackend_SDL_GL::WindowOpen()
 
 void CGraphicsBackend_SDL_GL::SetWindowGrab(bool Grab)
 {
+	// Works around https://github.com/libsdl-org/sdl2-compat/issues/578.
+	if(!m_pWindow)
+		return;
+
 	SDL_SetWindowGrab(m_pWindow, Grab ? SDL_TRUE : SDL_FALSE);
 }
 

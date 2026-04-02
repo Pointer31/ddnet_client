@@ -1,9 +1,13 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
 /* Based on Race mod stuff and tweaked by GreYFoX@GTi and others to fit our DDRace needs. */
-#include "DDRace.h"
+#include "ddnet.h"
+
+#include <base/time.h>
 
 #include <engine/server.h>
 #include <engine/shared/config.h>
+#include <engine/shared/protocol.h>
+#include <engine/shared/protocol7.h>
 
 #include <game/mapitems.h>
 #include <game/server/entities/character.h>
@@ -15,21 +19,21 @@
 #define GAME_TYPE_NAME "DDraceᵖ"
 #define TEST_TYPE_NAME "TestDDraceᵖ"
 
-CGameControllerDDRace::CGameControllerDDRace(class CGameContext *pGameServer) :
+CGameControllerDDNet::CGameControllerDDNet(class CGameContext *pGameServer) :
 	IGameController(pGameServer)
 {
 	m_pGameType = g_Config.m_SvTestingCommands ? TEST_TYPE_NAME : GAME_TYPE_NAME;
 	m_GameFlags = protocol7::GAMEFLAG_RACE;
 }
 
-CGameControllerDDRace::~CGameControllerDDRace() = default;
+CGameControllerDDNet::~CGameControllerDDNet() = default;
 
-CScore *CGameControllerDDRace::Score()
+CScore *CGameControllerDDNet::Score()
 {
 	return GameServer()->Score();
 }
 
-void CGameControllerDDRace::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
+void CGameControllerDDNet::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
 {
 	CPlayer *pPlayer = pChr->GetPlayer();
 	const int ClientId = pPlayer->GetCid();
@@ -63,13 +67,13 @@ void CGameControllerDDRace::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
 			pChr->Die(ClientId, WEAPON_WORLD);
 			return;
 		}
-		if(g_Config.m_SvTeam == SV_TEAM_MANDATORY && (Team == TEAM_FLOCK || Teams().Count(Team) <= 1))
+		if(g_Config.m_SvTeam == SV_TEAM_MANDATORY && (Team == TEAM_FLOCK || Teams().TeamSize(Team) <= 1))
 		{
 			GameServer()->SendStartWarning(ClientId, "You have to be in a team with other tees to start");
 			pChr->Die(ClientId, WEAPON_WORLD);
 			return;
 		}
-		if(g_Config.m_SvTeam != SV_TEAM_FORCED_SOLO && Team > TEAM_FLOCK && Team < TEAM_SUPER && Teams().Count(Team) < g_Config.m_SvMinTeamSize && !Teams().TeamFlock(Team))
+		if(g_Config.m_SvTeam != SV_TEAM_FORCED_SOLO && Team != TEAM_FLOCK && Teams().IsValidTeamNumber(Team) && Teams().TeamSize(Team) < g_Config.m_SvMinTeamSize && !Teams().TeamFlock(Team))
 		{
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), "Your team has fewer than %d players, so your team rank won't count", g_Config.m_SvMinTeamSize);
@@ -113,12 +117,70 @@ void CGameControllerDDRace::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
 	}
 }
 
-void CGameControllerDDRace::SetArmorProgress(CCharacter *pCharacter, int Progress)
+void CGameControllerDDNet::SetArmorProgress(CCharacter *pCharacter, int Progress)
 {
 	pCharacter->SetArmor(std::clamp(10 - (Progress / 15), 0, 10));
 }
 
-void CGameControllerDDRace::OnPlayerConnect(CPlayer *pPlayer)
+int CGameControllerDDNet::SnapPlayerScore(int SnappingClient, CPlayer *pPlayer)
+{
+	bool HideScore = g_Config.m_SvHideScore && SnappingClient != pPlayer->GetCid();
+	std::optional<float> Score = GameServer()->Score()->PlayerData(pPlayer->GetCid())->m_BestTime;
+
+	if(Server()->IsSixup(SnappingClient))
+	{
+		if(!Score.has_value() || HideScore)
+			return protocol7::FinishTime::NOT_FINISHED;
+
+		// Times are in milliseconds for 0.7
+		return Score.value() * 1000.0f;
+	}
+
+	// This is the time sent to the player while ingame (do not confuse to the one reported to the master server).
+	// Due to clients expecting this as a negative value, we have to make sure it's negative.
+	// Special numbers:
+	// -9999 or FinishTime::NOT_FINISHED_TIMESCORE: means no time and isn't displayed in the scoreboard.
+	if(!Score.has_value() || HideScore)
+		return FinishTime::NOT_FINISHED_TIMESCORE;
+
+	// Times are in seconds for 0.6
+	int ScoreSeconds = Score.value();
+
+	// shift the time by a second if the player actually took 9999
+	// seconds to finish the map.
+	if(-ScoreSeconds == FinishTime::NOT_FINISHED_TIMESCORE)
+		return -ScoreSeconds - 1;
+	return -ScoreSeconds;
+}
+
+IGameController::CFinishTime CGameControllerDDNet::SnapPlayerTime(int SnappingClient, CPlayer *pPlayer)
+{
+	std::optional<float> BestTime = GameServer()->Score()->PlayerData(pPlayer->GetCid())->m_BestTime;
+	if(BestTime.has_value() && (!g_Config.m_SvHideScore || SnappingClient == pPlayer->GetCid()))
+	{
+		// same as in str_time_float
+		int64_t TimeMilliseconds = time_milliseconds_from_seconds(BestTime.value());
+		int Seconds = static_cast<int>(TimeMilliseconds / 1000);
+		int Millis = static_cast<int>(TimeMilliseconds % 1000);
+		return CFinishTime(Seconds, Millis);
+	}
+	return CFinishTime::NotFinished();
+}
+
+IGameController::CFinishTime CGameControllerDDNet::SnapMapBestTime(int SnappingClient)
+{
+	if(m_CurrentRecord.has_value() && !g_Config.m_SvHideScore)
+	{
+		// same as in str_time_float
+		int64_t TimeMilliseconds = time_milliseconds_from_seconds(m_CurrentRecord.value());
+		int Seconds = static_cast<int>(TimeMilliseconds / 1000);
+		int Millis = static_cast<int>(TimeMilliseconds % 1000);
+		return CFinishTime(Seconds, Millis);
+	}
+	return CFinishTime::NotFinished();
+}
+
+void CGameControllerDDNet::OnPlayerConnect(CPlayer *pPlayer)
 {
 	IGameController::OnPlayerConnect(pPlayer);
 	int ClientId = pPlayer->GetCid();
@@ -150,7 +212,7 @@ void CGameControllerDDRace::OnPlayerConnect(CPlayer *pPlayer)
 	}
 }
 
-void CGameControllerDDRace::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
+void CGameControllerDDNet::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
 {
 	int ClientId = pPlayer->GetCid();
 	bool WasModerator = pPlayer->m_Moderating && Server()->ClientIngame(ClientId);
@@ -168,20 +230,20 @@ void CGameControllerDDRace::OnPlayerDisconnect(CPlayer *pPlayer, const char *pRe
 			Teams().SetClientInvited(Team, ClientId, false);
 }
 
-void CGameControllerDDRace::OnReset()
+void CGameControllerDDNet::OnReset()
 {
 	IGameController::OnReset();
 	Teams().Reset();
 }
 
-void CGameControllerDDRace::Tick()
+void CGameControllerDDNet::Tick()
 {
 	IGameController::Tick();
 	Teams().ProcessSaveTeam();
 	Teams().Tick();
 }
 
-void CGameControllerDDRace::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
+void CGameControllerDDNet::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
 {
 	if(!IsValidTeam(Team))
 		return;

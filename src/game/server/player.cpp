@@ -92,11 +92,11 @@ void CPlayer::Reset()
 	if(g_Config.m_Events)
 	{
 		const ETimeSeason Season = time_season();
-		if(Season == SEASON_NEWYEAR)
+		if(Season == ETimeSeason::NEWYEAR)
 		{
 			m_DefEmote = EMOTE_HAPPY;
 		}
-		else if(Season == SEASON_HALLOWEEN)
+		else if(Season == ETimeSeason::HALLOWEEN)
 		{
 			m_DefEmote = EMOTE_ANGRY;
 			m_Halloween = true;
@@ -124,7 +124,6 @@ void CPlayer::Reset()
 	m_Whispers = true;
 
 	m_LastPause = 0;
-	m_Score.reset();
 
 	// Variable initialized:
 	m_LastSqlQuery = 0;
@@ -185,8 +184,6 @@ void CPlayer::Tick()
 	if(m_ChatScore > 0)
 		m_ChatScore--;
 
-	Server()->SetClientScore(m_ClientId, m_Score);
-
 	if(m_Moderating && m_Afk)
 	{
 		m_Moderating = false;
@@ -227,7 +224,7 @@ void CPlayer::Tick()
 		Server()->ResetNetErrorString(m_ClientId);
 	}
 
-	if(!GameServer()->m_World.m_Paused)
+	if(!GameServer()->m_pController->IsGamePaused())
 	{
 		int EarliestRespawnTick = m_PreviousDieTick + Server()->TickSpeed() * 3;
 		int RespawnTick = maximum(m_DieTick, EarliestRespawnTick) + 2;
@@ -308,7 +305,7 @@ void CPlayer::PostPostTick()
 	if(!Server()->ClientIngame(m_ClientId))
 		return;
 
-	if(!GameServer()->m_World.m_Paused && !m_pCharacter && m_Spawning && m_WeakHookSpawn)
+	if(!GameServer()->m_pController->IsGamePaused() && !m_pCharacter && m_Spawning && m_WeakHookSpawn)
 		TryRespawn();
 }
 
@@ -335,33 +332,9 @@ void CPlayer::Snap(int SnappingClient)
 
 	int SnappingClientVersion = GameServer()->GetClientVersion(SnappingClient);
 	int Latency = SnappingClient == SERVER_DEMO_CLIENT ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aCurLatency[m_ClientId];
-
-	int Score;
-	// This is the time sent to the player while ingame (do not confuse to the one reported to the master server).
-	// Due to clients expecting this as a negative value, we have to make sure it's negative.
-	// Special numbers:
-	// -9999: means no time and isn't displayed in the scoreboard.
+	int Score = GameServer()->m_pController->SnapPlayerScore(SnappingClient, this);
 	if(g_Config.m_SvShowScoreInsteadOfTime)
-	{
 		Score = m_ScorePoints;
-	}
-	else if(m_Score.has_value())
-	{
-		// shift the time by a second if the player actually took 9999
-		// seconds to finish the map.
-		if(m_Score.value() == 9999)
-			Score = -10000;
-		else
-			Score = -m_Score.value();
-	}
-	else
-	{
-		Score = -9999;
-	}
-
-	// send 0 if times of others are not shown
-	if(SnappingClient != m_ClientId && g_Config.m_SvHideScore)
-		Score = -9999;
 
 	if(!Server()->IsSixup(SnappingClient))
 	{
@@ -396,7 +369,7 @@ void CPlayer::Snap(int SnappingClient)
 		if(g_Config.m_SvShowScoreInsteadOfTime)
 			pPlayerInfo->m_Score = m_ScorePoints;
 		else
-			pPlayerInfo->m_Score = m_Score.has_value() ? GameServer()->Score()->PlayerData(m_ClientId)->m_BestTime * 1000 : -1;
+			pPlayerInfo->m_Score = Score;
 		pPlayerInfo->m_Latency = Latency;
 	}
 
@@ -495,6 +468,10 @@ void CPlayer::Snap(int SnappingClient)
 	if(m_Paused == PAUSE_PAUSED)
 		pDDNetPlayer->m_Flags |= EXPLAYERFLAG_PAUSED;
 
+	IGameController::CFinishTime PlayerTime = GameServer()->m_pController->SnapPlayerTime(SnappingClient, this);
+	pDDNetPlayer->m_FinishTimeSeconds = PlayerTime.m_Seconds;
+	pDDNetPlayer->m_FinishTimeMillis = PlayerTime.m_Milliseconds;
+
 	if(Server()->IsSixup(SnappingClient) && m_pCharacter && m_pCharacter->m_DDRaceState == ERaceState::STARTED &&
 		GameServer()->m_apPlayers[SnappingClient]->m_TimerType == TIMERTYPE_SIXUP)
 	{
@@ -553,7 +530,7 @@ void CPlayer::FakeSnap()
 	pPlayerInfo->m_Latency = m_Latency.m_Min;
 	pPlayerInfo->m_Local = 1;
 	pPlayerInfo->m_ClientId = FakeId;
-	pPlayerInfo->m_Score = -9999;
+	pPlayerInfo->m_Score = FinishTime::NOT_FINISHED_TIMESCORE;
 	pPlayerInfo->m_Team = TEAM_SPECTATORS;
 
 	CNetObj_SpectatorInfo *pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(FakeId);
@@ -929,17 +906,11 @@ bool CPlayer::IsPlaying() const
 
 void CPlayer::SpectatePlayerName(const char *pName)
 {
-	if(!pName)
+	auto ClientId = GameServer()->FindClientIdByName(pName);
+	if(!ClientId.has_value())
 		return;
 
-	for(int i = 0; i < MAX_CLIENTS; ++i)
-	{
-		if(i != m_ClientId && Server()->ClientIngame(i) && !str_comp(pName, Server()->ClientName(i)))
-		{
-			SetSpectatorId(i);
-			return;
-		}
-	}
+	SetSpectatorId(ClientId.value());
 }
 
 void CPlayer::SetSpectatorId(int Id)
@@ -1001,7 +972,13 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			if(Result.m_Data.m_Info.m_Time.has_value())
 			{
 				GameServer()->Score()->PlayerData(m_ClientId)->Set(Result.m_Data.m_Info.m_Time.value(), Result.m_Data.m_Info.m_aTimeCp);
-				m_Score = Result.m_Data.m_Info.m_Time;
+				Server()->SetClientScore(m_ClientId, Result.m_Data.m_Info.m_Time.value());
+				// update map best time if player's time is better
+				if(!GameServer()->m_pController->m_CurrentRecord.has_value() ||
+					Result.m_Data.m_Info.m_Time.value() < GameServer()->m_pController->m_CurrentRecord.value())
+				{
+					GameServer()->Score()->LoadBestTime();
+				}
 			}
 			Server()->ExpireServerInfo();
 			int Birthday = Result.m_Data.m_Info.m_Birthday;
@@ -1026,7 +1003,7 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 		case CScorePlayerResult::PLAYER_TIMECP:
 			GameServer()->Score()->PlayerData(m_ClientId)->SetBestTimeCp(Result.m_Data.m_Info.m_aTimeCp);
 			char aBuf[128], aTime[32];
-			str_time_float(Result.m_Data.m_Info.m_Time.value(), TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+			str_time_float(Result.m_Data.m_Info.m_Time.value(), ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 			str_format(aBuf, sizeof(aBuf), "Showing the checkpoint times for '%s' with a race time of %s", Result.m_Data.m_Info.m_aRequestedPlayer, aTime);
 			GameServer()->SendChatTarget(m_ClientId, aBuf);
 			break;

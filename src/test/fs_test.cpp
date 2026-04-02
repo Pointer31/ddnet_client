@@ -1,6 +1,8 @@
 #include "test.h"
 
-#include <base/system.h>
+#include <base/fs.h>
+#include <base/io.h>
+#include <base/str.h>
 
 #include <gtest/gtest.h>
 
@@ -89,6 +91,15 @@ TEST(Filesystem, StoragePath)
 	ASSERT_FALSE(fs_storage_path("TestAppName", aStoragePath, sizeof(aStoragePath)));
 	EXPECT_FALSE(fs_is_relative_path(aStoragePath));
 	EXPECT_TRUE(str_endswith_nocase(aStoragePath, "/TestAppName"));
+}
+
+TEST(Filesystem, ExecutablePath)
+{
+	char aExecutablePath[IO_MAX_PATH_LENGTH];
+	ASSERT_FALSE(fs_executable_path(aExecutablePath, sizeof(aExecutablePath)));
+	EXPECT_TRUE(fs_is_file(aExecutablePath));
+	fs_parent_dir(aExecutablePath);
+	EXPECT_FALSE(fs_is_relative_path(aExecutablePath));
 }
 
 TEST(Filesystem, CreateCloseDelete)

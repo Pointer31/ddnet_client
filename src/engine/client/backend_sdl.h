@@ -46,6 +46,7 @@ class CGraphicsBackend_Threaded : public IGraphicsBackend
 {
 private:
 	TTranslateFunc m_TranslateFunc;
+	std::string m_FatalError;
 	SGfxWarningContainer m_Warning;
 
 public:
@@ -94,6 +95,7 @@ private:
 #endif
 
 public:
+	const char *GetFatalError() const override;
 	bool GetWarning(std::vector<std::string> &WarningStrings) override;
 };
 
@@ -196,7 +198,7 @@ public:
 	void HandleWarning();
 };
 
-static constexpr size_t gs_GpuInfoStringSize = 256;
+static constexpr size_t GPU_INFO_STRING_SIZE = 256;
 
 // graphics backend implemented with SDL and the graphics library @see EBackendType
 class CGraphicsBackend_SDL_GL : public CGraphicsBackend_Threaded
@@ -217,9 +219,9 @@ class CGraphicsBackend_SDL_GL : public CGraphicsBackend_Threaded
 
 	SBackendCapabilities m_Capabilities;
 
-	char m_aVendorString[gs_GpuInfoStringSize] = {};
-	char m_aVersionString[gs_GpuInfoStringSize] = {};
-	char m_aRendererString[gs_GpuInfoStringSize] = {};
+	char m_aVendorString[GPU_INFO_STRING_SIZE] = {};
+	char m_aVersionString[GPU_INFO_STRING_SIZE] = {};
+	char m_aRendererString[GPU_INFO_STRING_SIZE] = {};
 
 	EBackendType m_BackendType = BACKEND_TYPE_AUTO;
 

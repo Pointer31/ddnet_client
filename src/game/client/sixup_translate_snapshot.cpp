@@ -95,18 +95,12 @@ int CGameClient::TranslateSnap(CSnapshot *pSnapDstSix, CSnapshot *pSnapSrcSeven,
 			return -1;
 
 		int GameStateFlagsSix = 0;
-		if(TranslationContext.m_GameStateFlags7 & protocol7::GAMESTATEFLAG_GAMEOVER)
+		if(TranslationContext.m_GameStateFlags7 & protocol7::GAMESTATEFLAG_GAMEOVER || TranslationContext.m_GameStateFlags7 & protocol7::GAMESTATEFLAG_ROUNDOVER)
 			GameStateFlagsSix |= GAMESTATEFLAG_GAMEOVER;
 		if(TranslationContext.m_GameStateFlags7 & protocol7::GAMESTATEFLAG_SUDDENDEATH)
 			GameStateFlagsSix |= GAMESTATEFLAG_SUDDENDEATH;
 		if(TranslationContext.m_GameStateFlags7 & protocol7::GAMESTATEFLAG_PAUSED)
 			GameStateFlagsSix |= GAMESTATEFLAG_PAUSED;
-
-		/*
-			This is a 0.7 only flag that we just ignore for now
-
-			GAMESTATEFLAG_ROUNDOVER
-		*/
 
 		CNetObj_GameInfo Info6 = {};
 		Info6.m_GameFlags = TranslationContext.m_GameFlags;

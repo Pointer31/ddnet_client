@@ -363,6 +363,7 @@ public:
 		const CNetObj_Flag *m_apFlags[CSnapshot::MAX_ITEMS];
 		const CNetObj_Flag *m_apPrevFlags[CSnapshot::MAX_ITEMS];
 		const CNetObj_GameInfo *m_pGameInfoObj;
+		const CNetObj_RespawnTimer *m_pRespawnTimer; // Pointer31
 		const CNetObj_GameData *m_pGameDataObj;
 		const CNetObj_GameData *m_pPrevGameDataObj;
 

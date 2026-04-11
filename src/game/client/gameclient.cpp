@@ -2059,6 +2059,10 @@ void CGameClient::OnNewSnapshot()
 				m_GameOver = CurrentTickGameOver;
 				m_GamePaused = (bool)(m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_PAUSED);
 			}
+			else if(Item.m_Type == NETOBJTYPE_RESPAWNTIMER)
+			{
+				m_Snap.m_pRespawnTimer = (const CNetObj_RespawnTimer *)Item.m_pData;
+			}
 			else if(Item.m_Type == NETOBJTYPE_GAMEINFOEX)
 			{
 				if(FoundGameInfoEx)

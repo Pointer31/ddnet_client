@@ -300,12 +300,12 @@ void CScoreboard::RenderGoals(CUIRect Goals)
 	}
 }
 
+static int LinesUsedSpectators = 1;
 void CScoreboard::RenderSpectators(CUIRect Spectators)
 {
-	static int LinesUsed = 1;
 	int MaxHeight = Spectators.h;
 	if (g_Config.m_ClScoreboardShorten >= 1)
-		Spectators.HSplitTop(LinesUsed*11.0f, &Spectators, nullptr);
+		Spectators.HSplitTop(LinesUsedSpectators*11.0f, &Spectators, nullptr);
 	const CNetObj_GameInfo *pGameInfoObj = GameClient()->m_Snap.m_pGameInfoObj;
 	if(g_Config.m_ClScoreboardStyle == 2 && pGameInfoObj && (pGameInfoObj->m_ScoreLimit || pGameInfoObj->m_TimeLimit || (pGameInfoObj->m_RoundNum && pGameInfoObj->m_RoundCurrent)))
 		Spectators.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f), IGraphics::CORNER_B, 7.5f);
@@ -454,7 +454,7 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 		}
 	}
 
-	LinesUsed = Cursor.m_LineCount + 1;
+	LinesUsedSpectators = Cursor.m_LineCount + 1;
 }
 
 void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart, int CountEnd, CScoreboardRenderState &State)
@@ -1041,6 +1041,22 @@ void CScoreboard::OnRender()
 		RenderGoals(Goals);
 	}
 	RenderSpectators(Spectators);
+
+	const CNetObj_RespawnTimer *pRespawnTimer = GameClient()->m_Snap.m_pRespawnTimer;
+	if(pRespawnTimer)
+	{
+		CUIRect RespawnTimer = {(Screen.w - ScoreboardSmallWidth) / 2.0f, Spectators.y + LinesUsedSpectators*11.0f + 5.0f, ScoreboardSmallWidth, 20.0f};
+		
+		char aBuf[128];
+		float TimeLeft = (float)pRespawnTimer->m_TicksLeft / (float)Client()->GameTickSpeed();
+		if (TimeLeft > 0)
+			str_format(aBuf, sizeof(aBuf), "Respawn in %.1fs", TimeLeft);
+		else if (TimeLeft == 0)
+			str_copy(aBuf, "You can respawn");
+		else
+			str_copy(aBuf, "You cannot respawn right now");
+		Ui()->DoLabel(&RespawnTimer, aBuf, 12.0f, TEXTALIGN_MC);
+	}
 
 	RenderRecordingNotification((Screen.w / 7) * 4 + 10);
 

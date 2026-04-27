@@ -28,6 +28,7 @@
 #include <game/client/ui_listbox.h>
 #include <game/client/ui_scrollregion.h>
 #include <game/localization.h>
+#include <game/version.h>
 
 #include <array>
 #include <chrono>
@@ -247,16 +248,14 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 {
 	char aBuf[128 + IO_MAX_PATH_LENGTH];
 	CUIRect Label, Button, Left, Right, Game, ClientSettings, Menu, Button2;
-	MainView.HSplitTop(150.0f, &Game, &ClientSettings);
-	Game.VSplitMid(&Game, &Menu, 20.0f);
+	MainView.VSplitMid(&Left, &Menu, 20.0f);
 
 	constexpr float VerticalSpacing(2.0f);
 	// Miscellaneous
 	{
 		// headline
-		Game.HSplitTop(30.0f, &Label, &Game);
+		Left.HSplitTop(30.0f, &Label, &Left);
 		Ui()->DoLabel(&Label, Localize("User Interface"), 20.0f, TEXTALIGN_ML);
-		Left = Game;
 
 		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
@@ -396,6 +395,15 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 	{
 		// headline
 		Menu.HSplitTop(30.0f, &Label, &Menu);
+		Label.VSplitRight(60.0f, &Label, &Button);
+		Button.HSplitTop(5.0f, nullptr, &Button);
+		Button.HSplitBottom(5.0f, &Button, nullptr);
+		static CButtonContainer s_TaterButton;
+		if(DoButton_Menu(&s_TaterButton, Localize("Link"), 0, &Button))
+		{
+			const char *pLink = "https://tclient.app/";
+			Client()->ViewLink(pLink);
+		}
 		Ui()->DoLabel(&Label, Localize("From T-Client"), 20.0f, TEXTALIGN_ML);
 
 		Menu.HSplitTop(VerticalSpacing, nullptr, &Menu);
@@ -425,6 +433,15 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 	{
 		// headline
 		Menu.HSplitTop(30.0f, &Label, &Menu);
+		Label.VSplitRight(60.0f, &Label, &Button);
+		Button.HSplitTop(5.0f, nullptr, &Button);
+		Button.HSplitBottom(5.0f, &Button, nullptr);
+		static CButtonContainer s_KaizoButton;
+		if(DoButton_Menu(&s_KaizoButton, Localize("Link"), 0, &Button))
+		{
+			const char *pLink = "https://github.com/M0REKZ/kaizo-client";
+			Client()->ViewLink(pLink);
+		}
 		Ui()->DoLabel(&Label, Localize("From Kaizo Client"), 20.0f, TEXTALIGN_ML);
 
 		Menu.HSplitTop(VerticalSpacing, nullptr, &Menu);
@@ -436,6 +453,20 @@ void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 		Menu.HSplitTop(20.0f, &Button, &Menu);
 		if(DoButton_CheckBox(&g_Config.m_ClShowClientType, Localize("Show Client Types"), g_Config.m_ClShowClientType, &Button))
 			g_Config.m_ClShowClientType ^= 1;
+	}
+
+	// bottom right duck/infclass link
+	{
+		Menu.HSplitBottom(20.0f, &Menu, &Label);
+		Label.VSplitRight(60.0f, &Label, &Button);
+		Label.VSplitRight(10.0f, &Label, nullptr);
+		static CButtonContainer s_DuckInfclassButton;
+		if(DoButton_Menu(&s_DuckInfclassButton, Localize("Link"), 0, &Button))
+		{
+			const char *pLink = "https://pointer31.github.io/duckclient";
+			Client()->ViewLink(pLink);
+		}
+		Ui()->DoLabel(&Label, "Duck/Infclass Client " DUCKCLIENT_VERSIONSTR, 16.0f, TEXTALIGN_MR);
 	}
 }
 

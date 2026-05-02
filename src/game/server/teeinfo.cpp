@@ -32,7 +32,10 @@ static constexpr CStandardSkin STANDARD_SKINS[] = {
 	{"nanami", {"raccoon", "mice", "", "standard", "standard", "standard"}, {true, false, false, true, true, false}, {2686817, (int)4282737407, 0, 2686817, 3827951, 0}},
 	{"mermydon", {"kitty", "sidemarks", "", "standard", "standard", "standard"}, {true, false, false, true, true, false}, {1769313, (int)4282737407, 0, 1769313, 3827951, 0}},
 	{"greensward", {"greensward", "duodonny", "", "standard", "standard", "standard"}, {true, true, false, false, false, false}, {5635840, -11141356, 65408, 65408, 65408, 65408}},
-	{"monkey", {"monkey", "monkey", "hair", "standard", "standard", "standard"}, {true, true, false, false, false, false}, {1421252, (int)4279665714, 2352795, 1659536, 1274287, 65408}},
+	{"monkey", {"monkey", "monkey", "hair", "standard", "standard", "standard"}, {true, true, false, true, true, false}, {1421252, (int)4279665714, 2352795, 1659536, 1274287, 65408}},
+	{"pandabear", {"bear", "panda1", "hair", "standard", "standard", "standard"}, {true, true, false, true, true, true}, {9834574, (int)4288555753, 65408, 1769630, 1835070, 65535}},
+	{"tiger", {"kitty", "tiger1", "", "standard", "standard", "colorable"}, {true, true, true, true, true, true}, {1495659, (int)3692298203, 65408, 1487971, 1495666, 1900288}},
+	{"duobopp", {"standard", "twintri", "unibop", "standard", "standard", "standard"}, {true, true, true, true, true, false}, {9870460, (int)4287749859, 9870460, (int)4287749859, (int)4287749859, 65535}},
 	/* coala, but it was moved to the end to ensure coala_ skins look better*/
 	{"coala", {"koala", "twinbelly", "", "standard", "standard", "standard"}, {true, true, false, true, true, false}, {184, -15397662, 0, 184, 9765959, 0}},
 };
@@ -154,7 +157,11 @@ void CTeeInfo::ToSixup()
 			}
 		}
 
-		if (str_find_nocase(m_aSkinName, "kitty") || str_find_nocase(m_aSkinName, "nanami"))
+		if (str_find_nocase(m_aSkinName, "mouse") || str_find_nocase(m_aSkinName, "hammie"))
+		{
+			str_copy(m_aaSkinPartNames[0], "mouse");
+		}
+		else if (str_find_nocase(m_aSkinName, "kitty") || str_find_nocase(m_aSkinName, "nanami") || str_find_nocase(m_aSkinName, "wolf") || str_find_nocase(m_aSkinName, "whis"))
 		{
 			str_copy(m_aaSkinPartNames[0], "kitty");
 		}
@@ -165,10 +172,6 @@ void CTeeInfo::ToSixup()
 		else if (str_find_nocase(m_aSkinName, "fox"))
 		{
 			str_copy(m_aaSkinPartNames[0], "fox");
-		}
-		else if (str_find_nocase(m_aSkinName, "mouse") || str_find_nocase(m_aSkinName, "hammie"))
-		{
-			str_copy(m_aaSkinPartNames[0], "mouse");
 		}
 		else if (str_find_nocase(m_aSkinName, "bear"))
 		{

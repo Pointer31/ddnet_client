@@ -758,10 +758,12 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		if(DoButton_MenuTab(&s_ServerInfoButton, Localize("Server info"), ActivePage == PAGE_SERVER_INFO, &Button, IGraphics::CORNER_NONE))
 			NewPage = PAGE_SERVER_INFO;
 
-		Box.VSplitLeft(90.0f, &Button, &Box);
-		static CButtonContainer s_NetworkButton;
-		if(DoButton_MenuTab(&s_NetworkButton, Localize("Browser"), ActivePage == PAGE_NETWORK, &Button, IGraphics::CORNER_NONE))
-			NewPage = PAGE_NETWORK;
+		if (g_Config.m_ClBrowserButtonPosition == 0) {
+			Box.VSplitLeft(90.0f, &Button, &Box);
+			static CButtonContainer s_NetworkButton;
+			if(DoButton_MenuTab(&s_NetworkButton, Localize("Browser"), ActivePage == PAGE_NETWORK, &Button, IGraphics::CORNER_NONE))
+				NewPage = PAGE_NETWORK;
+		}
 
 		if(GameClient()->m_GameInfo.m_Race)
 		{
@@ -793,6 +795,24 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 				NewPage = PAGE_DEMOS;
 			}
 			GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
+			Box.VSplitRight(10.0f, &Box, nullptr);
+
+			TextRender()->SetRenderFlags(0);
+			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+		}
+
+		if (g_Config.m_ClBrowserButtonPosition == 1)
+		{
+			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+			TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
+
+			Box.VSplitRight(33.0f, &Box, &Button);
+			static CButtonContainer s_BrowseroButton;
+			if(DoButton_MenuTab(&s_BrowseroButton, FONT_ICON_EARTH_AMERICAS, ActivePage == PAGE_NETWORK, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_BROWSER]))
+			{
+				NewPage = PAGE_NETWORK;
+			}
+			GameClient()->m_Tooltips.DoToolTip(&s_BrowseroButton, &Button, Localize("Browser"));
 			Box.VSplitRight(10.0f, &Box, nullptr);
 
 			TextRender()->SetRenderFlags(0);

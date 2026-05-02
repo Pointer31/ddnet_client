@@ -766,6 +766,7 @@ MACRO_CONFIG_INT(ClUpsidedownTees, cl_upsidedown_tees, 0, 0, 1, CFGFLAG_CLIENT |
 MACRO_CONFIG_INT(ClMapChangeMessage, cl_map_change_message, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show map change echo message")
 MACRO_CONFIG_STR(ClGametypeFilterList, cl_gametype_filter_list, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Gametype buttons filter list")
 MACRO_CONFIG_STR(ClSendLanguage, cl_send_language, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Language code to send to servers telling them to use this language")
+MACRO_CONFIG_INT(ClBrowserButtonPosition, cl_browser_button_position, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Where to place the browser button in the in-game UI")
 
 // Client identify (from Kaizo Network)
 MACRO_CONFIG_INT(ClSendClientType, cl_send_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let know other clients that we are DuckClient")

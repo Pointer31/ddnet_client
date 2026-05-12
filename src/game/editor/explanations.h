@@ -11,7 +11,8 @@ public:
 		FNG,
 		RACE,
 		VANILLA,
-		BLOCKWORLDS
+		BLOCKWORLDS,
+		PTWPLUS, // pointer31's TWplus
 	};
 	static const char *Explain(EGametype Gametype, int Tile, int Layer);
 	static const char *Explain(const char *pZoneType, int Tile);
@@ -20,6 +21,7 @@ private:
 	static const char *ExplainDDNet(int Tile, int Layer);
 	static const char *ExplainFNG(int Tile, int Layer);
 	static const char *ExplainVanilla(int Tile, int Layer);
+	static const char *ExplainPTWplus(int Tile, int Layer);
 };
 
 #endif

@@ -1432,6 +1432,7 @@ set(EXPECTED_DATA
   editor/entities/Race.png
   editor/entities/Vanilla.png
   editor/entities/blockworlds.png
+  editor/entities/twplus.png
   editor/entities/ptum/icBonus.png
   editor/entities/ptum/icDamage.png
   editor/entities/ptum/icTele.png

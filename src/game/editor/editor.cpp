@@ -2902,6 +2902,8 @@ void CEditor::DoMapEditor(CUIRect View)
 					ExplanationGametype = CExplanations::EGametype::VANILLA;
 				else if(m_SelectEntitiesImage == "blockworlds")
 					ExplanationGametype = CExplanations::EGametype::BLOCKWORLDS;
+				else if(m_SelectEntitiesImage == "twplus")
+					ExplanationGametype = CExplanations::EGametype::PTWPLUS;
 				else
 					ExplanationGametype = CExplanations::EGametype::NONE;
 

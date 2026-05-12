@@ -737,6 +737,143 @@ const char *CExplanations::ExplainVanilla(int Tile, int Layer)
 	return nullptr;
 }
 
+const char *CExplanations::ExplainPTWplus(int Tile, int Layer)
+{
+	switch(Tile)
+	{
+	case TILE_PUB_AIR:
+		return "EMPTY: Can be used as an eraser.";
+	case TILE_PUB_HOOKABLE:
+		if(Layer == LAYER_GAME)
+			return "HOOKABLE: It's possible to hook and collide with it.";
+		break;
+	case TILE_PUB_DEATH:
+		if(Layer == LAYER_GAME)
+			return "DEATH: Kills the tee.";
+		break;
+	case TILE_PUB_UNHOOKABLE:
+		if(Layer == LAYER_GAME)
+			return "UNHOOKABLE: It's not possible to hook it, but can collide with it.";
+		break;
+	case 4:
+		if(Layer == LAYER_GAME)
+			return "NO-FLAG: Reset flags passing through here.";
+		break;
+	case TILE_FREEZE:
+		if(Layer == LAYER_GAME)
+			return "FREEZE: Freezes tees for 3 seconds.";
+		break;
+	case TILE_UNFREEZE:
+		if(Layer == LAYER_GAME)
+			return "UNFREEZE: Unfreezes tees immediately.";
+		break;
+	case TILE_DFREEZE:
+		if(Layer == LAYER_GAME)
+			return "DEEP FREEZE: Permanent freeze.";
+		break;
+	case TILE_DUNFREEZE:
+		if(Layer == LAYER_GAME)
+			return "HEAL ZONE: quickly heals tees inside over time.";
+		break;
+
+	case TILE_START:
+		if(Layer == LAYER_GAME)
+			return "START: Starts counting your race time.";
+		break;
+	case TILE_FINISH:
+		if(Layer == LAYER_GAME)
+			return "FINISH: End of race.";
+		break;
+	case 35:
+		if(Layer == LAYER_GAME)
+			return "TELEPORT 1: may teleport to tele 2.";
+		break;
+	case 36:
+		if(Layer == LAYER_GAME)
+			return "TELEPORT 2: may teleport to tele 1.";
+		break;
+	case 37:
+		if(Layer == LAYER_GAME)
+			return "TELEPORT 3: may teleport to tele 4.";
+		break;
+	case 38:
+		if(Layer == LAYER_GAME)
+			return "TELEPORT 4: may teleport to tele 3.";
+		break;
+
+	case 65:
+		if(Layer == LAYER_GAME)
+			return "BOOST TILE";
+		break;
+	case 88:
+		if(Layer == LAYER_GAME)
+			return "SLOW DEATH ZONE: quickly deals damage over time.";
+		break;
+	case 145:
+		if(Layer == LAYER_GAME)
+			return "ARMOR ZONE: quickly gives armor to tees inside.";
+		break;
+
+	case TILE_VANILLA_SPAWN:
+		if(Layer == LAYER_GAME)
+			return "SPAWN: Here tees will appear after joining the game or dying.";
+		break;
+	case TILE_VANILLA_SPAWN_RED:
+		if(Layer == LAYER_GAME)
+			return "SPAWN: Red team members spawn here.";
+		break;
+	case TILE_VANILLA_SPAWN_BLUE:
+		if(Layer == LAYER_GAME)
+			return "SPAWN: Blue team members spawn here.";
+		break;
+	case TILE_VANILLA_FLAG_RED:
+		if(Layer == LAYER_GAME)
+			return "FLAG: Place where red team flag is.";
+		break;
+	case TILE_VANILLA_FLAG_BLUE:
+		if(Layer == LAYER_GAME)
+			return "FLAG: Place where blue team flag is.";
+		break;
+	case TILE_VANILLA_SHIELD:
+		if(Layer == LAYER_GAME)
+			return "SHIELD: Gives player +1 shield.";
+		break;
+	case TILE_VANILLA_HEART:
+		if(Layer == LAYER_GAME)
+			return "HEART: Gives player +1 health";
+		break;
+	case TILE_VANILLA_SHOTGUN:
+		if(Layer == LAYER_GAME)
+			return "SHOTGUN: Gives you shotgun weapon with 10 charges.";
+		break;
+	case TILE_VANILLA_GRENADE:
+		if(Layer == LAYER_GAME)
+			return "GRENADE: Gives you grenade weapon with 10 charges.";
+		break;
+	case TILE_VANILLA_NINJA:
+		if(Layer == LAYER_GAME)
+			return "NINJA: Gives you ninja for a period of time.";
+		break;
+	case TILE_VANILLA_LASER:
+		if(Layer == LAYER_GAME)
+			return "LASER: Gives you laser weapon with 10 charges.";
+		break;
+	case 213:
+		if(Layer == LAYER_GAME)
+			return "SHIELD5: Gives player +5 shields.";
+		break;
+	case 214:
+		if(Layer == LAYER_GAME)
+			return "HEART5: Gives player +5 health";
+		break;
+	}
+	if((Tile >= TILE_PUB_CREDITS1 && Tile <= TILE_PUB_CREDITS8) && Layer == LAYER_GAME)
+		return "CREDITS: Who designed the entities.";
+	else if((Tile == TILE_PUB_ENTITIES_OFF1 || Tile == TILE_PUB_ENTITIES_OFF2) && Layer == LAYER_GAME)
+		return "ENTITIES OFF SIGN: Informs people playing with entities about important marks, tips, information or text on the map.";
+	return nullptr;
+}
+
 const char *CExplanations::Explain(EGametype Gametype, int Tile, int Layer)
 {
 	switch(Gametype)
@@ -753,6 +890,8 @@ const char *CExplanations::Explain(EGametype Gametype, int Tile, int Layer)
 		return ExplainVanilla(Tile, Layer);
 	case EGametype::BLOCKWORLDS:
 		return nullptr; // TODO: Explanations for Blockworlds
+	case EGametype::PTWPLUS:
+		return ExplainPTWplus(Tile, Layer);
 	}
 	dbg_assert_failed("Gametype invalid: %d", (int)Gametype);
 }

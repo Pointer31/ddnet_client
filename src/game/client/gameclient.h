@@ -71,6 +71,7 @@
 #include "components/tooltips.h"
 #include "components/touch_controls.h"
 #include "components/voting.h"
+#include "components/resources.h"
 
 #include <vector>
 
@@ -179,6 +180,7 @@ public:
 	CNamePlates m_NamePlates;
 	CFreezeBars m_FreezeBars;
 	CItems m_Items;
+	CResources m_Resources;
 	CMapImages m_MapImages;
 
 	CMapLayers m_MapLayersBackground = CMapLayers{ERenderType::RENDERTYPE_BACKGROUND};

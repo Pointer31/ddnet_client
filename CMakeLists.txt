@@ -1596,6 +1596,10 @@ set(EXPECTED_DATA
   menuimages/settings.png
   particles.png
   race_flag.png
+  resources/star.png
+  resources/star2.png
+  resources/star3.png
+  resources/unknown.png
   shader/pipeline.frag
   shader/pipeline.vert
   shader/prim.frag
@@ -2491,6 +2495,8 @@ if(CLIENT)
     components/touch_controls.h
     components/voting.cpp
     components/voting.h
+    components/resources.cpp
+    components/resources.h
     gameclient.cpp
     gameclient.h
     laser_data.cpp

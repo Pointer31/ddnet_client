@@ -255,6 +255,12 @@ Objects = [
 		NetIntAny("m_TicksLeft"),
 	]),
 
+	NetObjectEx("PickupCustom", "pickup-custom@pointerstwplus", [
+		NetIntAny("m_X"),
+		NetIntAny("m_Y"),
+		NetIntAny("m_ResourceId"),
+	]),
+
 	NetObjectEx("InfClassObject", "object@infclass", [
 		NetIntAny("m_Flags", default=0),
 		NetIntRange("m_Owner", -1, 'MAX_CLIENTS-1', default=-1),
@@ -599,6 +605,16 @@ Messages = [
 
 	NetMessageEx("Cl_Language", "language@ddnet-community.github.io", [
 		NetStringStrict("m_pLanguage"),
+	]),
+
+	NetMessageEx("Sv_ImageResource", "image-resource@pointerstwplus", [
+		NetIntAny("m_Id"),
+		NetString("m_pName"),
+		NetString("m_pUnused"),
+	]),
+
+	NetMessageEx("Cl_IHaveResource", "i-have-resource@pointerstwplus", [
+		NetIntAny("m_Id"),
 	]),
     
 	NetMessageEx("Inf_KillMsg", "kill-ex1@infclass", [

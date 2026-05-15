@@ -40,6 +40,7 @@
 #include "components/spectator.h"
 #include "components/statboard.h"
 #include "components/voting.h"
+#include "components/resources.h"
 #include "lineinput.h"
 #include "prediction/entities/character.h"
 #include "prediction/entities/projectile.h"
@@ -145,6 +146,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Particles.m_RenderTrail,
 					      &m_Particles.m_RenderTrailExtra,
 					      &m_Items,
+					      &m_Resources,
 					      &m_Ghost,
 					      &m_Players,
 					      &m_MapLayersForeground,
@@ -1142,6 +1144,12 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 		m_aClients[pMsg->m_ClientId].m_Emoticon = pMsg->m_Emoticon;
 		m_aClients[pMsg->m_ClientId].m_EmoticonStartTick = Client()->GameTick(Conn);
 		m_aClients[pMsg->m_ClientId].m_EmoticonStartFraction = Client()->IntraGameTickSincePrev(Conn);
+	}
+	else if (MsgId == NETMSGTYPE_SV_IMAGERESOURCE)
+	{
+		CNetMsg_Sv_ImageResource *pMsg = (CNetMsg_Sv_ImageResource *)pRawMsg;
+
+		m_Resources.OnResourceMessage(pMsg);
 	}
 	else if(MsgId == NETMSGTYPE_SV_SOUNDGLOBAL)
 	{
@@ -5165,6 +5173,8 @@ void CGameClient::SnapCollectEntities()
 		else if(Item.m_Type == NETOBJTYPE_PICKUP || Item.m_Type == NETOBJTYPE_DDNETPICKUP || Item.m_Type == NETOBJTYPE_LASER || Item.m_Type == NETOBJTYPE_DDNETLASER || Item.m_Type == NETOBJTYPE_PROJECTILE || Item.m_Type == NETOBJTYPE_DDRACEPROJECTILE || Item.m_Type == NETOBJTYPE_DDNETPROJECTILE)
 			vItemData.push_back({Item, nullptr});
 		else if(Item.m_Type == NETOBJTYPE_INFCLASSOBJECT)
+			vItemData.push_back({Item, nullptr});
+		else if(Item.m_Type == NETOBJTYPE_PICKUPCUSTOM)
 			vItemData.push_back({Item, nullptr});
 	}
 

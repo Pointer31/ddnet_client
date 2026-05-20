@@ -547,7 +547,19 @@ bool CEditorMap::Load(const char *pFilename, int StorageType, const FErrorHandle
 			if(pImg->m_External || (pItem->m_Version > 1 && pItem->m_MustBe1 != 1))
 			{
 				char aBuf[IO_MAX_PATH_LENGTH];
-				str_format(aBuf, sizeof(aBuf), "mapres/%s.png", pImg->m_aName);
+
+				bool Translated = false;
+				if(g_Config.m_EdSevenMode)
+				{
+					Translated =
+						!str_comp(pName, "grass_doodads") ||
+						!str_comp(pName, "grass_main") ||
+						!str_comp(pName, "winter_main") ||
+						!str_comp(pName, "generic_shadows") ||
+						!str_comp(pName, "generic_unhookable") ||
+						!str_comp(pName, "easter");
+				}
+				str_format(aBuf, sizeof(aBuf), "mapres/%s%s.png", pImg->m_aName, Translated ? "_0.7" : "");
 
 				// load external
 				CImageInfo ImgInfo;

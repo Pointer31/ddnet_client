@@ -769,6 +769,11 @@ MACRO_CONFIG_STR(ClSendLanguage, cl_send_language, 128, "", CFGFLAG_CLIENT | CFG
 MACRO_CONFIG_INT(ClBrowserButtonPosition, cl_browser_button_position, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Where to place the browser button in the in-game UI")
 MACRO_CONFIG_INT(ClMainMenuHideServer, cl_main_menu_hide_server, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to hide the start server button on the main menu")
 
+// editor
+MACRO_CONFIG_INT(EdAlwaysAllowMapCommands, ed_always_allow_map_commands, 0, 0, 1, CFGFLAG_CLIENT, "Allows any map command in maps without showing a warning")
+MACRO_CONFIG_INT(EdAlwaysAllowExternal, ed_always_allow_external, 0, 0, 1, CFGFLAG_CLIENT, "Allows making any image external, even non-vanilla mapres")
+MACRO_CONFIG_INT(EdSevenMode, ed_seven7_mode, 0, 0, 1, CFGFLAG_CLIENT, "Load 0.7 versions of mapres instead of 0.6 mapres")
+
 // Client identify (from Kaizo Network)
 MACRO_CONFIG_INT(ClSendClientType, cl_send_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let know other clients that we are DuckClient")
 MACRO_CONFIG_INT(ClShowClientType, cl_show_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Try to identify and show other players clients as icons")

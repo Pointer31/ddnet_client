@@ -2150,7 +2150,7 @@ void CMapSettingsBackend::OnMapLoad()
 		LocalContext.Reset();
 	}
 
-	if(!m_LoadedMapSettings.m_vSettingsInvalid.empty())
+	if(!m_LoadedMapSettings.m_vSettingsInvalid.empty() && !g_Config.m_EdAlwaysAllowMapCommands)
 		Editor()->m_Dialog = DIALOG_MAPSETTINGS_ERROR;
 }
 

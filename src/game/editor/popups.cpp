@@ -1749,7 +1749,7 @@ CUi::EPopupMenuFunctionResult CEditor::PopupImage(void *pContext, CUIRect View, 
 		View.HSplitTop(5.0f, nullptr, &View);
 		View.HSplitTop(RowHeight, &Slot, &View);
 	}
-	else if(CEditor::IsVanillaImage(pImg->m_aName))
+	else if(CEditor::IsVanillaImage(pImg->m_aName) || g_Config.m_EdAlwaysAllowExternal)
 	{
 		if(pEditor->DoButton_MenuItem(&s_ExternalButton, "Make external", 0, &Slot, BUTTONFLAG_LEFT, "Remove the image from the map file."))
 		{

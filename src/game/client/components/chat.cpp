@@ -1171,6 +1171,28 @@ void CChat::OnRender()
 	float x = 5.0f;
 	float y = 300.0f - 20.0f * FontSize() / 6.0f;
 	float ScaledFontSize = FontSize() * (8.0f / 6.0f);
+
+	if(g_Config.m_ClDifferentChatBackground && (m_Show || (m_Mode != MODE_NONE && g_Config.m_ClShowChat == 1) || g_Config.m_ClShowChat == 2))
+	{	// Pointer31
+		float x = 5.0f;
+		float FontSize = this->FontSize();
+
+		const bool IsScoreBoardOpen = GameClient()->m_Scoreboard.IsActive() && (Graphics()->ScreenAspect() > 1.7f); // only assume scoreboard when screen ratio is widescreen(something around 16:9)
+
+		const int TeeSize = MessageTeeSize();
+		float RealMsgPaddingX = MessagePaddingX();
+		float RealMsgPaddingTee = TeeSize + MESSAGE_TEE_PADDING_RIGHT;
+		const float LineWidth = (IsScoreBoardOpen ? maximum(85.0f, (FontSize * 85.0f / 6.0f)) : g_Config.m_ClChatWidth) - (RealMsgPaddingX * 1.5f) - RealMsgPaddingTee;
+		
+		Graphics()->TextureClear();
+		int yy = 26.0f;
+		int Height = y - yy*2 - 4.0f;
+		int ContainerIndex = Graphics()->CreateRectQuadContainer(x/2, yy, LineWidth + 4.0f, Height, MessageRounding(), IGraphics::CORNER_ALL);
+		Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChatBackgroundColor, true)));
+		Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, x/2, yy);
+		Graphics()->SetColor({1,1,1,1});
+	}
+
 	if(m_Mode != MODE_NONE)
 	{
 		// Draw background for message
@@ -1292,7 +1314,8 @@ void CChat::OnRender()
 		float Blend = Now > Line.m_Time + 14 * time_freq() && !m_PrevShowChat ? 1.0f - (Now - Line.m_Time - 14 * time_freq()) / (2.0f * time_freq()) : 1.0f;
 
 		// Draw backgrounds for messages in one batch
-		if(!g_Config.m_ClChatOld)
+		if(!g_Config.m_ClChatOld &&
+			/*Pointer31*/ !(g_Config.m_ClDifferentChatBackground==1 && (m_Show || (m_Mode != MODE_NONE && g_Config.m_ClShowChat == 1) || g_Config.m_ClShowChat == 2)))
 		{
 			Graphics()->TextureClear();
 			if(Line.m_QuadContainerIndex != -1)

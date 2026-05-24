@@ -768,6 +768,7 @@ MACRO_CONFIG_STR(ClGametypeFilterList, cl_gametype_filter_list, 128, "", CFGFLAG
 MACRO_CONFIG_STR(ClSendLanguage, cl_send_language, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Language code to send to servers telling them to use this language")
 MACRO_CONFIG_INT(ClBrowserButtonPosition, cl_browser_button_position, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Where to place the browser button in the in-game UI")
 MACRO_CONFIG_INT(ClMainMenuHideServer, cl_main_menu_hide_server, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to hide the start server button on the main menu")
+MACRO_CONFIG_INT(ClDifferentChatBackground, cl_different_chat_background, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use a different chat background")
 
 // editor
 MACRO_CONFIG_INT(EdAlwaysAllowMapCommands, ed_always_allow_map_commands, 0, 0, 1, CFGFLAG_CLIENT, "Allows any map command in maps without showing a warning")

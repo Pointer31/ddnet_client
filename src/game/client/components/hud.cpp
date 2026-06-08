@@ -29,6 +29,7 @@
 CHud::CHud()
 {
 	m_FPSTextContainerIndex.Reset();
+	m_DeathCounterTextContainerIndex.Reset(); // Pointer31
 	m_DDRaceEffectsTextContainerIndex.Reset();
 	m_PlayerAngleTextContainerIndex.Reset();
 	m_PlayerPrevAngle = -INFINITY;
@@ -55,6 +56,7 @@ void CHud::ResetHudContainers()
 	}
 
 	TextRender()->DeleteTextContainer(m_FPSTextContainerIndex);
+	TextRender()->DeleteTextContainer(m_DeathCounterTextContainerIndex); // Pointer31
 	TextRender()->DeleteTextContainer(m_DDRaceEffectsTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_PlayerAngleTextContainerIndex);
 	m_PlayerPrevAngle = -INFINITY;
@@ -115,6 +117,8 @@ void CHud::OnInit()
 	PrepareInfclassHudQuads();
 
 	Graphics()->QuadContainerUpload(m_HudQuadContainerIndex);
+
+	m_DeadTeeTexture = Graphics()->LoadTexture("deadtee.png", IStorage::TYPE_ALL); // Pointer31
 }
 
 void CHud::RenderGameTimer()
@@ -668,6 +672,46 @@ void CHud::RenderTextInfo()
 		if(m_FPSTextContainerIndex.Valid())
 		{
 			TextRender()->RenderTextContainer(m_FPSTextContainerIndex, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor());
+		}
+	}
+	if(g_Config.m_ClShowDeathCounter)
+	{   // Pointer31
+		int extraY = Showfps ? 16.0f : 0.0f;
+		Graphics()->BlendNormal();
+		Graphics()->TextureSet(m_DeadTeeTexture);
+		Graphics()->QuadsBegin();
+		IGraphics::CQuadItem QuadItem(m_Width - 22.0f, 2.0f + extraY, 20, 20);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+
+		char aBuf[16];
+		const int SpectatorId = GameClient()->m_Snap.m_SpecInfo.m_Active ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : -1;
+		const int ClientId = SpectatorId >= 0 ? SpectatorId : GameClient()->m_aLocalIds[g_Config.m_ClDummy];
+		const int DeathCount = GameClient()->m_aStats[ClientId].m_Deaths;
+		str_format(aBuf, sizeof(aBuf), "%d", DeathCount);
+
+		static float s_TextWidth0 = TextRender()->TextWidth(12.f, "0", -1, -1.0f);
+		static float s_TextWidth00 = TextRender()->TextWidth(12.f, "00", -1, -1.0f);
+		static float s_TextWidth000 = TextRender()->TextWidth(12.f, "000", -1, -1.0f);
+		static float s_TextWidth0000 = TextRender()->TextWidth(12.f, "0000", -1, -1.0f);
+		static float s_TextWidth00000 = TextRender()->TextWidth(12.f, "00000", -1, -1.0f);
+		static const float s_aTextWidth[5] = {s_TextWidth0, s_TextWidth00, s_TextWidth000, s_TextWidth0000, s_TextWidth00000};
+
+		int DigitIndex = GetDigitsIndex(DeathCount, 4);
+
+		CTextCursor Cursor;
+		Cursor.SetPosition(vec2(m_Width - 24 - s_aTextWidth[DigitIndex], 5 + extraY));
+		Cursor.m_FontSize = 12.0f;
+		auto OldFlags = TextRender()->GetRenderFlags();
+		TextRender()->SetRenderFlags(OldFlags | TEXT_RENDER_FLAG_ONE_TIME_USE);
+		if(m_DeathCounterTextContainerIndex.Valid())
+			TextRender()->RecreateTextContainerSoft(m_DeathCounterTextContainerIndex, &Cursor, aBuf);
+		else
+			TextRender()->CreateTextContainer(m_DeathCounterTextContainerIndex, &Cursor, "0");
+		TextRender()->SetRenderFlags(OldFlags);
+		if(m_DeathCounterTextContainerIndex.Valid())
+		{
+			TextRender()->RenderTextContainer(m_DeathCounterTextContainerIndex, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor());
 		}
 	}
 	if(g_Config.m_ClShowpred && Client()->State() != IClient::STATE_DEMOPLAYBACK)

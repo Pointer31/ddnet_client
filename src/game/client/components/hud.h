@@ -49,6 +49,8 @@ class CHud : public CComponent
 	int m_HudQuadContainerIndex;
 	SScoreInfo m_aScoreInfo[2];
 	STextContainerIndex m_FPSTextContainerIndex;
+	STextContainerIndex m_DeathCounterTextContainerIndex; // Pointer31
+	IGraphics::CTextureHandle m_DeadTeeTexture; // Pointer31
 	STextContainerIndex m_DDRaceEffectsTextContainerIndex;
 	STextContainerIndex m_PlayerAngleTextContainerIndex;
 	float m_PlayerPrevAngle;

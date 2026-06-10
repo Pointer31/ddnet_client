@@ -6,6 +6,7 @@
 #include <game/client/component.h>
 
 #include <generated/protocol.h>
+#include <engine/shared/http.h>
 
 const int MAX_RESOURCE_ARRAY_SIZE = 64;
 const int MAX_RESOURCES = 64;
@@ -14,6 +15,7 @@ class CResources : public CComponent
 {
 public:
 	int Sizeof() const override { return sizeof(*this); }
+	void OnUpdate() override;
 	struct CResource
 	{
 		char m_aName[MAX_RESOURCE_ARRAY_SIZE];
@@ -32,6 +34,16 @@ private:
 	std::vector<CResource> m_aResources;
 	char ResourceMapping[MAX_RESOURCES][MAX_RESOURCE_ARRAY_SIZE];
 	static int FileScan(const char *pName, int IsDir, int DirType, void *pUser);
+
+	struct CResourceTask
+	{
+		char m_aName[MAX_RESOURCE_ARRAY_SIZE];
+		int m_ResourceId;
+		std::shared_ptr<CHttpRequest> m_pTask;
+	};
+	CResourceTask m_pTasks [MAX_RESOURCES];
+	
+	char m_DownloadBaseUrl [256];
 };
 
 #endif

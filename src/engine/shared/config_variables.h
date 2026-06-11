@@ -776,6 +776,11 @@ MACRO_CONFIG_INT(EdAlwaysAllowMapCommands, ed_always_allow_map_commands, 0, 0, 1
 MACRO_CONFIG_INT(EdAlwaysAllowExternal, ed_always_allow_external, 0, 0, 1, CFGFLAG_CLIENT, "Allows making any image external, even non-vanilla mapres")
 MACRO_CONFIG_INT(EdSevenMode, ed_seven7_mode, 0, 0, 1, CFGFLAG_CLIENT, "Load 0.7 versions of mapres instead of 0.6 mapres")
 
+// Custom Resource Protocol
+MACRO_CONFIG_INT(ClResourcesEnable, cl_resources_enable, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to enable the custom resource system/protocol")
+MACRO_CONFIG_INT(ClResourcesDownload, cl_resources_download, 2, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to download custom resources (2=allow server to set the url)")
+MACRO_CONFIG_STR(ClResourcesDownloadUrl, cl_resources_download_url, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "The URL to be used for downloading custom resources if cl_resources_download is enabled")
+
 // Client identify (from Kaizo Network)
 MACRO_CONFIG_INT(ClSendClientType, cl_send_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let know other clients that we are DuckClient")
 MACRO_CONFIG_INT(ClShowClientType, cl_show_client_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Try to identify and show other players clients as icons")

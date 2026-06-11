@@ -68,7 +68,7 @@ void CResources::OnInit()
 		str_copy(ResourceMapping[index], "\0", 64);
 	}
 
-	m_DownloadBaseUrl[0] = '\0';
+	str_copy(m_DownloadBaseUrl, g_Config.m_ClResourcesDownloadUrl, 64);
 
 	m_aResources.clear();
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "resources", FileScan, this);
@@ -97,6 +97,20 @@ void CResources::OnUpdate()
 	}
 }
 
+void CResources::OnStateChange(int NewState, int OldState)
+{
+	// clear mappings and url when disconnected from a server
+	if (NewState == IClient::STATE_OFFLINE)
+	{
+		for (int index = 0; index < MAX_RESOURCES; index++)
+		{
+			str_copy(ResourceMapping[index], "\0", 64);
+		}
+
+		str_copy(m_DownloadBaseUrl, g_Config.m_ClResourcesDownloadUrl, 64);
+	}
+}
+
 const CResources::CResource *CResources::Get(int ResourceId)
 {
 	if (ResourceId < 0 || ResourceId >= MAX_RESOURCES)
@@ -119,6 +133,9 @@ int CResources::Find(const char *pName)
 
 void CResources::OnResourceMessage(CNetMsg_Sv_ImageResource* msg)
 {
+	if (!g_Config.m_ClResourcesEnable)
+		return;
+		
 	char aBuf[IO_MAX_PATH_LENGTH];
 
 	int Id = msg->m_Id;
@@ -145,7 +162,7 @@ void CResources::OnResourceMessage(CNetMsg_Sv_ImageResource* msg)
 		MsgIHaveResource.m_Id = Id;
 		Client()->SendPackMsgActive(&MsgIHaveResource, MSGFLAG_VITAL);
 	}
-	else
+	else if (g_Config.m_ClResourcesDownload >= 1)
 	{
 		char downloadUrl [256];
 		char saveUrl [256];
@@ -174,5 +191,6 @@ void CResources::OnResourceMessage(CNetMsg_Sv_ImageResource* msg)
 
 void CResources::OnResourceDownloadUrlMessage(CNetMsg_Sv_ResourceDownloadBaseUrl* msg)
 {
-	str_copy(m_DownloadBaseUrl, msg->m_pUrl);
+	if (g_Config.m_ClResourcesDownload == 2)
+		str_copy(m_DownloadBaseUrl, msg->m_pUrl);
 }

@@ -607,6 +607,11 @@ Messages = [
 		NetStringStrict("m_pLanguage"),
 	]),
 
+	
+	NetMessageEx("Sv_ResourceDownloadBaseUrl", "resource-download-base-url@pointerstwplus", [
+		NetString("m_pUrl"),
+	]),
+
 	NetMessageEx("Sv_ImageResource", "image-resource@pointerstwplus", [
 		NetIntAny("m_Id"),
 		NetString("m_pName"),

@@ -29,6 +29,7 @@ public:
 	int Find(const char *pName);
 
 	void OnResourceMessage(CNetMsg_Sv_ImageResource* msg);
+	void OnResourceDownloadUrlMessage(CNetMsg_Sv_ResourceDownloadBaseUrl* msg);
 	
 private:
 	std::vector<CResource> m_aResources;

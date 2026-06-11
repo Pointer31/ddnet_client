@@ -68,7 +68,7 @@ void CResources::OnInit()
 		str_copy(ResourceMapping[index], "\0", 64);
 	}
 
-	str_copy(m_DownloadBaseUrl, "https://raw.githubusercontent.com/Pointer31/teeworlds-custom-resources/refs/heads/main/");
+	m_DownloadBaseUrl[0] = '\0';
 
 	m_aResources.clear();
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "resources", FileScan, this);
@@ -170,4 +170,9 @@ void CResources::OnResourceMessage(CNetMsg_Sv_ImageResource* msg)
 
 	str_copy(ResourceMapping[Id], pName, sizeof(ResourceMapping[Id]));
 	return;
+}
+
+void CResources::OnResourceDownloadUrlMessage(CNetMsg_Sv_ResourceDownloadBaseUrl* msg)
+{
+	str_copy(m_DownloadBaseUrl, msg->m_pUrl);
 }

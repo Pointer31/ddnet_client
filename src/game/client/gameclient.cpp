@@ -1151,6 +1151,12 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 
 		m_Resources.OnResourceMessage(pMsg);
 	}
+	else if (MsgId == NETMSGTYPE_SV_RESOURCEDOWNLOADBASEURL)
+	{
+		CNetMsg_Sv_ResourceDownloadBaseUrl *pMsg = (CNetMsg_Sv_ResourceDownloadBaseUrl *)pRawMsg;
+
+		m_Resources.OnResourceDownloadUrlMessage(pMsg);
+	}
 	else if(MsgId == NETMSGTYPE_SV_SOUNDGLOBAL)
 	{
 		if(m_SuppressEvents)

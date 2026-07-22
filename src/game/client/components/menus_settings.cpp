@@ -247,227 +247,305 @@ void CMenus::RenderSettingsGeneral(CUIRect MainView)
 void CMenus::RenderSettingsDuckClient(CUIRect MainView)
 {
 	char aBuf[128 + IO_MAX_PATH_LENGTH];
-	CUIRect Label, Button, Left, Right, Game, ClientSettings, Menu, Button2;
-	MainView.VSplitMid(&Left, &Menu, 20.0f);
 
-	constexpr float VerticalSpacing(2.0f);
-	// Miscellaneous
+	constexpr float VerticalSpacing(4.0f);
+
+	CUIRect TabBar, LeftView, RightView, Button;
+	static int s_CurTab = 0;
+
+	MainView.HSplitTop(20.0f, &TabBar, &MainView);
+	const float TabWidth = TabBar.w / (float)4;
+	static CButtonContainer s_aPageTabs[4] = {};
+	const char *apTabNames[4] = {
+		Localize("User Interface"),
+		Localize("Miscellaneous"),
+		Localize("From Other Clients"),
+		Localize("About"),
+	};
+
+
+	for(int Tab = 0; Tab < 4; ++Tab)
 	{
-		// headline
-		Left.HSplitTop(30.0f, &Label, &Left);
-		Ui()->DoLabel(&Label, Localize("User Interface"), 20.0f, TEXTALIGN_ML);
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		static std::vector<CButtonContainer> m_vButtonContainers = {{}, {}, {}};
-		DoLine_RadioMenu(Button, Localize("Old client console"),
-			m_vButtonContainers,
-			{Localize("Off"), Localize("Bar only"), Localize("Fully")},
-			{0, 1, 2},
-			g_Config.m_ClOldClientConsole);
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClPosistionCommunityFilter, Localize("Shift community filter position"), g_Config.m_ClPosistionCommunityFilter, &Button))
-			g_Config.m_ClPosistionCommunityFilter ^= 1;
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClChatInputBackground, Localize("Chat input background"), g_Config.m_ClChatInputBackground, &Button))
-			g_Config.m_ClChatInputBackground ^= 1;
-
-		Left.HSplitTop(2.0f, nullptr, &Left);
-		static CButtonContainer s_UiColorButtonsResetId;
-		DoLine_ColorPicker(&s_UiColorButtonsResetId, 25.0f, 13.0f, 2.0f, &Left, Localize("Button Color"), &g_Config.m_UiColorButtons, color_cast<ColorRGBA>(ColorHSLA(0xFFFFFFFF, true)), false, nullptr, true);
-
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		static std::vector<CButtonContainer> m_vButtonContainersColorMainMenu = {{}, {}, {}};
-		DoLine_RadioMenu(Button, Localize("UI color on main menu"),
-			m_vButtonContainersColorMainMenu,
-			{Localize("Off"), Localize("On"), Localize("Incl. Alpha")},
-			{0, 1, 2},
-			g_Config.m_UiColorMainMenu);
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		static std::vector<CButtonContainer> m_vButtonContainersScoreboardStyle = {{}, {}, {}, {}};
-		DoLine_RadioMenu(Button, Localize("Scoreboard Style"),
-			m_vButtonContainersScoreboardStyle,
-			{Localize("Default"), Localize("1"), Localize("2"), Localize("3")},
-			{0, 1, 2, 3},
-			g_Config.m_ClScoreboardStyle);
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		static std::vector<CButtonContainer> m_vButtonContainersScoreboardShorten = {{}, {}, {}};
-		DoLine_RadioMenu(Button, Localize("Shorten Scoreboard"),
-			m_vButtonContainersScoreboardShorten,
-			{Localize("Default"), Localize("Some"), Localize("Full")},
-			{0, 1, 2},
-			g_Config.m_ClScoreboardShorten);
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClHideCountryTypeFilters, Localize("Hide Country/Type Filter"), g_Config.m_ClHideCountryTypeFilters, &Button))
-			g_Config.m_ClHideCountryTypeFilters ^= 1;
-
-		Left.HSplitTop(4.0f, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button2, &Left);
-		Left.HSplitTop(2.0f, nullptr, &Left);
-		if (g_Config.m_ClHideCountryTypeFilters || g_Config.m_ClPosistionCommunityFilter == 2)
+		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
+		const int Corners = Tab == 0 ? IGraphics::CORNER_L : (Tab == 4 - 1 ? IGraphics::CORNER_R : IGraphics::CORNER_NONE);
+		if(DoButton_MenuTab(&s_aPageTabs[Tab], apTabNames[Tab], s_CurTab == Tab, &Button, Corners, nullptr, nullptr, nullptr, nullptr, 4.0f))
 		{
+			s_CurTab = Tab;
+		}
+	}
+
+	MainView.HSplitTop(10.0f, nullptr, &MainView);
+
+	if(s_CurTab == 0) {
+		CUIRect Label, Button, Left, Right, Game, ClientSettings, Button2;
+		MainView.VSplitMid(&Left, &Right, 20.0f);
+		{
+			// headline
+			Left.HSplitTop(30.0f, &Label, &Left);
+			Ui()->DoLabel(&Label, Localize("User Interface"), 20.0f, TEXTALIGN_ML);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			static std::vector<CButtonContainer> m_vButtonContainers = {{}, {}, {}};
+			DoLine_RadioMenu(Button, Localize("Old client console"),
+				m_vButtonContainers,
+				{Localize("Off"), Localize("Bar only"), Localize("Fully")},
+				{0, 1, 2},
+				g_Config.m_ClOldClientConsole);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClChatInputBackground, Localize("Chat input background"), g_Config.m_ClChatInputBackground, &Button))
+				g_Config.m_ClChatInputBackground ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClDifferentChatBackground, Localize("Different Chat Background"), g_Config.m_ClDifferentChatBackground, &Button))
+				g_Config.m_ClDifferentChatBackground ^= 1;
+
+			Left.HSplitTop(2.0f, nullptr, &Left);
+			static CButtonContainer s_UiColorButtonsResetId;
+			DoLine_ColorPicker(&s_UiColorButtonsResetId, 25.0f, 13.0f, 2.0f, &Left, Localize("Button Color"), &g_Config.m_UiColorButtons, color_cast<ColorRGBA>(ColorHSLA(0xFFFFFFFF, true)), false, nullptr, true);
+
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			static std::vector<CButtonContainer> m_vButtonContainersColorMainMenu = {{}, {}, {}};
+			DoLine_RadioMenu(Button, Localize("UI color on main menu"),
+				m_vButtonContainersColorMainMenu,
+				{Localize("Off"), Localize("On"), Localize("Incl. Alpha")},
+				{0, 1, 2},
+				g_Config.m_UiColorMainMenu);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			static std::vector<CButtonContainer> m_vButtonContainersScoreboardStyle = {{}, {}, {}, {}};
+			DoLine_RadioMenu(Button, Localize("Scoreboard Style"),
+				m_vButtonContainersScoreboardStyle,
+				{Localize("Default"), Localize("1"), Localize("2"), Localize("3")},
+				{0, 1, 2, 3},
+				g_Config.m_ClScoreboardStyle);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			static std::vector<CButtonContainer> m_vButtonContainersScoreboardShorten = {{}, {}, {}};
+			DoLine_RadioMenu(Button, Localize("Shorten Scoreboard"),
+				m_vButtonContainersScoreboardShorten,
+				{Localize("Default"), Localize("Some"), Localize("Full")},
+				{0, 1, 2},
+				g_Config.m_ClScoreboardShorten);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClShowDeathCounter, Localize("Show death count of current game round in top right"), g_Config.m_ClShowDeathCounter, &Button))
+				g_Config.m_ClShowDeathCounter ^= 1;
+
+			Left.HSplitTop(4.0f, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button2, &Left);
+			Left.HSplitTop(2.0f, nullptr, &Left);
 			Button2.VSplitMid(&Label, &Button);
-			Ui()->DoLabel(&Label, Localize("Gametype Filters"), 14.0f, TEXTALIGN_ML);
-			static CLineInput s_GameTypeFilters(g_Config.m_ClGametypeFilterList, sizeof(g_Config.m_ClGametypeFilterList));
-			s_GameTypeFilters.SetEmptyText(Localize("dm ctf ..."));
-			Ui()->DoEditBox(&s_GameTypeFilters, &Button, 14.0f);
+			Ui()->DoLabel(&Label, Localize("Language code to send"), 14.0f, TEXTALIGN_ML);
+			static CLineInput s_LanguageSend(g_Config.m_ClSendLanguage, sizeof(g_Config.m_ClSendLanguage));
+			s_LanguageSend.SetEmptyText(Localize("Language code"));
+			Ui()->DoEditBox(&s_LanguageSend, &Button, 14.0f);
 		}
-
-		Left.HSplitTop(4.0f, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button2, &Left);
-		Left.HSplitTop(2.0f, nullptr, &Left);
-		Button2.VSplitMid(&Label, &Button);
-		Ui()->DoLabel(&Label, Localize("Language code to send"), 14.0f, TEXTALIGN_ML);
-		static CLineInput s_LanguageSend(g_Config.m_ClSendLanguage, sizeof(g_Config.m_ClSendLanguage));
-		s_LanguageSend.SetEmptyText(Localize("Language code"));
-		Ui()->DoEditBox(&s_LanguageSend, &Button, 14.0f);
-
-		// miscellaneous
-		Left.HSplitTop(25.0f, &Label, &Left);
-		Left.HSplitTop(30.0f, &Label, &Left);
-		Ui()->DoLabel(&Label, Localize("Miscellaneous"), 20.0f, TEXTALIGN_ML);
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClOldDoorLaser, Localize("Old door laser"), g_Config.m_ClOldDoorLaser, &Button))
-			g_Config.m_ClOldDoorLaser ^= 1;
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClOldFreezeLaser, Localize("Old freeze laser"), g_Config.m_ClOldFreezeLaser, &Button))
-			g_Config.m_ClOldFreezeLaser ^= 1;
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClExtraParticles, Localize("Extra particles"), g_Config.m_ClExtraParticles, &Button))
-			g_Config.m_ClExtraParticles ^= 1;
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClBloodParticles, Localize("Extra blood particles"), g_Config.m_ClBloodParticles, &Button))
-			g_Config.m_ClBloodParticles ^= 1;
-
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if (g_Config.m_ClConfirmKillTime != -1)
-			str_copy(aBuf, Localize("s", "Seconds"), sizeof(aBuf));
-		else
 		{
-			str_copy(aBuf, " = ", sizeof(aBuf));
-			str_append(aBuf, Localize("Off"));
-		}
-		Ui()->DoScrollbarOption(&g_Config.m_ClConfirmKillTime, &g_Config.m_ClConfirmKillTime, &Button, Localize("Confirm kill time"), -1, 60, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, aBuf);
+			Right.HSplitTop(30.0f, &Label, &Right);
+			Ui()->DoLabel(&Label, Localize("Browser"), 20.0f, TEXTALIGN_ML);
 
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClDuckFilter, Localize("Duck Filter"), g_Config.m_ClDuckFilter, &Button))
-			g_Config.m_ClDuckFilter ^= 1;
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_ClPosistionCommunityFilter, Localize("Shift community filter position"), g_Config.m_ClPosistionCommunityFilter, &Button))
+				g_Config.m_ClPosistionCommunityFilter ^= 1;
 
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClUpsidedownTees, Localize("Upside down tees"), g_Config.m_ClUpsidedownTees, &Button))
-			g_Config.m_ClUpsidedownTees ^= 1;
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_ClHideCountryTypeFilters, Localize("Hide Country/Type Filter"), g_Config.m_ClHideCountryTypeFilters, &Button))
+				g_Config.m_ClHideCountryTypeFilters ^= 1;
 
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		if(DoButton_CheckBox(&g_Config.m_ClMapChangeMessage, Localize("Map Change Message"), g_Config.m_ClMapChangeMessage, &Button))
-			g_Config.m_ClMapChangeMessage ^= 1;
+			Right.HSplitTop(4.0f, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button2, &Right);
+			Right.HSplitTop(2.0f, nullptr, &Right);
+			if (g_Config.m_ClHideCountryTypeFilters || g_Config.m_ClPosistionCommunityFilter == 2)
+			{
+				Button2.VSplitMid(&Label, &Button);
+				Ui()->DoLabel(&Label, Localize("Gametype Filters"), 14.0f, TEXTALIGN_ML);
+				static CLineInput s_GameTypeFilters(g_Config.m_ClGametypeFilterList, sizeof(g_Config.m_ClGametypeFilterList));
+				s_GameTypeFilters.SetEmptyText(Localize("dm ctf ..."));
+				Ui()->DoEditBox(&s_GameTypeFilters, &Button, 14.0f);
+			}
 
-		Left.HSplitTop(VerticalSpacing, nullptr, &Left);
-		Left.HSplitTop(20.0f, &Button, &Left);
-		Ui()->DoScrollbarOption(&g_Config.m_ClWeatherSnow, &g_Config.m_ClWeatherSnow, &Button, Localize("Snow Weather (won't be saved)"), 0, 15, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "");
-
-	}
-
-	// From T-Client
-	{
-		// headline
-		Menu.HSplitTop(30.0f, &Label, &Menu);
-		Label.VSplitRight(60.0f, &Label, &Button);
-		Button.HSplitTop(5.0f, nullptr, &Button);
-		Button.HSplitBottom(5.0f, &Button, nullptr);
-		static CButtonContainer s_TaterButton;
-		if(DoButton_Menu(&s_TaterButton, Localize("Link"), 0, &Button))
-		{
-			const char *pLink = "https://tclient.app/";
-			Client()->ViewLink(pLink);
-		}
-		Ui()->DoLabel(&Label, Localize("From T-Client"), 20.0f, TEXTALIGN_ML);
-
-		Menu.HSplitTop(VerticalSpacing, nullptr, &Menu);
-		Menu.HSplitTop(20.0f, &Button, &Menu);
-		if(DoButton_CheckBox(&g_Config.m_ClHammerRotatesWithCursor, Localize("Spinny hammer"), g_Config.m_ClHammerRotatesWithCursor, &Button))
-			g_Config.m_ClHammerRotatesWithCursor ^= 1;
-
-		Menu.HSplitTop(5.0f, nullptr, &Menu);
-		Menu.HSplitTop(20.0f, &Label, &Menu);
-		Menu.HSplitTop(2.0f, nullptr, &Menu);
-		Ui()->DoLabel(&Label, Localize("Custom Communities Url"), 14.0f, TEXTALIGN_ML);
-		Menu.HSplitTop(20.0f, &Button, &Menu);
-		static CLineInput s_CommunityUrl(g_Config.m_TcCustomCommunitiesUrl, sizeof(g_Config.m_TcCustomCommunitiesUrl));
-		s_CommunityUrl.SetEmptyText(Localize("Community Url"));
-		Ui()->DoEditBox(&s_CommunityUrl, &Button, 14.0f);
-		static CButtonContainer s_ButtonTimeout;
-		Menu.HSplitTop(8.0f, nullptr, &Menu);
-		Menu.HSplitTop(20.0f, &Button, &Menu);
-		Button.VSplitRight(120.0f, nullptr, &Button);
-		if(DoButton_Menu(&s_ButtonTimeout, Localize("Reset Url"), 0, &Button))
-		{
-			str_copy(g_Config.m_TcCustomCommunitiesUrl, "https://raw.githubusercontent.com/SollyBunny/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json");
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_ClBrowserButtonPosition, Localize("Browser Button Position (in-game)"), g_Config.m_ClBrowserButtonPosition, &Button))
+				g_Config.m_ClBrowserButtonPosition ^= 1;
 		}
 	}
+	else if (s_CurTab == 1) {
+		CUIRect Label, Button, Left, Right, Game, ClientSettings, Button2;
+		MainView.VSplitMid(&Left, &Right, 20.0f);
 
-	// From Kaizo client
-	{
-		// headline
-		Menu.HSplitTop(30.0f, &Label, &Menu);
-		Label.VSplitRight(60.0f, &Label, &Button);
-		Button.HSplitTop(5.0f, nullptr, &Button);
-		Button.HSplitBottom(5.0f, &Button, nullptr);
-		static CButtonContainer s_KaizoButton;
-		if(DoButton_Menu(&s_KaizoButton, Localize("Link"), 0, &Button))
+					// miscellaneous
+			// Left.HSplitTop(25.0f, &Label, &Left);
+			Left.HSplitTop(30.0f, &Label, &Left);
+			Ui()->DoLabel(&Label, Localize("Miscellaneous"), 20.0f, TEXTALIGN_ML);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClOldDoorLaser, Localize("Old door laser"), g_Config.m_ClOldDoorLaser, &Button))
+				g_Config.m_ClOldDoorLaser ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClOldFreezeLaser, Localize("Old freeze laser"), g_Config.m_ClOldFreezeLaser, &Button))
+				g_Config.m_ClOldFreezeLaser ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClExtraParticles, Localize("Extra particles"), g_Config.m_ClExtraParticles, &Button))
+				g_Config.m_ClExtraParticles ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClBloodParticles, Localize("Extra blood particles"), g_Config.m_ClBloodParticles, &Button))
+				g_Config.m_ClBloodParticles ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if (g_Config.m_ClConfirmKillTime != -1)
+				str_copy(aBuf, Localize("s", "Seconds"), sizeof(aBuf));
+			else
+			{
+				str_copy(aBuf, " = ", sizeof(aBuf));
+				str_append(aBuf, Localize("Off"));
+			}
+			Ui()->DoScrollbarOption(&g_Config.m_ClConfirmKillTime, &g_Config.m_ClConfirmKillTime, &Button, Localize("Confirm kill time"), -1, 60, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, aBuf);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClDuckFilter, Localize("Duck Filter"), g_Config.m_ClDuckFilter, &Button))
+				g_Config.m_ClDuckFilter ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClUpsidedownTees, Localize("Upside down tees"), g_Config.m_ClUpsidedownTees, &Button))
+				g_Config.m_ClUpsidedownTees ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClMapChangeMessage, Localize("Map Change Message"), g_Config.m_ClMapChangeMessage, &Button))
+				g_Config.m_ClMapChangeMessage ^= 1;
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			Ui()->DoScrollbarOption(&g_Config.m_ClWeatherSnow, &g_Config.m_ClWeatherSnow, &Button, Localize("Snow Weather (won't be saved)"), 0, 15, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "");
+
 		{
-			const char *pLink = "https://github.com/M0REKZ/kaizo-client";
-			Client()->ViewLink(pLink);
+			Right.HSplitTop(30.0f, &Label, &Right);
+			Ui()->DoLabel(&Label, Localize("Editor (won't save)"), 20.0f, TEXTALIGN_ML);
+
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_EdSevenMode, Localize("Open maps using 0.7 mapres"), g_Config.m_EdSevenMode, &Button))
+				g_Config.m_EdSevenMode ^= 1;
+
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_EdAlwaysAllowExternal, Localize("Always allow making mapres external"), g_Config.m_EdAlwaysAllowExternal, &Button))
+				g_Config.m_EdAlwaysAllowExternal ^= 1;
+
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_EdAlwaysAllowMapCommands, Localize("Don't ask to 'fix unknown commands'"), g_Config.m_EdAlwaysAllowMapCommands, &Button))
+				g_Config.m_EdAlwaysAllowMapCommands ^= 1;
 		}
-		Ui()->DoLabel(&Label, Localize("From Kaizo Client"), 20.0f, TEXTALIGN_ML);
-
-		Menu.HSplitTop(VerticalSpacing, nullptr, &Menu);
-		Menu.HSplitTop(20.0f, &Button, &Menu);
-		if(DoButton_CheckBox(&g_Config.m_ClSendClientType, Localize("Send Client Type"), g_Config.m_ClSendClientType, &Button))
-			g_Config.m_ClSendClientType ^= 1;
-
-		Menu.HSplitTop(VerticalSpacing, nullptr, &Menu);
-		Menu.HSplitTop(20.0f, &Button, &Menu);
-		if(DoButton_CheckBox(&g_Config.m_ClShowClientType, Localize("Show Client Types"), g_Config.m_ClShowClientType, &Button))
-			g_Config.m_ClShowClientType ^= 1;
 	}
-
-	// bottom right duck/infclass link
-	{
-		Menu.HSplitBottom(20.0f, &Menu, &Label);
-		Label.VSplitRight(60.0f, &Label, &Button);
-		Label.VSplitRight(10.0f, &Label, nullptr);
-		static CButtonContainer s_DuckInfclassButton;
-		if(DoButton_Menu(&s_DuckInfclassButton, Localize("Link"), 0, &Button))
+	else if (s_CurTab == 2) {
+		CUIRect Label, Button, Left, Right, Game, ClientSettings, Button2;
+		MainView.VSplitMid(&Left, &Right, 20.0f);
+		// From T-Client
 		{
-			const char *pLink = "https://pointer31.github.io/duckclient";
-			Client()->ViewLink(pLink);
+			// headline
+			Left.HSplitTop(30.0f, &Label, &Left);
+			Label.VSplitRight(60.0f, &Label, &Button);
+			Button.HSplitTop(5.0f, nullptr, &Button);
+			Button.HSplitBottom(5.0f, &Button, nullptr);
+			static CButtonContainer s_TaterButton;
+			if(DoButton_Menu(&s_TaterButton, Localize("Link"), 0, &Button))
+			{
+				const char *pLink = "https://tclient.app/";
+				Client()->ViewLink(pLink);
+			}
+			Ui()->DoLabel(&Label, Localize("From T-Client"), 20.0f, TEXTALIGN_ML);
+
+			Left.HSplitTop(VerticalSpacing, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			if(DoButton_CheckBox(&g_Config.m_ClHammerRotatesWithCursor, Localize("Spinny hammer"), g_Config.m_ClHammerRotatesWithCursor, &Button))
+				g_Config.m_ClHammerRotatesWithCursor ^= 1;
+
+			Left.HSplitTop(5.0f, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Label, &Left);
+			Left.HSplitTop(2.0f, nullptr, &Left);
+			Ui()->DoLabel(&Label, Localize("Custom Communities Url"), 14.0f, TEXTALIGN_ML);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			static CLineInput s_CommunityUrl(g_Config.m_TcCustomCommunitiesUrl, sizeof(g_Config.m_TcCustomCommunitiesUrl));
+			s_CommunityUrl.SetEmptyText(Localize("Community Url"));
+			Ui()->DoEditBox(&s_CommunityUrl, &Button, 14.0f);
+			static CButtonContainer s_ButtonTimeout;
+			Left.HSplitTop(8.0f, nullptr, &Left);
+			Left.HSplitTop(20.0f, &Button, &Left);
+			Button.VSplitRight(120.0f, nullptr, &Button);
+			if(DoButton_Menu(&s_ButtonTimeout, Localize("Reset Url"), 0, &Button))
+			{
+				str_copy(g_Config.m_TcCustomCommunitiesUrl, "https://raw.githubusercontent.com/SollyBunny/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json");
+			}
 		}
-		Ui()->DoLabel(&Label, "Duck/Infclass Client " DUCKCLIENT_VERSIONSTR, 16.0f, TEXTALIGN_MR);
+
+		// From Kaizo client
+		{
+			// headline
+			Right.HSplitTop(30.0f, &Label, &Right);
+			Label.VSplitRight(60.0f, &Label, &Button);
+			Button.HSplitTop(5.0f, nullptr, &Button);
+			Button.HSplitBottom(5.0f, &Button, nullptr);
+			static CButtonContainer s_KaizoButton;
+			if(DoButton_Menu(&s_KaizoButton, Localize("Link"), 0, &Button))
+			{
+				const char *pLink = "https://github.com/M0REKZ/kaizo-client";
+				Client()->ViewLink(pLink);
+			}
+			Ui()->DoLabel(&Label, Localize("From Kaizo Client"), 20.0f, TEXTALIGN_ML);
+
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_ClSendClientType, Localize("Send Client Type"), g_Config.m_ClSendClientType, &Button))
+				g_Config.m_ClSendClientType ^= 1;
+
+			Right.HSplitTop(VerticalSpacing, nullptr, &Right);
+			Right.HSplitTop(20.0f, &Button, &Right);
+			if(DoButton_CheckBox(&g_Config.m_ClShowClientType, Localize("Show Client Types"), g_Config.m_ClShowClientType, &Button))
+				g_Config.m_ClShowClientType ^= 1;
+		}
 	}
+	else if (s_CurTab == 3) {
+
+		CUIRect Label, Button, Left, Right, Game, ClientSettings, Menu, Button2;
+		// bottom right duck/infclass link
+		{
+			MainView.HSplitBottom(20.0f, &Menu, &Label);
+			Label.VSplitRight(60.0f, &Label, &Button);
+			Label.VSplitRight(10.0f, &Label, nullptr);
+			static CButtonContainer s_DuckInfclassButton;
+			if(DoButton_Menu(&s_DuckInfclassButton, Localize("Link"), 0, &Button))
+			{
+				const char *pLink = "https://pointer31.github.io/duckclient";
+				Client()->ViewLink(pLink);
+			}
+			Ui()->DoLabel(&Label, "Duck/Infclass Client " DUCKCLIENT_VERSIONSTR, 16.0f, TEXTALIGN_MR);
+		}
+	}
+	
+
 }
 
 void CMenus::SetNeedSendInfo()
